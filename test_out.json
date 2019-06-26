@@ -1,0 +1,12 @@
+{
+"metadata": {
+    "version": {
+        "essentia": "2.1-beta5-dev"
+    }
+},
+"tonal": {
+    "key_strength": 0.64949709177,
+    "key_key": "A#",
+    "key_scale": "major"
+}
+}

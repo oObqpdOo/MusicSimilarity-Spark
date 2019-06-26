@@ -88,10 +88,10 @@ def extract_chroma(x, fs):
         avg = avg + np.sum(j)
 
     avg = avg / m
-    threshold = avg * 2 
+    threshold = avg
 
     for i in chroma:
-        if np.sum(i) < threshold:
+        if np.sum(i) > threshold:
             ind = np.where(i == np.max(i))
             max_val = i[ind]#is always 1!
             i[ind] = 0
@@ -127,9 +127,13 @@ def extract_chroma(x, fs):
         #print(chroma[prev_beat:act_beat])
 
         ind = np.where(sum_key == np.max(sum_key))
+        ind = ind[0]
         #print("debug")
         fill = np.zeros(len(j))
-        fill[ind] = 1
+        if(np.all(chroma[prev_beat:act_beat] == 0)):
+            fill[ind] = 0
+        else:    
+            fill[ind] = 1
         chroma[prev_beat:act_beat] = fill
         #print(chroma[prev_beat:act_beat])
         prev_beat = i

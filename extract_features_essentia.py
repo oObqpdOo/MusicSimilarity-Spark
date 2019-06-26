@@ -144,11 +144,21 @@ def compute_chroma_notes(path):
     for i in beats_frames:
         act_beat = i
         sum_key = sum(chroma[prev_beat:act_beat])
+        #print(sum_key)
+        #print(chroma[prev_beat:act_beat])
+
         ind = np.where(sum_key == np.max(sum_key))
+        ind = ind[0]
+        #print("debug")
         fill = np.zeros(len(j))
-        fill[ind] = 1
+        if(np.all(chroma[prev_beat:act_beat] == 0)):
+            fill[ind] = 0
+        else:    
+            fill[ind] = 1
         chroma[prev_beat:act_beat] = fill
+        #print(chroma[prev_beat:act_beat])
         prev_beat = i
+        #print("BEAT")
     notes = []
     for i in notes:
         del i
@@ -256,6 +266,8 @@ path = 'music/guitar.mp3'
 start_time = time.time()
 
 a = 1
+
+#a = 0
 if a == 0:
     with open("features/out.mfcc", "w") as myfile:
         myfile.write("")
@@ -274,7 +286,8 @@ if a == 0:
             count = count + 1
         myfile.close()
 
-if a == 0:
+#a = 1
+if a == 1:
     with open("features/out.chroma", "w") as myfile:
         myfile.write("")
         myfile.close()
@@ -293,41 +306,44 @@ if a == 0:
             count = count + 1
         myfile.close()
 
+#a = 2
+if a == 2:
+    with open("features/out.bh", "w") as myfile:
+        myfile.write("")
+        myfile.close()
 
-with open("features/out.bh", "w") as myfile:
-    myfile.write("")
-    myfile.close()
+    with open("features/out.bh", "a") as myfile:
+        count = 1
+        for file_name in filelist: 
+            path = str(PurePath(file_name))
+            print ("Beat Histogram - File " + path + " " + str(count) + " von " + str(len(filelist))) 
+            bpmret, hist = compute_bpm_hist(path)
+            bpmret = str(bpmret)
+            hist = str(hist).replace('\n', '')
+            line = (str(PurePath(file_name)) + "; " + bpmret + "; " + hist).replace('\n', '')
+            myfile.write(line + '\n')       
+            count = count + 1
+        myfile.close()
 
-with open("features/out.bh", "a") as myfile:
-    count = 1
-    for file_name in filelist: 
-        path = str(PurePath(file_name))
-        print ("Beat Histogram - File " + path + " " + str(count) + " von " + str(len(filelist))) 
-        bpmret, hist = compute_bpm_hist(path)
-        bpmret = str(bpmret)
-        hist = str(hist).replace('\n', '')
-        line = (str(PurePath(file_name)) + "; " + bpmret + "; " + hist).replace('\n', '')
-        myfile.write(line + '\n')       
-        count = count + 1
-    myfile.close()
+    with open("features/out.notes", "w") as myfile:
+        myfile.write("")
+        myfile.close()
 
-with open("features/out.notes", "w") as myfile:
-    myfile.write("")
-    myfile.close()
-
-with open("features/out.notes", "a") as myfile:
-    count = 1
-    for file_name in filelist: 
-        path = str(PurePath(file_name))
-        print ("Chroma Notes - File " + path + " " + str(count) + " von " + str(len(filelist))) 
-        key, scale, notes = compute_chroma_notes(path)
-        key = str(key)
-        scale = str(scale).replace('\n', '')
-        notes = str(notes).replace('\n', '')
-        line = (str(PurePath(file_name)) + "; " + key + "; " + scale + "; " + notes).replace('\n', '')
-        myfile.write(line + '\n')       
-        count = count + 1
-    myfile.close()
+#a = 3
+if a == 3:
+    with open("features/out.notes", "a") as myfile:
+        count = 1
+        for file_name in filelist: 
+            path = str(PurePath(file_name))
+            print ("Chroma Notes - File " + path + " " + str(count) + " von " + str(len(filelist))) 
+            key, scale, notes = compute_chroma_notes(path)
+            key = str(key)
+            scale = str(scale).replace('\n', '')
+            notes = str(notes).replace('\n', '')
+            line = (str(PurePath(file_name)) + "; " + key + "; " + scale + "; " + notes).replace('\n', '')
+            myfile.write(line + '\n')       
+            count = count + 1
+        myfile.close()
 
 
 # Perform any action like print a string
