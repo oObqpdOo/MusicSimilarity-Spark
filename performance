@@ -1,52 +1,17 @@
 ##########################################
-# LIBROSA
-
-MFCC - File music/SPACE1.mp3 1 von 23
-MFCC - File music/PUNISH2.mp3 2 von 23
-MFCC - File music/TURCA3.mp3 3 von 23
-MFCC - File music/AFRICA1.mp3 4 von 23
-MFCC - File music/HURRICANE2.mp3 5 von 23
-MFCC - File music/BACK1.mp3 6 von 23
-MFCC - File music/AFRICA2.mp3 7 von 23
-MFCC - File music/TNT1.mp3 8 von 23
-MFCC - File music/WALLS2.mp3 9 von 23
-MFCC - File music/WALLS1.mp3 10 von 23
-MFCC - File music/THRONES1.mp3 11 von 23
-MFCC - File music/TNT2.mp3 12 von 23
-MFCC - File music/BACK2.mp3 13 von 23
-MFCC - File music/PUNISH1.mp3 14 von 23
-MFCC - File music/THRONES2.mp3 15 von 23
-MFCC - File music/HURRICANE1.mp3 16 von 23
-MFCC - File music/FADED2.mp3 17 von 23
-MFCC - File music/FADED1.mp3 18 von 23
-MFCC - File music/RACH2.mp3 19 von 23
-MFCC - File music/RACH1.mp3 20 von 23
-MFCC - File music/SPACE2.mp3 21 von 23
-MFCC - File music/TURCA2.wav 22 von 23
-MFCC - File music/TURCA1.wav 23 von 23
-Chroma - File music/SPACE1.mp3 1 von 23
-Chroma - File music/PUNISH2.mp3 2 von 23
-Chroma - File music/TURCA3.mp3 3 von 23
-Chroma - File music/AFRICA1.mp3 4 von 23
-Chroma - File music/HURRICANE2.mp3 5 von 23
-Chroma - File music/BACK1.mp3 6 von 23
-Chroma - File music/AFRICA2.mp3 7 von 23
-Chroma - File music/TNT1.mp3 8 von 23
-Chroma - File music/WALLS2.mp3 9 von 23
-Chroma - File music/WALLS1.mp3 10 von 23
-Chroma - File music/THRONES1.mp3 11 von 23
-Chroma - File music/TNT2.mp3 12 von 23
-Chroma - File music/BACK2.mp3 13 von 23
-Chroma - File music/PUNISH1.mp3 14 von 23
-Chroma - File music/THRONES2.mp3 15 von 23
-Chroma - File music/HURRICANE1.mp3 16 von 23
-Chroma - File music/FADED2.mp3 17 von 23
-Chroma - File music/FADED1.mp3 18 von 23
-Chroma - File music/RACH2.mp3 19 von 23
-Chroma - File music/RACH1.mp3 20 von 23
-Chroma - File music/SPACE2.mp3 21 von 23
-Chroma - File music/TURCA2.wav 22 von 23
-Chroma - File music/TURCA1.wav 23 von 23
-Printing this string takes ...
+# LIBROSA 23 items
+23 von 23 Files takes ...
 587.2161481380 seconds
+
+##########################################
+# ESSENTIA 151 items
+Job execution statistics:
+ job count | % of all jobs | job time sum | time per job | job server
+        37 |        100.00 |     1951.5632 |    52.744950 | local
+Time elapsed since server creation 671.516398191
+0 active tasks, 3 cores
+
+##########################################
+# ESSENTIA 3.180 items
+estimated: 235 min
 

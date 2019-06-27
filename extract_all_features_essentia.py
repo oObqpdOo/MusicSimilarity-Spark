@@ -14,6 +14,8 @@ from essentia.standard import *
 
 import time
 
+import pp
+
 #full array conversion to text! no truncation
 np.set_printoptions(threshold=np.inf)
 
@@ -301,69 +303,76 @@ def compute_features(path):
     return bpm, histogram, pool['tonal.key_key'], pool['tonal.key_scale'], notes, chroma_matrix, mean, cov
 
 
-with open("features/out.mfcc", "w") as myfile:
-    myfile.write("")
-    myfile.close()
-with open("features/out.chroma", "w") as myfile:
-    myfile.write("")
-    myfile.close()       
-with open("features/out.bh", "w") as myfile:
-    myfile.write("")
-    myfile.close()
-with open("features/out.notes", "w") as myfile:
-    myfile.write("")
-    myfile.close()
+################################################
+# clear outputs
 
-
-# Store start time
-start_time = time.time()
-count = 1
-
-for file_name in filelist:
-    path = str(PurePath(file_name))
-    print ("File " + path + " " + str(count) + " von " + str(len(filelist))) 
-    bpmret, hist, key, scale, notes, chroma_matrix, mean, cov = compute_features(path)
-    with open("features/out.mfcc", "a") as myfile:
-        print ("MFCC File " + path + " " + str(count) + " von " + str(len(filelist))) 
-        mean = np.array2string(mean, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
-        cov = np.array2string(cov, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
-        line = (str(PurePath(file_name)) + "; " + mean + "; " + cov).replace('\n', '')
-        myfile.write(line + '\n')       
+def parallel_python_process(process_id, filelist):
+    #full array conversion to text! no truncation
+    np.set_printoptions(threshold=np.inf)
+    
+    with open("features/out" + str(process_id) + ".mfcc", "w") as myfile:
+        myfile.write("")
+        myfile.close()
+    with open("features/out" + str(process_id) + ".chroma", "w") as myfile:
+        myfile.write("")
+        myfile.close()       
+    with open("features/out" + str(process_id) + ".bh", "w") as myfile:
+        myfile.write("")
+        myfile.close()
+    with open("features/out" + str(process_id) + ".notes", "w") as myfile:
+        myfile.write("")
         myfile.close()
 
-    with open("features/out.chroma", "a") as myfile:
-        print ("Chroma Full - File " + path + " " + str(count) + " von " + str(len(filelist))) 
-        chroma_str = str(chroma_matrix).replace('\n', '')
-        line = (str(PurePath(file_name)) + "; " + chroma_str).replace('\n', '')
-        myfile.write(line + '\n')       
-        myfile.close()
+    # Store start time
+    start_time = time.time()
+    count = 1
 
-    with open("features/out.bh", "a") as myfile:
-        print ("Beat Histogram - File " + path + " " + str(count) + " von " + str(len(filelist))) 
-        bpmret = str(bpmret)
-        hist = str(hist).replace('\n', '')
-        line = (str(PurePath(file_name)) + "; " + bpmret + "; " + hist).replace('\n', '')
-        myfile.write(line + '\n')       
-        myfile.close()
+    for file_name in filelist:
+        path = str(PurePath(file_name))
+        print ("File " + path + " " + str(count) + " von " + str(len(filelist))) 
+        bpmret, hist, key, scale, notes, chroma_matrix, mean, cov = compute_features(path)
+        with open("features/out" + str(process_id) + ".mfcc", "a") as myfile:
+            print ("MFCC File " + path + " " + str(count) + " von " + str(len(filelist))) 
+            mean = np.array2string(mean, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
+            cov = np.array2string(cov, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
+            line = (str(PurePath(file_name)) + "; " + mean + "; " + cov).replace('\n', '')
+            myfile.write(line + '\n')       
+            myfile.close()
 
-    with open("features/out.notes", "a") as myfile:
-        print ("Chroma Notes - File " + path + " " + str(count) + " von " + str(len(filelist))) 
-        key = str(key)
-        scale = str(scale).replace('\n', '')
-        notes = str(notes).replace('\n', '')
-        line = (str(PurePath(file_name)) + "; " + key + "; " + scale + "; " + notes).replace('\n', '')
-        myfile.write(line + '\n')       
-        myfile.close()
+        with open("features/out" + str(process_id) + ".chroma", "a") as myfile:
+            print ("Chroma Full - File " + path + " " + str(count) + " von " + str(len(filelist))) 
+            chroma_str = str(chroma_matrix).replace('\n', '')
+            line = (str(PurePath(file_name)) + "; " + chroma_str).replace('\n', '')
+            myfile.write(line + '\n')       
+            myfile.close()
 
-    count = count + 1
+        with open("features/out" + str(process_id) + ".bh", "a") as myfile:
+            print ("Beat Histogram - File " + path + " " + str(count) + " von " + str(len(filelist))) 
+            bpmret = str(bpmret)
+            hist = str(hist).replace('\n', '')
+            line = (str(PurePath(file_name)) + "; " + bpmret + "; " + hist).replace('\n', '')
+            myfile.write(line + '\n')       
+            myfile.close()
 
-# Perform any action like print a string
-print("calculating this takes ...")
+        with open("features/out" + str(process_id) + ".notes", "a") as myfile:
+            print ("Chroma Notes - File " + path + " " + str(count) + " von " + str(len(filelist))) 
+            key = str(key)
+            scale = str(scale).replace('\n', '')
+            notes = str(notes).replace('\n', '')
+            line = (str(PurePath(file_name)) + "; " + key + "; " + scale + "; " + notes).replace('\n', '')
+            myfile.write(line + '\n')       
+            myfile.close()
 
-# Store end time
-end_time = time.time()
+        count = count + 1
 
-# Calculate the execution time and print the result
-print("%.10f seconds" % (end_time - start_time))
+    # Perform any action like print a string
+    print("calculating this takes ...")
 
+    # Store end time
+    end_time = time.time()
+
+    # Calculate the execution time and print the result
+    print("%.10f seconds" % (end_time - start_time))
+
+parallel_python_process(1, filelist)
 
