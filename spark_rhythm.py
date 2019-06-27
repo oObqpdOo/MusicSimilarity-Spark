@@ -12,11 +12,11 @@ from pyspark.mllib.linalg import Vectors
 from pyspark.ml.param.shared import *
 from pyspark.ml.linalg import Vectors, VectorUDT
 
-rh = sc.textFile("out.rh")
+rh = sc.textFile("features/out.rh")
 rh = rh.map(lambda x: x.split(","))
 kv_rh= rh.map(lambda x: (x[0], list(x[1:])))
 
-rp = sc.textFile("out.rp")
+rp = sc.textFile("features/out.rp")
 rp = rp.map(lambda x: x.split(","))
 kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
 
@@ -48,6 +48,6 @@ def get_neighbors_rp(song):
     result = rf.select("id", "distCol").rdd.flatMap(list).collect()
     print result
 
-get_neighbors_rh("HURRICANE1.mp3")
-
-get_neighbors_rp("HURRICANE1.mp3")
+song = "music/PUNISH2.mp3"
+get_neighbors_rh(song)
+get_neighbors_rp(song)

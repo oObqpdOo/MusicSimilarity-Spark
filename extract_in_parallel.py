@@ -341,7 +341,7 @@ def parallel_python_process(process_id, cpu_filelist):
         #plt.tight_layout()
         #chroma = chroma.transpose()  
 
-        return bpm, histogram, pool['tonal.key_key'], pool['tonal.key_scale'], notes, chroma_matrix, mean, cov
+        return bpm, histogram, pool['tonal.key_key'], pool['tonal.key_scale'], notes, chroma_matrix, mean, cov, var
       
     with open("features/out" + str(process_id) + ".mfcc", "w") as myfile:
         myfile.write("")
@@ -363,12 +363,13 @@ def parallel_python_process(process_id, cpu_filelist):
     for file_name in cpu_filelist:
         path = str(PurePath(file_name))
         print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
-        bpmret, hist, key, scale, notes, chroma_matrix, mean, cov = compute_features(path)
+        bpmret, hist, key, scale, notes, chroma_matrix, mean, cov, var = compute_features(path)
         with open("features/out" + str(process_id) + ".mfcc", "a") as myfile:
             print ("MFCC File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
             mean = np.array2string(mean, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
+            var = np.array2string(var, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
             cov = np.array2string(cov, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
-            line = (str(PurePath(file_name)) + "; " + mean + "; " + cov).replace('\n', '')
+            line = (str(PurePath(file_name)) + "; " + mean + "; " + var + "; " + cov).replace('\n', '')
             myfile.write(line + '\n')       
             myfile.close()
 
