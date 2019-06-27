@@ -16,6 +16,9 @@ from time import time, sleep
 import pp
 import multiprocessing
 
+import gc
+gc.enable()
+
 #full array conversion to text! no truncation
 np.set_printoptions(threshold=np.inf)
 
@@ -46,6 +49,8 @@ def parallel_python_process(process_id, cpu_filelist):
     from pathlib import Path, PurePath
     from time import time, sleep
     import pp
+    import gc
+    gc.enable()
     
     fs = 44100
     #full array conversion to text! no truncation
@@ -392,6 +397,10 @@ def parallel_python_process(process_id, cpu_filelist):
             myfile.close()
 
         count = count + 1
+        import gc
+        gc.enable()
+        gc.collect()
+        gc.disable()
 
     # Perform any action like print a string
     #print("calculating this takes ...")
