@@ -20,7 +20,7 @@ rp = sc.textFile("features/out.rp")
 rp = rp.map(lambda x: x.split(","))
 kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
 
-def get_neighbors_rh(song):
+def get_neighbors_rh_brp(song):
     comparator = kv_rh.lookup(song)
     comparator_value = comparator[0]
     df = spark.createDataFrame(kv_rh, ["id", "features"])
@@ -34,7 +34,7 @@ def get_neighbors_rh(song):
     result = rf.select("id", "distCol").rdd.flatMap(list).collect()
     print result
 
-def get_neighbors_rp(song):
+def get_neighbors_rp_brp(song):
     comparator = kv_rp.lookup(song)
     comparator_value = comparator[0]
     df = spark.createDataFrame(kv_rp, ["id", "features"])
@@ -48,6 +48,34 @@ def get_neighbors_rp(song):
     result = rf.select("id", "distCol").rdd.flatMap(list).collect()
     print result
 
+def get_neighbors_rh_euclidean(song):
+    comparator = kv_rh.lookup(song)
+    comparator_value = comparator[0]
+    df = spark.createDataFrame(kv_rh, ["id", "features"])
+    list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
+    df_vec = df.select(df["id"],list_to_vector_udf(df["features"]).alias("features"))
+    comparator_value = Vectors.dense(comparator[0])
+    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
+    result = df_vec.withColumn('distances', distance_udf(F.col('features')))
+    result = result.select("id", "distances").orderBy('distances', ascending=True)
+    result = result.rdd.flatMap(list).collect()
+    print result
+
+def get_neighbors_rp_euclidean(song):
+    comparator = kv_rp.lookup(song)
+    comparator_value = comparator[0]
+    df = spark.createDataFrame(kv_rp, ["id", "features"])
+    list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
+    df_vec = df.select(df["id"],list_to_vector_udf(df["features"]).alias("features"))
+    comparator_value = Vectors.dense(comparator[0])
+    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
+    result = df_vec.withColumn('distances', distance_udf(F.col('features')))
+    result = result.select("id", "distances").orderBy('distances', ascending=True)
+    result = result.rdd.flatMap(list).collect()
+    print result
+
 song = "music/PUNISH2.mp3"
-get_neighbors_rh(song)
-get_neighbors_rp(song)
+get_neighbors_rh_brp(song)
+get_neighbors_rh_euclidean(song)
+get_neighbors_rp_brp(song)
+get_neighbors_rp_euclidean(song)
