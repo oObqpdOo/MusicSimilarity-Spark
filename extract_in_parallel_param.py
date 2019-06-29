@@ -28,6 +28,13 @@ path = 'music/guitar.mp3'
 #remember: in essentia A has index 0!
 octave = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
 
+def jensen_shannon(mean1, mean2, cov1, cov2):
+    mean_m = 0.5 * (mean1 + mean2)
+    cov_m = 0.5 * (cov1 + mean1 * np.transpose(mean1)) + 0.5 * (cov2 + mean2 * np.transpose(mean2)) - (mean_m * np.transpose(mean_m))
+    div = 0.5 * np.log(np.linalg.det(cov_m)) - 0.25 * np.log(np.linalg.det(cov1)) - 0.25 * np.log(np.linalg.det(cov2))
+    #print div
+    return div
+
 def transpose_chroma_matrix(key, scale, chroma_param):
     #print key
     #print scale 
@@ -86,6 +93,60 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
     fs = 44100
     #full array conversion to text! no truncation
     np.set_printoptions(threshold=np.inf)
+    def transpose_chroma_matrix(key, scale, chroma_param):
+        import numpy, scipy, matplotlib.pyplot as plt, sklearn, librosa, urllib, IPython.display
+        import numpy as np
+        import essentia
+        import essentia.standard as es
+        import essentia.streaming as ess
+        #remember: in essentia A has index 0!
+        octave = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
+        #print key
+        #print scale 
+        chroma_param = chroma_param.transpose()
+        transposed_chroma = np.zeros(chroma_param.shape)
+        if key != 'A': 
+            #print("transposing: ")
+            #get key offset
+            offs = 12 - octave.index(key)
+            #print(offs)
+            for ind in range(len(chroma_param)):
+                #print "original" + str(ind)
+                index = (ind + offs)
+                if(index >= 12):
+                    index = index - 12
+                #print "new" + str(index)
+                transposed_chroma[index] = chroma_param[ind]
+        else:
+            transposed_chroma = chroma_param
+        transposed_chroma = transposed_chroma.transpose()     
+        #print transposed_chroma[0:4]
+        return transposed_chroma    
+                
+    def transpose_chroma_notes(key, scale, notes):
+        import numpy, scipy, matplotlib.pyplot as plt, sklearn, librosa, urllib, IPython.display
+        import numpy as np
+        import essentia
+        import essentia.standard as es
+        import essentia.streaming as ess
+        #remember: in essentia A has index 0!
+        octave = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
+        #print key
+        #print scale 
+        transposed = notes
+        if key != 'A':
+            #print("transposing: ")
+            #get key offset
+            offs = 12 - octave.index(key)
+            #print(offs)
+            index = 0
+            for i in notes:
+                i = i + offs
+                if(i >= 12):
+                    i = i - 12
+                transposed[index] = i
+                index = index + 1
+        return transposed
     def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
         import numpy, scipy, matplotlib.pyplot as plt, sklearn, librosa, urllib, IPython.display
         import numpy as np
@@ -430,7 +491,9 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
         if f_chroma == 1:  
             with open("features/out" + str(process_id) + ".chroma", "a") as myfile:
                 print ("Chroma Full - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
-                chroma_str = str(chroma_matrix.transpose()).replace('\n', '')
+                transposed_chroma = np.zeros(chroma_matrix.shape)
+                transposed_chroma = transpose_chroma_matrix(key, scale, chroma_matrix)
+                chroma_str = str(transposed_chroma.transpose()).replace('\n', '')
                 line = (str(PurePath(file_name)) + "; " + chroma_str).replace('\n', '')
                 myfile.write(line + '\n')       
                 myfile.close()
@@ -446,9 +509,12 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
             with open("features/out" + str(process_id) + ".notes", "a") as myfile:
                 print ("Chroma Notes - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 key = str(key)
+                transposed_notes = []
+                transposed_notes = transpose_chroma_notes(key, scale, notes)
+                #print notes
                 scale = str(scale).replace('\n', '')
-                notes = str(notes).replace('\n', '')
-                line = (str(PurePath(file_name)) + "; " + key + "; " + scale + "; " + notes).replace('\n', '')
+                transposed_notes = str(transposed_notes).replace('\n', '')
+                line = (str(PurePath(file_name)) + "; " + key + "; " + scale + "; " + transposed_notes).replace('\n', '')
                 myfile.write(line + '\n')       
                 myfile.close()
         if f_mfcc_kl == 1:                
