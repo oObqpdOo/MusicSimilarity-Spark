@@ -2,7 +2,7 @@ import numpy, scipy, matplotlib.pyplot as plt, sklearn, librosa, urllib, IPython
 import numpy as np
 import librosa.display
 import signal
-from scipy.signal import butter, lfilter, freqz
+from scipy.signal import butter, lfilter, freqz, correlate2d
 import glob
 import essentia
 import essentia.standard as es
@@ -32,6 +32,18 @@ def jensen_shannon(mean1, mean2, cov1, cov2):
     mean_m = 0.5 * (mean1 + mean2)
     cov_m = 0.5 * (cov1 + mean1 * np.transpose(mean1)) + 0.5 * (cov2 + mean2 * np.transpose(mean2)) - (mean_m * np.transpose(mean_m))
     div = 0.5 * np.log(np.linalg.det(cov_m)) - 0.25 * np.log(np.linalg.det(cov1)) - 0.25 * np.log(np.linalg.det(cov2))
+    #print("JENSEN_SHANNON_DIVERGENCE")    
+    if np.isnan(div):
+        div = np.inf
+    #print div
+    return div
+
+def symmetric_kullback_leibler(mean1, mean2, cov1, cov2):#
+    #elem1 = np.trace(cov1 * np.linalg.inv(cov2))
+    #elem2 = np.trace(cov2 * np.linalg.inv(cov1))
+    #elem3 = np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) 
+    d = 13
+    div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
     #print div
     return div
 
@@ -74,6 +86,46 @@ def transpose_chroma_notes(key, scale, notes):
             transposed[index] = i
             index = index + 1
     return transposed
+
+def chroma_cross_correlate(chroma1_par, chroma2_par):
+    length1 = chroma1_par.size/12
+    chroma1 = np.empty([length1,12])
+    chroma1 = chroma1_par.reshape(length1, 12)  
+    length2 = chroma2_par.size/12
+    chroma2 = np.empty([length2,12])
+    chroma2 = chroma2_par.reshape(length2, 12)
+    corr = scipy.signal.correlate2d(chroma1, chroma2, mode='full')
+    transposed_chroma = corr.transpose()  
+    plt.figure(figsize=(10, 4))
+    librosa.display.specshow(transposed_chroma, y_axis='chroma')
+    plt.colorbar()
+    plt.title('Chromagram')
+    plt.tight_layout()
+    transposed_chroma = transposed_chroma.transpose() 
+    transposed_chroma = np.transpose(transposed_chroma)
+    mean_line = transposed_chroma[12]
+    print np.max(mean_line)
+    return np.max(mean_line)
+
+def chroma_cross_correlate_full(chroma1_par, chroma2_par):
+    length1 = chroma1_par.size/12
+    chroma1 = np.empty([length1,12])
+    chroma1 = chroma1_par.reshape(length1, 12)
+    length2 = chroma2_par.size/12
+    chroma2 = np.empty([length2,12])
+    chroma2 = chroma2_par.reshape(length2, 12)
+    corr = scipy.signal.correlate2d(chroma1, chroma2, mode='full')
+    transposed_chroma = corr.transpose()  
+    plt.figure(figsize=(10, 4))
+    librosa.display.specshow(transposed_chroma, y_axis='chroma')
+    plt.colorbar()
+    plt.title('Chromagram')
+    plt.tight_layout()
+    transposed_chroma = transposed_chroma.transpose() 
+    #transposed_chroma = np.transpose(transposed_chroma)
+    #mean_line = transposed_chroma[12]
+    print np.max(transposed_chroma)
+    return np.max(transposed_chroma)
 
 def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
     import numpy, scipy, matplotlib.pyplot as plt, sklearn, librosa, urllib, IPython.display
@@ -493,7 +545,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 print ("Chroma Full - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 transposed_chroma = np.zeros(chroma_matrix.shape)
                 transposed_chroma = transpose_chroma_matrix(key, scale, chroma_matrix)
-                chroma_str = str(transposed_chroma.transpose()).replace('\n', '')
+                chroma_str = np.array2string(transposed_chroma.transpose(), separator=',', suppress_small=True).replace('\n', '')
                 line = (str(PurePath(file_name)) + "; " + chroma_str).replace('\n', '')
                 myfile.write(line + '\n')       
                 myfile.close()
