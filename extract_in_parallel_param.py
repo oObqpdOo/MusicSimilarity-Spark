@@ -629,7 +629,9 @@ jobs = []
 #parallel_python_process(1, filelist, 1, 1, 1, 1, 1)
 
 print "Starting ", job_server.get_ncpus(), " workers"
-for index in xrange(parts):
+#can continue previously started jobs: 
+startjob = 0
+for index in xrange(startjob, parts):
     starti = start+index*step
     endi = min(start+(index+1)*step, end)
     #print index
@@ -637,6 +639,7 @@ for index in xrange(parts):
     #print endi    
     #PARAMS: filelist, mfcc_kl, mfcc_euclid, notes, chroma, bh
     jobs.append(job_server.submit(parallel_python_process, (index, filelist[starti:endi], 1, 1, 1, 1, 1)))
+    gc.collect()
 
 # Retrieve all the results and calculate their sum
 times = sum([job() for job in jobs])
