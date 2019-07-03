@@ -306,8 +306,8 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
             # Compute beat positions and BPM
             rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
             bpm, beats, beats_confidence, _, beats_intervals = rhythm_extractor(audio)
-            peak1_bpm, peak1_weight, peak1_spread, peak2_bpm, peak2_weight, peak2_spread, histogram = es.BpmHistogramDescriptors()(beats_intervals)
-
+            if f_bh == 1:
+                peak1_bpm, peak1_weight, peak1_spread, peak2_bpm, peak2_weight, peak2_spread, histogram = es.BpmHistogramDescriptors()(beats_intervals)
             tempo = bpm
             times = beats
             beats_frames = (beats * fs) / hopSize
@@ -553,7 +553,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
             with open("features/out" + str(process_id) + ".bh", "a") as myfile:
                 print ("Beat Histogram - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 bpmret = str(bpmret)
-                hist = str(hist).replace('\n', '')
+                hist = np.array2string(hist, separator=',', suppress_small=True).replace('\n', '')
                 line = (str(PurePath(file_name)) + "; " + bpmret + "; " + hist).replace('\n', '')
                 myfile.write(line + '\n')       
                 myfile.close()
@@ -639,6 +639,10 @@ for index in xrange(startjob, parts):
     #print starti
     #print endi    
     #PARAMS: filelist, mfcc_kl, mfcc_euclid, notes, chroma, bh
+    #jobs.append(job_server.submit(parallel_python_process, (index, filelist[starti:endi], 0, 0, 0, 0, 1)))
+    #PARAMS: filelist, mfcc_kl, mfcc_euclid, notes, chroma, bh
+    #jobs.append(job_server.submit(parallel_python_process, (index, filelist[starti:endi], 1, 1, 1, 1, 0)))
+    #PARAMS: filelist, mfcc_kl, mfcc_euclid, notes, chroma, bh    
     jobs.append(job_server.submit(parallel_python_process, (index, filelist[starti:endi], 1, 1, 1, 1, 1)))
     gc.collect()
 
