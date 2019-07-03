@@ -158,7 +158,7 @@ assembler = VectorAssembler(inputCols=["mean", "cov"],outputCol="features")
 mfccDfMerged = assembler.transform(mfccDf)
 #print("Assembled columns 'mean', 'var', 'cov' to vector column 'features'")
 #mfccDfMerged.select("features", "id").show(truncate=False)
-mfccDfMerged.first()
+#mfccDfMerged.first()
 
 #########################################################
 #   Pre- Process MFCC for Euclidean
@@ -190,15 +190,15 @@ def get_neighbors_mfcc_js(song):
     df_vec = mfccDfMerged.select(mfccDfMerged["id"],list_to_vector_udf(mfccDfMerged["features"]).alias("features"))
     #df_vec.first()
     filterDF = df_vec.filter(df_vec.id == song)
-    filterDF.first()
+    #filterDF.first()
     comparator_value = comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     #print comparator_value
     distance_udf = F.udf(lambda x: float(jensen_shannon(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances', distance_udf(F.col('features')))
     result = result.select("id", "distances").orderBy('distances', ascending=True)
     result = result.rdd.flatMap(list).collect()
-    print result
-    return
+    #print result
+    return result
     
 
 
@@ -206,15 +206,15 @@ def get_neighbors_mfcc_skl(song):
     df_vec = mfccDfMerged.select(mfccDfMerged["id"],list_to_vector_udf(mfccDfMerged["features"]).alias("features"))
     #df_vec.first()
     filterDF = df_vec.filter(df_vec.id == song)
-    filterDF.first()
+    #filterDF.first()
     comparator_value = comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     #print comparator_value
     distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances', distance_udf(F.col('features')))
     result = result.select("id", "distances").orderBy('distances', ascending=True)
     result = result.rdd.flatMap(list).collect()
-    print result
-    return
+    #print result
+    return result
 
 
 
@@ -229,8 +229,8 @@ def get_neighbors_rh_brp(song):
     result = model.approxNearestNeighbors(df_vec, comparator_value, df_vec.count()).collect()
     rf = spark.createDataFrame(result)
     result = rf.select("id", "distCol").rdd.flatMap(list).collect()
-    print result
-    return
+    #print result
+    return result
 
 def get_neighbors_rp_brp(song):
     comparator = kv_rp.lookup(song)
@@ -243,8 +243,8 @@ def get_neighbors_rp_brp(song):
     result = model.approxNearestNeighbors(df_vec, comparator_value, df_vec.count()).collect()
     rf = spark.createDataFrame(result)
     result = rf.select("id", "distCol").rdd.flatMap(list).collect()
-    print result
-    return
+    #print result
+    return result
 
 
 
@@ -258,8 +258,9 @@ def get_neighbors_rh_euclidean(song):
     result = df_vec.withColumn('distances', distance_udf(F.col('features')))
     result = result.select("id", "distances").orderBy('distances', ascending=True)
     result = result.rdd.flatMap(list).collect()
-    print result
+    #print result
     return
+
 
 def get_neighbors_rp_euclidean(song):
     comparator = kv_rp.lookup(song)
@@ -271,20 +272,20 @@ def get_neighbors_rp_euclidean(song):
     result = df_vec.withColumn('distances', distance_udf(F.col('features')))
     result = result.select("id", "distances").orderBy('distances', ascending=True)
     result = result.rdd.flatMap(list).collect()
-    print result
-    return
+    #print result
+    return result
 
 
 
 def get_neighbors_notes(song):
     df = spark.createDataFrame(notes, ["id", "key", "scale", "notes"])
     filterDF = df.filter(df.id == song)
-    filterDF.first()
+    #filterDF.first()
     comparator_value = filterDF.collect()[0][3] 
     df_merged = df.withColumn("compare", lit(comparator_value))
     df_levenshtein = df_merged.withColumn("word1_word2_levenshtein", levenshtein(col("notes"), col("compare")))
-    df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()    
-    return
+    #df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()    
+    return df_levenshtein.sort(col("word1_word2_levenshtein").asc())
 
 
    
@@ -296,8 +297,8 @@ def get_neighbors_chroma_corr_full(song):
     result = df_vec.withColumn('distances', distance_udf(F.col('chroma')))
     result = result.select("id", "distances").orderBy('distances', ascending=False)
     result = result.rdd.flatMap(list).collect()
-    print result
-    return
+    #print result
+    return result
     
 
 
@@ -309,8 +310,8 @@ def get_neighbors_chroma_corr(song):
     result = df_vec.withColumn('distances', distance_udf(F.col('chroma')))
     result = result.select("id", "distances").orderBy('distances', ascending=False)
     result = result.rdd.flatMap(list).collect()
-    print result
-    return
+    #print result
+    return result
 
 
 
@@ -319,13 +320,13 @@ def get_neighbors_mfcc_brp(song):
     brp = BucketedRandomProjectionLSH(inputCol="features", outputCol="hashes", seed=12345, bucketLength=1.0)
     model = brp.fit(df_vec)
     filterDF = df_vec.filter(df_vec.id == song)
-    filterDF.first()
+    #filterDF.first()
     comparator_value = comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     result = model.approxNearestNeighbors(df_vec, comparator_value, df_vec.count()).collect()
     rf = spark.createDataFrame(result)
     result = rf.select("id", "distCol").rdd.flatMap(list).collect()
-    print result   
-    return
+    #print result   
+    return result
 
 
 
@@ -333,53 +334,39 @@ def get_neighbors_mfcc_euclidean(song):
     df_vec = mfccEucDfMerged.select(mfccEucDfMerged["id"],list_to_vector_udf(mfccEucDfMerged["features"]).alias("features"))
     #df_ved.first()
     filterDF = df_vec.filter(df_vec.id == song)
-    filterDF.first()
+    #filterDF.first()
     comparator_value = comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     #print comparator_value
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances', distance_udf(F.col('features')))
     result = result.select("id", "distances").orderBy('distances', ascending=True)
     result = result.rdd.flatMap(list).collect()
-    print result
-    return
+    #print result
+    return result
 
 
 
-song = "music/PUNISH2.mp3"
-get_neighbors_mfcc_js(song)
-get_neighbors_mfcc_skl(song)
-song = "music/THRONES2.mp3"
-get_neighbors_mfcc_js(song)
-get_neighbors_mfcc_skl(song)
+def get_nearest_neighbors(song):
+    #get_neighbors_mfcc_brp(song)
+    #get_neighbors_mfcc_euclidean(song)
+    #get_neighbors_mfcc_js(song)
+    #get_neighbors_rh_brp(song)
+    #get_neighbors_rp_brp(song)
+    #get_neighbors_rh_euclidean(song)
+    #get_neighbors_chroma_corr_full(song)
+    neighbors_mfcc_skl = get_neighbors_mfcc_skl(song)
+    neighbors_rp_euclidean = get_neighbors_rp_euclidean(song)
+    neighbors_rh_euclidean = get_neighbors_rh_euclidean(song)
+    neighbors_notes = get_neighbors_notes(song)
+    neighbors_chroma = get_neighbors_chroma_corr(song)
+    print neighbors_mfcc_skl.top[:5]
+    print neighbors_rp_euclidean[:5]
+    print neighbors_rh_euclidean[:5]
+    neighbors_notes.show()
+    print neighbors_chroma[:5]
 
-song = "music/PUNISH2.mp3"
-get_neighbors_rh_brp(song)
-get_neighbors_rh_euclidean(song)
-get_neighbors_rp_brp(song)
-get_neighbors_rp_euclidean(song)
+song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"
+get_nearest_neighbors(song)
 
-song = "music/TURCA1.wav"
-get_neighbors_notes(song)
-song = "music/RACH1.mp3"
-get_neighbors_notes(song)
-song = "music/TNT1.mp3"
-get_neighbors_notes(song)
-
-song = "music/HURRICANE1.mp3"
-get_neighbors_chroma_corr_full(song)
-get_neighbors_chroma_corr(song)
-song = "music/TNT1.mp3"
-get_neighbors_chroma_corr_full(song)
-get_neighbors_chroma_corr(song)
-song = "music/PUNISH1.mp3"
-get_neighbors_chroma_corr_full(song)
-get_neighbors_chroma_corr(song)
-song = "music/AFRICA1.mp3"
-get_neighbors_chroma_corr_full(song)
-get_neighbors_chroma_corr(song)
-
-song = "music/AFRICA1.mp3"
-get_neighbors_mfcc_brp(song)
-get_neighbors_mfcc_euclidean(song)
 
 

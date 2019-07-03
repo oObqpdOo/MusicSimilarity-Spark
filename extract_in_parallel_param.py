@@ -12,6 +12,8 @@ from pathlib import Path, PurePath
 from time import time, sleep
 import pp
 import multiprocessing
+import os
+import argparse
 
 import gc
 gc.enable()
@@ -578,6 +580,17 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 myfile.write(line + '\n')       
                 myfile.close()
         count = count + 1
+        del bpmret
+        del hist
+        del key 
+        del scale
+        del notes   
+        del chroma_matrix
+        del mean    
+        del cov
+        del var
+        del cov_kl
+        gc.enable()
         gc.collect()
     
     # Perform any action like print a string
@@ -589,69 +602,121 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
     # Calculate the execution time and print the result
     #print("%.10f seconds" % (end_time - start_time))
     
+    gc.enable()
     gc.collect()
     return 1
     #return (end_time - start_time)
-    
-print("Init done")   
 
-print """Usage: python extract_in_parallel.py"""
 
-#sys.path.remove('/usr/share/pyshared')
+def process_stuff (startjob, maxparts, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
+    print("Init done")   
+    print """Usage: python extract_in_parallel.py"""
+    #sys.path.remove('/usr/share/pyshared')
+    start = 1
+    end = len(filelist)
+    cpus = multiprocessing.cpu_count()
+    print("Detected cores: ")
+    print cpus
+    ncpus = (cpus / 2) - 1
+    ncpus = 4
+    print("Used cores: ")
+    print ncpus
+    print("files per part: ")
+    files_per_part = 4
+    files_per_part = 400
+    print(files_per_part)
+    # Divide the task into subtasks - such that each subtask processes around 4 songs
+    parts = (len(filelist) / files_per_part) + 1
+    print("Split problem in parts: ")
+    print parts
 
-start = 1
-end = len(filelist)
+    startjob = int(startjob)
+    maxparts = int(maxparts)
 
-cpus = multiprocessing.cpu_count()
-print("Detected cores: ")
-print cpus
+    print("starting with")    
+    print(startjob)
+    print("ending with")
+    print(maxparts)
 
-ncpus = (cpus / 2) - 1
-print("Used cores: ")
-print ncpus
-
-# Divide the task into subtasks - such that each subtask processes around 4 songs
-parts = (len(filelist) / 4) + 1
-print("Split problem in parts: ")
-print parts
-
-#parts = ncpus
-step = (end - start) / parts + 1
-
-# Create jobserver
-job_server = pp.Server()
-
-# Execute the same task with different amount of active workers and measure the time
-#for ncpus in (1, 2, 4, 8, 16, 1):
-
-job_server.set_ncpus(ncpus)
-jobs = []
-
-#parallel_python_process(1, filelist, 1, 1, 1, 1, 1)
-
-print "Starting ", job_server.get_ncpus(), " workers"
-#can continue previously started jobs: 
-startjob = 0
-for index in xrange(startjob, parts):
-    starti = start+index*step
-    endi = min(start+(index+1)*step, end)
-    #print index
-    #print starti
-    #print endi    
-    #PARAMS: filelist, mfcc_kl, mfcc_euclid, notes, chroma, bh
-    #jobs.append(job_server.submit(parallel_python_process, (index, filelist[starti:endi], 0, 0, 0, 0, 1)))
-    #PARAMS: filelist, mfcc_kl, mfcc_euclid, notes, chroma, bh
-    #jobs.append(job_server.submit(parallel_python_process, (index, filelist[starti:endi], 1, 1, 1, 1, 0)))
-    #PARAMS: filelist, mfcc_kl, mfcc_euclid, notes, chroma, bh    
-    jobs.append(job_server.submit(parallel_python_process, (index, filelist[starti:endi], 1, 1, 1, 1, 1)))
+    #if parts < maxparts:
+    if startjob != 0 and maxparts != 0:
+        #parts = ncpus
+        step = (end - start) / parts + 1
+        # Create jobserver
+        job_server = pp.Server()
+        # Execute the same task with different amount of active workers and measure the time
+        #for ncpus in (1, 2, 4, 8, 16, 1):
+        job_server.set_ncpus(ncpus)
+        jobs = []
+        #parallel_python_process(1, filelist, 1, 1, 1, 1, 1)
+        print "Starting ", job_server.get_ncpus(), " workers"
+        #for index in xrange(startjob, startjob + maxparts):
+        for index in xrange(startjob, maxparts):
+            #not <= (range(startjob, parts) would go to parts-1 as well)
+            if index < parts:        
+                starti = start+index*step
+                endi = min(start+(index+1)*step, end)
+                #print index
+                #print starti
+                #print endi    
+                #PARAMS: filelist, mfcc_kl, mfcc_euclid, notes, chroma, bh    
+                jobs.append(job_server.submit(parallel_python_process, (index, filelist[starti:endi], do_mfcc_kl, do_mfcc_euclid, do_notes, do_chroma, do_bh)))
+                gc.collect()
+        # Retrieve all the results and calculate their sum
+        times = sum([job() for job in jobs])
+        #print(times / ncpus)
+        # Print the partial sum
+        #print "Partial sum is", part_sum1, "| diff =", math.log(2) - part_sum1
+        job_server.print_stats()
+    else:
+        #parts = ncpus
+        step = (end - start) / parts + 1
+        # Create jobserver
+        job_server = pp.Server()
+        # Execute the same task with different amount of active workers and measure the time
+        #for ncpus in (1, 2, 4, 8, 16, 1):
+        job_server.set_ncpus(ncpus)
+        jobs = []
+        #parallel_python_process(1, filelist, 1, 1, 1, 1, 1)
+        print "Starting ", job_server.get_ncpus(), " workers"
+        #can continue previously started jobs: 
+        startjob = 0
+        for index in xrange(startjob, parts):
+            starti = start+index*step
+            endi = min(start+(index+1)*step, end)
+            #print index
+            #print starti
+            #print endi    
+            #PARAMS: filelist, mfcc_kl, mfcc_euclid, notes, chroma, bh    
+            jobs.append(job_server.submit(parallel_python_process, (index, filelist[starti:endi], do_mfcc_kl, do_mfcc_euclid, do_notes, do_chroma, do_bh)))
+            gc.collect()
+        # Retrieve all the results and calculate their sum
+        times = sum([job() for job in jobs])
+        #print(times / ncpus)
+        # Print the partial sum
+        #print "Partial sum is", part_sum1, "| diff =", math.log(2) - part_sum1
+        job_server.print_stats()
+    #if more than 200 RAM will flow regardless of GC
+    del job_server
+    del jobs
+    gc.enable()
     gc.collect()
 
-# Retrieve all the results and calculate their sum
-times = sum([job() for job in jobs])
 
-#print(times / ncpus)
-# Print the partial sum
-#print "Partial sum is", part_sum1, "| diff =", math.log(2) - part_sum1
+if __name__ == '__main__':
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('start', help='start ID', default=0)
+    argparser.add_argument('end', help='end ID', default=np.inf) 
+    args = argparser.parse_args()
 
-job_server.print_stats()
+    do_mfcc_kl = 1
+    do_mfcc_euclid = 1
+    do_notes = 1
+    do_chroma = 1
+    do_bh = 1
+    startjob = 0
+    maxparts = 400
+
+    # BATCH FEATURE EXTRACTION:
+    process_stuff(args.start,args.end, do_mfcc_kl, do_mfcc_euclid, do_notes, do_chroma, do_bh)
 
