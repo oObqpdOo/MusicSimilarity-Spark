@@ -589,6 +589,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
     # Calculate the execution time and print the result
     #print("%.10f seconds" % (end_time - start_time))
     
+    gc.collect()
     return 1
     #return (end_time - start_time)
     
