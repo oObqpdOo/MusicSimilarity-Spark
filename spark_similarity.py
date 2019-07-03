@@ -14,13 +14,13 @@ from pyspark.ml.param.shared import *
 from pyspark.ml.linalg import Vectors, VectorUDT
 from pyspark.ml.feature import VectorAssembler
 import numpy as np
-import org.apache.spark.sql.functions.typedLit
+#import org.apache.spark.sql.functions.typedLit
 from pyspark.sql.functions import lit
 from pyspark.sql.functions import levenshtein  
 from pyspark.sql.functions import col
 from pyspark.sql.functions import desc
 from pyspark.sql.functions import asc
-import scipy as sc
+import scipy as sp
 from scipy.signal import butter, lfilter, freqz, correlate2d
 
 def chroma_cross_correlate(chroma1_par, chroma2_par):
@@ -30,11 +30,13 @@ def chroma_cross_correlate(chroma1_par, chroma2_par):
     length2 = chroma2_par.size/12
     chroma2 = np.empty([length2,12])
     chroma2 = chroma2_par.reshape(length2, 12)
-    corr = sc.signal.correlate2d(chroma1, chroma2, mode='full') 
+    corr = sp.signal.correlate2d(chroma1, chroma2, mode='full') 
     transposed_chroma = np.transpose(corr)
     mean_line = transposed_chroma[12]
     #print np.max(mean_line)
     return np.max(mean_line)
+
+
 
 def chroma_cross_correlate_full(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
@@ -43,11 +45,13 @@ def chroma_cross_correlate_full(chroma1_par, chroma2_par):
     length2 = chroma2_par.size/12
     chroma2 = np.empty([length2,12])
     chroma2 = chroma2_par.reshape(length2, 12)
-    corr = sc.signal.correlate2d(chroma1, chroma2, mode='full')
+    corr = sp.signal.correlate2d(chroma1, chroma2, mode='full')
     #transposed_chroma = np.transpose(transposed_chroma)
     #mean_line = transposed_chroma[12]
     #print np.max(corr)
     return np.max(corr)
+
+
 
 #get 13 mean and 13x13 cov as vectors
 def jensen_shannon(vec1, vec2):
@@ -72,6 +76,8 @@ def jensen_shannon(vec1, vec2):
     #print div
     return div
 
+
+
 #get 13 mean and 13x13 cov as vectors
 def symmetric_kullback_leibler(vec1, vec2):
     mean1 = np.empty([13, 1])
@@ -92,6 +98,8 @@ def symmetric_kullback_leibler(vec1, vec2):
     div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
     #print div
     return div
+
+
 
 song = "music/PUNISH2.mp3"
 
@@ -190,7 +198,10 @@ def get_neighbors_mfcc_js(song):
     result = result.select("id", "distances").orderBy('distances', ascending=True)
     result = result.rdd.flatMap(list).collect()
     print result
+    return
     
+
+
 def get_neighbors_mfcc_skl(song):
     df_vec = mfccDfMerged.select(mfccDfMerged["id"],list_to_vector_udf(mfccDfMerged["features"]).alias("features"))
     #df_vec.first()
@@ -203,6 +214,9 @@ def get_neighbors_mfcc_skl(song):
     result = result.select("id", "distances").orderBy('distances', ascending=True)
     result = result.rdd.flatMap(list).collect()
     print result
+    return
+
+
 
 def get_neighbors_rh_brp(song):
     comparator = kv_rh.lookup(song)
@@ -216,6 +230,7 @@ def get_neighbors_rh_brp(song):
     rf = spark.createDataFrame(result)
     result = rf.select("id", "distCol").rdd.flatMap(list).collect()
     print result
+    return
 
 def get_neighbors_rp_brp(song):
     comparator = kv_rp.lookup(song)
@@ -229,6 +244,9 @@ def get_neighbors_rp_brp(song):
     rf = spark.createDataFrame(result)
     result = rf.select("id", "distCol").rdd.flatMap(list).collect()
     print result
+    return
+
+
 
 def get_neighbors_rh_euclidean(song):
     comparator = kv_rh.lookup(song)
@@ -241,6 +259,7 @@ def get_neighbors_rh_euclidean(song):
     result = result.select("id", "distances").orderBy('distances', ascending=True)
     result = result.rdd.flatMap(list).collect()
     print result
+    return
 
 def get_neighbors_rp_euclidean(song):
     comparator = kv_rp.lookup(song)
@@ -253,42 +272,47 @@ def get_neighbors_rp_euclidean(song):
     result = result.select("id", "distances").orderBy('distances', ascending=True)
     result = result.rdd.flatMap(list).collect()
     print result
+    return
+
+
 
 def get_neighbors_notes(song):
     df = spark.createDataFrame(notes, ["id", "key", "scale", "notes"])
     filterDF = df.filter(df.id == song)
     filterDF.first()
     comparator_value = filterDF.collect()[0][3] 
-    print comparator_value
     df_merged = df.withColumn("compare", lit(comparator_value))
     df_levenshtein = df_merged.withColumn("word1_word2_levenshtein", levenshtein(col("notes"), col("compare")))
-    df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()
-        
+    df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()    
+    return
+
+
+   
 def get_neighbors_chroma_corr_full(song):
     df_vec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
-    #df_vec.first()
     filterDF = df_vec.filter(df_vec.id == song)
-    filterDF.first()
     comparator_value = comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
-    #print comparator_value
     distance_udf = F.udf(lambda x: float(chroma_cross_correlate_full(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances', distance_udf(F.col('chroma')))
     result = result.select("id", "distances").orderBy('distances', ascending=False)
     result = result.rdd.flatMap(list).collect()
     print result
+    return
     
+
+
 def get_neighbors_chroma_corr(song):
     df_vec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
-    #df_vec.first()
     filterDF = df_vec.filter(df_vec.id == song)
-    filterDF.first()
     comparator_value = comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
-    #print comparator_value
     distance_udf = F.udf(lambda x: float(chroma_cross_correlate(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances', distance_udf(F.col('chroma')))
     result = result.select("id", "distances").orderBy('distances', ascending=False)
     result = result.rdd.flatMap(list).collect()
     print result
+    return
+
+
 
 def get_neighbors_mfcc_brp(song):
     df_vec = mfccEucDfMerged.select(mfccEucDfMerged["id"],list_to_vector_udf(mfccEucDfMerged["features"]).alias("features"))
@@ -301,8 +325,9 @@ def get_neighbors_mfcc_brp(song):
     rf = spark.createDataFrame(result)
     result = rf.select("id", "distCol").rdd.flatMap(list).collect()
     print result   
-    #result = model.approxSimilarityJoin(df_vec, df_vec, np.inf, distCol="EuclideanDistance")
-    #print result.collect()
+    return
+
+
 
 def get_neighbors_mfcc_euclidean(song):
     df_vec = mfccEucDfMerged.select(mfccEucDfMerged["id"],list_to_vector_udf(mfccEucDfMerged["features"]).alias("features"))
@@ -316,6 +341,9 @@ def get_neighbors_mfcc_euclidean(song):
     result = result.select("id", "distances").orderBy('distances', ascending=True)
     result = result.rdd.flatMap(list).collect()
     print result
+    return
+
+
 
 song = "music/PUNISH2.mp3"
 get_neighbors_mfcc_js(song)

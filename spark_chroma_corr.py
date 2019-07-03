@@ -14,7 +14,7 @@ from pyspark.ml.param.shared import *
 from pyspark.ml.linalg import Vectors, VectorUDT
 from pyspark.ml.feature import VectorAssembler
 import numpy as np
-import scipy as sc
+import scipy as sp
 from scipy.signal import butter, lfilter, freqz, correlate2d
 
 song = "music/PUNISH2.mp3"
@@ -26,7 +26,7 @@ def chroma_cross_correlate(chroma1_par, chroma2_par):
     length2 = chroma2_par.size/12
     chroma2 = np.empty([length2,12])
     chroma2 = chroma2_par.reshape(length2, 12)
-    corr = sc.signal.correlate2d(chroma1, chroma2, mode='full') 
+    corr = sp.signal.correlate2d(chroma1, chroma2, mode='full') 
     transposed_chroma = np.transpose(corr)
     mean_line = transposed_chroma[12]
     #print np.max(mean_line)
@@ -42,7 +42,7 @@ def chroma_cross_correlate_full(chroma1_par, chroma2_par):
     length2 = chroma2_par.size/12
     chroma2 = np.empty([length2,12])
     chroma2 = chroma2_par.reshape(length2, 12)
-    corr = sc.signal.correlate2d(chroma1, chroma2, mode='full')
+    corr = sp.signal.correlate2d(chroma1, chroma2, mode='full')
     #transposed_chroma = np.transpose(transposed_chroma)
     #mean_line = transposed_chroma[12]
     #print np.max(corr)
