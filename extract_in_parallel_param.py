@@ -132,6 +132,39 @@ def chroma_cross_correlate_full(chroma1_par, chroma2_par):
     print np.max(transposed_chroma)
     return np.max(transposed_chroma)
 
+
+def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
+    length1 = chroma1_par.size/12
+    chroma1 = np.empty([length1,12])
+    length2 = chroma2_par.size/12
+    chroma2 = np.empty([length2,12])
+    if(length1 > length2):
+        chroma1 = chroma1_par.reshape(length1, 12)
+        chroma2 = chroma2_par.reshape(length2, 12)
+    else:
+        chroma2 = chroma1_par.reshape(length1, 12)
+        chroma1 = chroma2_par.reshape(length2, 12)    
+    corr = scipy.signal.correlate2d(chroma1, chroma2, mode='same')
+    transposed_chroma = corr.transpose()  
+    transposed_chroma = transposed_chroma / (min(length1, length2))
+    plt.figure(figsize=(10, 4))
+    librosa.display.specshow(transposed_chroma, y_axis='chroma')
+    plt.colorbar()
+    plt.title('Chromagram')
+    plt.tight_layout()
+    transposed_chroma = transposed_chroma.transpose()
+    transposed_chroma = np.transpose(transposed_chroma)
+    mean_line = transposed_chroma[6]
+    plt.rcParams.update({'font.size': 14})
+    plt.figure(figsize=(10, 4))
+    plt.plot(mean_line)
+    plt.xlabel("cross-correlation")
+    plt.ylabel("beat")
+    plt.title('Chromagram')
+    plt.tight_layout()    
+    print np.max(mean_line)
+    return mean_line
+
 def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
     import numpy, scipy, matplotlib.pyplot as plt, sklearn, librosa, urllib, IPython.display
     import numpy as np
