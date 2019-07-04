@@ -677,7 +677,7 @@ def process_stuff (startjob, maxparts, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chro
     print(maxparts)
 
     #if parts < maxparts:
-    if startjob != 0 and maxparts != 0:
+    if startjob != 0 or maxparts != parts:
         #parts = ncpus
         step = (end - start) / parts + 1
         # Create jobserver
@@ -689,6 +689,8 @@ def process_stuff (startjob, maxparts, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chro
         #parallel_python_process(1, filelist, 1, 1, 1, 1, 1)
         print "Starting ", job_server.get_ncpus(), " workers"
         #for index in xrange(startjob, startjob + maxparts):
+        if maxparts > parts:
+            maxparts = parts
         for index in xrange(startjob, maxparts):
             #not <= (range(startjob, parts) would go to parts-1 as well)
             if index < parts:        
