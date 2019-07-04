@@ -17,6 +17,7 @@ import argparse
 
 import gc
 gc.enable()
+plt.rcParams.update({'font.size': 14})
 
 np.set_printoptions(threshold=np.inf)
 filelist = []
@@ -98,6 +99,7 @@ def chroma_cross_correlate(chroma1_par, chroma2_par):
     chroma2 = chroma2_par.reshape(length2, 12)
     corr = scipy.signal.correlate2d(chroma1, chroma2, mode='full')
     transposed_chroma = corr.transpose()  
+    transposed_chroma = transposed_chroma / (min(length1, length2))
     plt.figure(figsize=(10, 4))
     librosa.display.specshow(transposed_chroma, y_axis='chroma')
     plt.colorbar()
@@ -118,6 +120,7 @@ def chroma_cross_correlate_full(chroma1_par, chroma2_par):
     chroma2 = chroma2_par.reshape(length2, 12)
     corr = scipy.signal.correlate2d(chroma1, chroma2, mode='full')
     transposed_chroma = corr.transpose()  
+    transposed_chroma = transposed_chroma / (min(length1, length2))
     plt.figure(figsize=(10, 4))
     librosa.display.specshow(transposed_chroma, y_axis='chroma')
     plt.colorbar()
@@ -408,6 +411,8 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 value = sum(chroma_align[prev_beat:act_beat])/(act_beat-prev_beat)
                 chroma_align[prev_beat:act_beat] = value
                 prev_beat = i
+                if np.linalg.norm(value, ord=1) != 0:
+                    value = value / np.linalg.norm(value, ord=1)
                 chroma_matrix[mat_index] = value
                 mat_index = mat_index + 1
 
