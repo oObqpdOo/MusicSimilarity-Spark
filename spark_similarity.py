@@ -32,10 +32,10 @@ sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
 spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrCreate()
 
-song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
+#song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 #song = "music/HURRICANE1.mp3"              #small testset
-
+song = "music/Small Cover Song Library/Sia - Chandelier.mp3"              #small testset
 
 def chroma_cross_correlate(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
@@ -137,7 +137,6 @@ def symmetric_kullback_leibler(vec1, vec2):
 
 
 
-song = "music/PUNISH2.mp3"
 
 #########################################################
 #   Pre- Process RH and RP for Euclidean
@@ -150,6 +149,15 @@ kv_rh= rh.map(lambda x: (x[0], list(x[1:])))
 rp = sc.textFile("features/out[0-9]*.rp")
 rp = rp.map(lambda x: x.split(","))
 kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
+
+
+#########################################################
+#   Pre- Process BH for Euclidean
+#
+
+bh = sc.textFile("features/out[0-9]*.bh")
+bh = bh.map(lambda x: x.split(";"))
+kv_bh = bh.map(lambda x: (x[0], x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 
 #########################################################
 #   Pre- Process Notes for Levenshtein
@@ -395,6 +403,18 @@ def get_neighbors_mfcc_euclidean(song):
 
 
 
+def get_neighbors_bh_euclidean(song):
+    df = spark.createDataFrame(kv_bh, ["id", "bpm", "features"])
+    filterDF = df.filter(df.id == song)
+    comparator_value = filterDF.collect()[0][2]
+    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
+    result = df.withColumn('distances_bh', distance_udf(F.col('features'))).select("id", "bpm", "distances_bh")
+    result = result.orderBy('distances_bh', ascending=True).rdd.flatMap(list).collect()
+    #print result
+    return result
+
+
+
 def get_nearest_neighbors(song):
     #get_neighbors_mfcc_brp(song)
     #get_neighbors_mfcc_euclidean(song)
@@ -405,18 +425,21 @@ def get_nearest_neighbors(song):
     #get_neighbors_chroma_corr_full(song)
     neighbors_mfcc_skl = get_neighbors_mfcc_skl(song)
     neighbors_rp_euclidean = get_neighbors_rp_euclidean(song)
+    neighbors_bh_euclidean = get_neighbors_bh_euclidean(song)
     #neighbors_rh_euclidean = get_neighbors_rh_euclidean(song)
     neighbors_notes = get_neighbors_notes(song)
     neighbors_chroma = get_neighbors_chroma_corr(song)
     print neighbors_mfcc_skl[:10]
     print neighbors_rp_euclidean[:10]
+    print neighbors_bh_euclidean[:10]
     #print neighbors_rh_euclidean[:10]
     neighbors_notes.show()
     print neighbors_chroma[:10]
 
-song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
+#song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 #song = "music/HURRICANE1.mp3"              #small testset
+song = "music/Small Cover Song Library/Sia - Chandelier.mp3"              #small testset
 
 get_nearest_neighbors(song)
 

@@ -28,10 +28,11 @@ def parallel_python_process(process_id, cpu_filelist):
     count = 1
     for file_name in cpu_filelist:
         path = str(PurePath(file_name))
+        filename = path.replace(".","").replace(",","").replace("mp3",".mp3").replace("wav",".wav").replace("flac",".flac").replace("ogg",".ogg")        
         print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist)))               
         with open("features/out.files", "a") as myfile:
             print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
-            line = (str(PurePath(file_name)) + "     :       " + str(process_id))
+            line = (filename + "     :       " + str(process_id))
             myfile.write(line + '\n')       
             myfile.close()
      

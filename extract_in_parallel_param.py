@@ -571,13 +571,14 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
         path = str(PurePath(file_name))
         print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
         bpmret, hist, key, scale, notes, chroma_matrix, mean, cov, var, cov_kl = compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh)
+        filename = path.replace(".","").replace(",","").replace("mp3",".mp3").replace("wav",".wav").replace("flac",".flac").replace("ogg",".ogg")        
         if f_mfcc_euclid == 1:                
             with open("features/out" + str(process_id) + ".mfcc", "a") as myfile:
                 print ("MFCC File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 str_mean = np.array2string(mean, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
                 str_var = np.array2string(var, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
                 str_cov = np.array2string(cov, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
-                line = (str(PurePath(file_name)) + "; " + str_mean + "; " + str_var + "; " + str_cov).replace('\n', '')
+                line = (filename + "; " + str_mean + "; " + str_var + "; " + str_cov).replace('\n', '')
                 myfile.write(line + '\n')       
                 myfile.close()
         if f_chroma == 1:  
@@ -586,7 +587,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 transposed_chroma = np.zeros(chroma_matrix.shape)
                 transposed_chroma = transpose_chroma_matrix(key, scale, chroma_matrix)
                 chroma_str = np.array2string(transposed_chroma.transpose(), separator=',', suppress_small=True).replace('\n', '')
-                line = (str(PurePath(file_name)) + "; " + chroma_str).replace('\n', '')
+                line = (filename + "; " + chroma_str).replace('\n', '')
                 myfile.write(line + '\n')       
                 myfile.close()
         if f_bh == 1:  
@@ -594,7 +595,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 print ("Beat Histogram - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 bpmret = str(bpmret)
                 hist = np.array2string(hist, separator=',', suppress_small=True).replace('\n', '')
-                line = (str(PurePath(file_name)) + "; " + bpmret + "; " + hist).replace('\n', '')
+                line = (filename + "; " + bpmret + "; " + hist).replace('\n', '')
                 myfile.write(line + '\n')       
                 myfile.close()
         if f_notes == 1:  
@@ -606,7 +607,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 #print notes
                 scale = str(scale).replace('\n', '')
                 transposed_notes = str(transposed_notes).replace('\n', '')
-                line = (str(PurePath(file_name)) + "; " + key + "; " + scale + "; " + transposed_notes).replace('\n', '')
+                line = (filename + "; " + key + "; " + scale + "; " + transposed_notes).replace('\n', '')
                 myfile.write(line + '\n')       
                 myfile.close()
         if f_mfcc_kl == 1:                
@@ -614,20 +615,11 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 print ("MFCC Kullback-Leibler " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 str_mean = np.array2string(mean, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
                 str_cov_kl = np.array2string(cov_kl, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
-                line = (str(PurePath(file_name)) + "; " + str_mean + "; " + str_cov_kl).replace('\n', '')
+                line = (filename + "; " + str_mean + "; " + str_cov_kl).replace('\n', '')
                 myfile.write(line + '\n')       
                 myfile.close()
         count = count + 1
-        del bpmret
-        del hist
-        del key 
-        del scale
-        del notes   
-        del chroma_matrix
-        del mean    
-        del cov
-        del var
-        del cov_kl
+        del bpmret, hist, key, scale, notes, chroma_matrix, mean, cov, var, cov_kl
         gc.enable()
         gc.collect()
     
