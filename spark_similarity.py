@@ -9,7 +9,7 @@ from pyspark.sql.types import DoubleType
 from pyspark.sql.functions import udf
 from scipy.spatial import distance
 from pyspark.ml.feature import BucketedRandomProjectionLSH
-from pyspark.mllib.linalg import Vectors
+#from pyspark.mllib.linalg import Vectors
 from pyspark.ml.param.shared import *
 from pyspark.ml.linalg import Vectors, VectorUDT
 from pyspark.ml.feature import VectorAssembler
@@ -22,6 +22,20 @@ from pyspark.sql.functions import desc
 from pyspark.sql.functions import asc
 import scipy as sp
 from scipy.signal import butter, lfilter, freqz, correlate2d
+
+from pyspark import SparkContext, SparkConf
+from pyspark.sql import SQLContext, Row
+from pyspark.sql import SparkSession
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confLocal = SparkConf().setMaster("local").setAppName("MusicSimilarity Local")
+sc = SparkContext(conf=confCluster)
+sqlContext = SQLContext(sc)
+spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrCreate()
+
+song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
+#song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
+#song = "music/HURRICANE1.mp3"              #small testset
+
 
 def chroma_cross_correlate(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
@@ -64,13 +78,13 @@ def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
     else:
         chroma2 = chroma1_par.reshape(length1, 12)
         chroma1 = chroma2_par.reshape(length2, 12)    
-    corr = scipy.signal.correlate2d(chroma1, chroma2, mode='same')
+    corr = sp.signal.correlate2d(chroma1, chroma2, mode='same')
     transposed_chroma = corr.transpose()  
     transposed_chroma = transposed_chroma / (min(length1, length2))
     transposed_chroma = transposed_chroma.transpose()
     transposed_chroma = np.transpose(transposed_chroma)
     mean_line = transposed_chroma[6]
-    print np.max(mean_line)
+    #print np.max(mean_line)
     return np.max(mean_line)
 
 
@@ -129,11 +143,11 @@ song = "music/PUNISH2.mp3"
 #   Pre- Process RH and RP for Euclidean
 #
 
-rh = sc.textFile("features/out.rh")
+rh = sc.textFile("features/out[0-9]*.rh")
 rh = rh.map(lambda x: x.split(","))
 kv_rh= rh.map(lambda x: (x[0], list(x[1:])))
 
-rp = sc.textFile("features/out.rp")
+rp = sc.textFile("features/out[0-9]*.rp")
 rp = rp.map(lambda x: x.split(","))
 kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
 
@@ -328,7 +342,7 @@ def get_neighbors_chroma_corr(song):
     df_vec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
-    distance_udf = F.udf(lambda x: float(chroma_cross_correlate(x, comparator_value)), DoubleType())
+    distance_udf = F.udf(lambda x: float(chroma_cross_correlate_valid(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances', distance_udf(F.col('chroma')))
     result = result.select("id", "distances").orderBy('distances', ascending=False)
     result = result.rdd.flatMap(list).collect()
@@ -391,16 +405,19 @@ def get_nearest_neighbors(song):
     #get_neighbors_chroma_corr_full(song)
     neighbors_mfcc_skl = get_neighbors_mfcc_skl(song)
     neighbors_rp_euclidean = get_neighbors_rp_euclidean(song)
-    neighbors_rh_euclidean = get_neighbors_rh_euclidean(song)
+    #neighbors_rh_euclidean = get_neighbors_rh_euclidean(song)
     neighbors_notes = get_neighbors_notes(song)
     neighbors_chroma = get_neighbors_chroma_corr(song)
-    print neighbors_mfcc_skl.top[:5]
-    print neighbors_rp_euclidean[:5]
-    print neighbors_rh_euclidean[:5]
+    print neighbors_mfcc_skl[:10]
+    print neighbors_rp_euclidean[:10]
+    #print neighbors_rh_euclidean[:10]
     neighbors_notes.show()
-    print neighbors_chroma[:5]
+    print neighbors_chroma[:10]
 
-song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"
+song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
+#song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
+#song = "music/HURRICANE1.mp3"              #small testset
+
 get_nearest_neighbors(song)
 
 

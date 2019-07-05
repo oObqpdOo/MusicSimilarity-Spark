@@ -1,6 +1,34 @@
-python extract_in_parallel_param.py 4 7
-python extract_in_parallel_param.py 8 11
-python extract_in_parallel_param.py 12 15
-python extract_in_parallel_param.py 16 19
+python extract_in_parallel_param.py 0 4
+python extract_in_parallel_param.py 4 8
+python extract_in_parallel_param.py 8 12
+python extract_in_parallel_param.py 12 16
+python extract_in_parallel_param.py 16 20
 python extract_in_parallel_param.py 20 22
 
+
+python extract_in_parallel_param.py 2 3
+python extract_in_parallel_param.py 12 13
+python extract_in_parallel_param.py 18 19
+
+
+###########################################################
+python extract_in_parallel_param.py 2 3
+
+Traceback (most recent call last):
+  File "/home/bqpd/anaconda2/lib/python2.7/site-packages/ppworker.py", line 90, in run
+    __result = __f(*__args)
+  File "<string>", line 406, in parallel_python_process
+  File "<string>", line 92, in compute_features
+  File "/home/bqpd/anaconda2/lib/python2.7/site-packages/essentia/standard.py", line 44, in __init__
+    self.configure(**kwargs)
+  File "/home/bqpd/anaconda2/lib/python2.7/site-packages/essentia/standard.py", line 64, in configure
+    self.__configure__(**kwargs)
+RuntimeError: Error while configuring MonoLoader: AudioLoader: Could not open file "music/Metal & Rock/Black Metal/Saor - Guardians.mp3", error = Invalid data found when processing input
+Traceback (most recent call last):
+  File "extract_in_parallel_param.py", line 761, in <module>
+    process_stuff(args.start,args.end, do_mfcc_kl, do_mfcc_euclid, do_notes, do_chroma, do_bh)
+  File "extract_in_parallel_param.py", line 706, in process_stuff
+    times = sum([job() for job in jobs])
+TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'
+
+###########################################################

@@ -660,8 +660,8 @@ def process_stuff (startjob, maxparts, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chro
     print("Used cores: ")
     print ncpus
     print("files per part: ")
-    files_per_part = 4
-    files_per_part = 400
+    files_per_part = 8
+    #files_per_part = 50
     print(files_per_part)
     # Divide the task into subtasks - such that each subtask processes around 4 songs
     parts = (len(filelist) / files_per_part) + 1
