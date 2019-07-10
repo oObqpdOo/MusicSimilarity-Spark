@@ -16,6 +16,9 @@ for filename in Path('music').glob('**/*.mp3'):
 for filename in Path('music').glob('**/*.wav'):
     filelist.append(filename)  
 
+print len(filelist)
+#print(filelist)
+
 def parallel_python_process(process_id, cpu_filelist):
     import numpy as np
     from pathlib import Path, PurePath
@@ -67,7 +70,7 @@ def process_stuff (startjob, maxparts):
     print("Init done")   
     print """Usage: python extract_in_parallel.py"""
     #sys.path.remove('/usr/share/pyshared')
-    start = 1
+    start = 0
     end = len(filelist)
     cpus = multiprocessing.cpu_count()
     print("Detected cores: ")
@@ -77,8 +80,8 @@ def process_stuff (startjob, maxparts):
     print("Used cores: ")
     print ncpus
     print("files per part: ")
-    files_per_part = 8
-    files_per_part = 400
+    files_per_part = 25
+    #files_per_part = 200
     print(files_per_part)
     # Divide the task into subtasks - such that each subtask processes around 4 songs
     parts = (len(filelist) / files_per_part) + 1
