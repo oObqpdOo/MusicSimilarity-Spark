@@ -9,8 +9,6 @@ from pyspark.ml.param.shared import *
 from pyspark.mllib.linalg import Vectors, VectorUDT
 from pyspark.ml.feature import VectorAssembler
 import numpy as np
-import scipy as sp
-from scipy.signal import butter, lfilter, freqz, correlate2d
 
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
@@ -19,51 +17,6 @@ confLocal = SparkConf().setMaster("local").setAppName("MusicSimilarity Local")
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
 
-def chroma_cross_correlate(chroma1_par, chroma2_par):
-    length1 = chroma1_par.size/12
-    chroma1 = np.empty([length1,12])
-    chroma1 = chroma1_par.reshape(length1, 12)
-    length2 = chroma2_par.size/12
-    chroma2 = np.empty([length2,12])
-    chroma2 = chroma2_par.reshape(length2, 12)
-    corr = sp.signal.correlate2d(chroma1, chroma2, mode='full') 
-    transposed_chroma = np.transpose(corr)
-    mean_line = transposed_chroma[12]
-    #print np.max(mean_line)
-    return np.max(mean_line)
-
-def chroma_cross_correlate_full(chroma1_par, chroma2_par):
-    length1 = chroma1_par.size/12
-    chroma1 = np.empty([length1,12])
-    chroma1 = chroma1_par.reshape(length1, 12)
-    length2 = chroma2_par.size/12
-    chroma2 = np.empty([length2,12])
-    chroma2 = chroma2_par.reshape(length2, 12)
-    corr = sp.signal.correlate2d(chroma1, chroma2, mode='full')
-    #transposed_chroma = np.transpose(transposed_chroma)
-    #mean_line = transposed_chroma[12]
-    #print np.max(corr)
-    return np.max(corr)
-
-def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
-    length1 = chroma1_par.size/12
-    chroma1 = np.empty([length1,12])
-    length2 = chroma2_par.size/12
-    chroma2 = np.empty([length2,12])
-    if(length1 > length2):
-        chroma1 = chroma1_par.reshape(length1, 12)
-        chroma2 = chroma2_par.reshape(length2, 12)
-    else:
-        chroma2 = chroma1_par.reshape(length1, 12)
-        chroma1 = chroma2_par.reshape(length2, 12)    
-    corr = sp.signal.correlate2d(chroma1, chroma2, mode='same')
-    transposed_chroma = corr.transpose()  
-    transposed_chroma = transposed_chroma / (min(length1, length2))
-    transposed_chroma = transposed_chroma.transpose()
-    transposed_chroma = np.transpose(transposed_chroma)
-    mean_line = transposed_chroma[6]
-    #print np.max(mean_line)
-    return np.max(mean_line)
 
 #get 13 mean and 13x13 cov as vectors
 def jensen_shannon(vec1, vec2):
@@ -286,31 +239,10 @@ def get_neighbors_mfcc_js(song):
     resultMfcc.sortBy(lambda x: x[1]).take(100)
     return resultMfcc
 
-def get_neighbors_chroma_corr_valid(song):
-    #########################################################
-    #   Pre- Process Chroma for cross-correlation
-    #
-    chroma = sc.textFile("features/out[0-9]*.chroma")
-    chroma = chroma.map(lambda x: x.split(';'))
-    chromaRdd = chroma.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(']', ''),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
-    comparator = chromaVec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    comparator_value = Vectors.dense(comparator[0])
-    #print(np.array(chromaVec.first()[1]))
-    #print(np.array(comparator_value))
-    resultChroma = chromaVec.map(lambda x: (x[0], chroma_cross_correlate_valid(np.array(x[1]), np.array(comparator_value))))
-    #drop non valid rows    
-    max_val = resultChroma.max(lambda x:x[1])[1]
-    min_val = resultChroma.min(lambda x:x[1])[1]  
-    resultChroma = resultChroma.map(lambda x: (x[0], (1 - (x[1]-min_val)/(max_val-min_val))))
-    resultChroma.sortBy(lambda x: x[1]).take(100)
-    return resultChroma
-
 def get_nearest_neighbors_full(song, outname):
     neighbors_rp_euclidean = get_neighbors_rp_euclidean(song)
     neighbors_rh_euclidean = get_neighbors_rh_euclidean(song)
     neighbors_bh_euclidean = get_neighbors_bh_euclidean(song)
-    neighbors_chroma = get_neighbors_chroma_corr_valid(song)
     neighbors_notes = get_neighbors_notes(song)
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song)
     neighbors_mfcc_js = get_neighbors_mfcc_js(song)
@@ -318,8 +250,6 @@ def get_nearest_neighbors_full(song, outname):
     mergedSim = neighbors_rp_euclidean.join(neighbors_rh_euclidean)
     mergedSim = mergedSim.map(lambda x: (x[0], list(x[1])))
     mergedSim = mergedSim.join(neighbors_bh_euclidean)
-    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])]))
-    mergedSim = mergedSim.join(neighbors_chroma)
     mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])]))
     mergedSim = mergedSim.join(neighbors_notes)
     mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])]))
@@ -331,7 +261,7 @@ def get_nearest_neighbors_full(song, outname):
     mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])]))
     mergedSim = mergedSim.map(lambda x: (x[0], x[1], float(np.mean(np.array(x[1]))))).sortBy(lambda x: x[2], ascending = True)
     #print mergedSim.first()
-    mergedSim.toDF().toPandas().to_csv(outname, encoding='utf-8')
+    #mergedSim.toDF().toPandas().to_csv(outname, encoding='utf-8')
     return mergedSim
 
 def get_nearest_neighbors_fast(song, outname):
@@ -342,7 +272,7 @@ def get_nearest_neighbors_fast(song, outname):
     mergedSim = mergedSim.join(neighbors_notes)
     #mergedSim.toDF().toPandas().to_csv(outname, encoding='utf-8')
     mergedSim = mergedSim.map(lambda x: (x[0], ((x[1][0][1] + x[1][1] + x[1][0][0]) / 3))).sortBy(lambda x: x[1], ascending = True)
-    mergedSim.toDF().toPandas().to_csv(outname, encoding='utf-8')
+    #mergedSim.toDF().toPandas().to_csv(outname, encoding='utf-8')
     return mergedSim
 
 song = "music/Electronic/The XX - Intro.mp3"
