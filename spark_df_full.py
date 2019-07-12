@@ -368,7 +368,6 @@ def get_nearest_neighbors_full(song, outname):
     neighbors_chroma = get_neighbors_chroma_corr_valid(song)
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song)
     neighbors_bh_euclidean = get_neighbors_bh_euclidean(song)
-
     #print neighbors_mfcc_skl.first()
     #print neighbors_rp_euclidean.first()
     #neighbors_notes.show()
@@ -408,24 +407,22 @@ def get_nearest_neighbors_precise(song, outname):
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
     mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
-
 def get_nearest_neighbors_pre_filtered(song, outname):
     pass
 
+song = "music/Electronic/The XX - Intro.mp3"
+get_nearest_neighbors_fast(song, "Electro_df_fast.csv")
+song = "music/Electronic/The XX - Intro.mp3"
+get_nearest_neighbors_precise(song, "Electro_df_precise.csv")
+song = "music/Electronic/The XX - Intro.mp3"
+get_nearest_neighbors_full(song, "Electro_df_full.csv")
 
-song = "music/Electronic/Daft Punk - Within.mp3"
-get_nearest_neighbors_fast(song, "Electronic_fast.csv")
-song = "music/Electronic/Daft Punk - Within.mp3"
-get_nearest_neighbors_precise(song, "Electronic_precise.csv")
-song = "music/Electronic/Daft Punk - Within.mp3"
-get_nearest_neighbors_full(song, "Electronic_full.csv")
-
-song = "music/Reggae/Damian Marley - Confrontation.mp3"
-get_nearest_neighbors_fast(song, "Reggae_fast.csv")
-song = "music/Reggae/Damian Marley - Confrontation.mp3"
-get_nearest_neighbors_precise(song, "Reggae_precise.csv")
-song = "music/Reggae/Damian Marley - Confrontation.mp3"
-get_nearest_neighbors_full(song, "Reggae_full.csv")
+#song = "music/Reggae/Damian Marley - Confrontation.mp3"
+#get_nearest_neighbors_fast(song, "Reggae_fast.csv")
+#song = "music/Reggae/Damian Marley - Confrontation.mp3"
+#get_nearest_neighbors_precise(song, "Reggae_precise.csv")
+#song = "music/Reggae/Damian Marley - Confrontation.mp3"
+#get_nearest_neighbors_full(song, "Reggae_full.csv")
 
 
 
