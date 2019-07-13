@@ -277,12 +277,12 @@ def get_nearest_neighbors_fast(song, outname):
 
 song = "music/Electronic/The XX - Intro.mp3"
 result = get_nearest_neighbors_fast(song, "Electro_rdd_fast.csv")
-result.sortBy(lambda x: x[1], ascending = True).take(10)
+print(result.sortBy(lambda x: x[1], ascending = True).take(10))
 
 
 song = "music/Electronic/The XX - Intro.mp3"
 result = get_nearest_neighbors_full(song, "Electro_rdd_full.csv")
-result.sortBy(lambda x: x[1], ascending = True).take(10)
+print(result.sortBy(lambda x: x[1], ascending = True).take(10))
 
 
 
