@@ -571,7 +571,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
         path = str(PurePath(file_name))
         print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
         bpmret, hist, key, scale, notes, chroma_matrix, mean, cov, var, cov_kl = compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh)
-        filename = path.replace(".","").replace(",","").replace("mp3",".mp3").replace("wav",".wav").replace("flac",".flac").replace("ogg",".ogg")        
+        filename = path.replace(".","").replace(";","").replace(",","").replace("mp3",".mp3").replace("wav",".wav").replace("flac",".flac").replace("ogg",".ogg")        
         if f_mfcc_euclid == 1:                
             with open("features/out" + str(process_id) + ".mfcc", "a") as myfile:
                 print ("MFCC File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 

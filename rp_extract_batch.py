@@ -372,7 +372,7 @@ def extract_all_files(filelist,
             # TODO check if ext and feat.keys are consistent
 
             # WHAT TO USE AS ID (based on filename): 3 choices:
-            id = fil.replace(".","").replace(",","").replace("mp3",".mp3").replace("wav",".wav").replace("flac",".flac").replace("ogg",".ogg")  # rel. filename as from find_files
+            id = fil.replace(".","").replace(";","").replace(",","").replace("mp3",".mp3").replace("wav",".wav").replace("flac",".flac").replace("ogg",".ogg")  # rel. filename as from find_files
             # id = filename   # full filename incl. full path
             # id = filename[len(path)+1:] # relative filename only (extracted from path)
 
