@@ -275,12 +275,13 @@ def get_nearest_neighbors_fast(song, outname):
     #mergedSim.toDF().toPandas().to_csv(outname, encoding='utf-8')
     return mergedSim
 
-song = "music/Electronic/The XX - Intro.mp3"
+#song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
+#song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
+song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+
 result = get_nearest_neighbors_fast(song, "Electro_rdd_fast.csv")
 print(result.sortBy(lambda x: x[1], ascending = True).take(10))
 
-
-song = "music/Electronic/The XX - Intro.mp3"
 result = get_nearest_neighbors_full(song, "Electro_rdd_full.csv")
 print(result.sortBy(lambda x: x[1], ascending = True).take(10))
 

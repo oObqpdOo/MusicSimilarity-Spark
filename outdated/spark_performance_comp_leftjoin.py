@@ -100,8 +100,8 @@ def get_neighbors_rp_euclidean_rdd_noscale(song):
     comparator = mfccVec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
     comparator_value = Vectors.dense(comparator[0])
     resultMfcc = mfccVec.map(lambda x: (x[0], distance.euclidean(x[1], comparator_value[0])))
-    mergedSim = resultMfcc.join(resultNotes)
-    mergedSim = mergedSim.join(resultRH)
+    mergedSim = resultMfcc.leftOuterJoin(resultNotes)
+    mergedSim = mergedSim.leftOuterJoin(resultRH)    
     mergedSim.toDF().toPandas().to_csv("debug.csv", encoding='utf-8')
 
 def get_neighbors_rp_euclidean_rdd(song):
@@ -207,8 +207,8 @@ def get_neighbors_mfcc_euclidean_dataframe(song):
     covRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
     covDfEuc = spark.createDataFrame(covRddEuc, ["id", "cov"])
     covVecEuc = covDfEuc.select(covDfEuc["id"],list_to_vector_udf(covDfEuc["cov"]).alias("cov"))
-    mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='inner')
-    mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
+    mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='left_outer')
+    mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='left_outer')
     assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="features")
     mfccEucDfMerged = assembler.transform(mfccEucDf)
     df_vec = mfccEucDfMerged.select(mfccEucDfMerged["id"],list_to_vector_udf(mfccEucDfMerged["features"]).alias("features"))
@@ -277,15 +277,15 @@ def get_nearest_neighbors_pregroup(song, outname):
     covRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
     covDfEuc = spark.createDataFrame(covRddEuc, ["id", "cov"])
     covVecEuc = covDfEuc.select(covDfEuc["id"],list_to_vector_udf(covDfEuc["cov"]).alias("cov"))
-    mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='inner')
-    mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
+    mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='left_outer')
+    mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='left_outer')
     assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="mfccEuc")
     mfccEucDfMerged = assembler.transform(mfccEucDf).select("id", "mfccEuc").dropDuplicates()
     #########################################################
     #   Gather all features in one dataframe
     #
-    featureDF = mfccEucDfMerged.join(rp_df, on=["id"], how='inner')
-    featureDF = featureDF.join(notesDf, on=['id'], how='inner').dropDuplicates()
+    featureDF = mfccEucDfMerged.join(rp_df, on=["id"], how='left_outer')
+    featureDF = featureDF.join(notesDf, on=['id'], how='left_outer').dropDuplicates()
     #print(featureDF.count())
     #featureDF.toPandas().to_csv("featureDF.csv", encoding='utf-8')
     #########################################################
@@ -334,7 +334,7 @@ def get_nearest_neighbors_dataframe(song, outname):
     neighbors_rp_euclidean = get_neighbors_rp_euclidean_dataframe(song)
     neighbors_notes = get_neighbors_notes_dataframe(song)
     mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner').dropDuplicates()
+    mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner')
     mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc) / 3)
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
     mergedSim.toPandas().to_csv(outname, encoding='utf-8')
@@ -344,23 +344,23 @@ def get_nearest_neighbors_rdd(song, outname):
     neighbors_rp_euclidean = get_neighbors_rp_euclidean_rdd(song)
     neighbors_notes = get_neighbors_notes_rdd(song)
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean_rdd(song)
-    mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean)
-    mergedSim = mergedSim.join(neighbors_notes)
+    mergedSim = neighbors_mfcc_eucl.leftOuterJoin(neighbors_rp_euclidean)
+    mergedSim = mergedSim.leftOuterJoin(neighbors_notes)
     #mergedSim.toDF().toPandas().to_csv(outname, encoding='utf-8')
     mergedSim = mergedSim.map(lambda x: (x[0], ((x[1][0][1] + x[1][1] + x[1][0][0]) / 3))).sortBy(lambda x: x[1], ascending = True)
     mergedSim.toDF().toPandas().to_csv(outname, encoding='utf-8')
     return mergedSim
 
-#song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
-#song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
-song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+song = "music/Electronic/The XX - Intro.mp3"
+result = get_nearest_neighbors_rdd(song, "Electro_rdd.csv")
+result.sortBy(lambda x: x[1], ascending = True).take(10)
 
+song = "music/Electronic/The XX - Intro.mp3"
 result = get_nearest_neighbors_dataframe(song, "Electro_dataframe.csv")
 result.show()
 
+song = "music/Electronic/The XX - Intro.mp3"
 result = get_nearest_neighbors_pregroup(song, "Electro_premerged.csv")
 result.show()
 
-result = get_nearest_neighbors_rdd(song, "Electro_rdd.csv")
-result.sortBy(lambda x: x[1], ascending = True).take(10)
 

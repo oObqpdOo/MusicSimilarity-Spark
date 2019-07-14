@@ -198,7 +198,7 @@ covRdd = mfcc.map(lambda x: (x[0],(x[2].replace(' ', '').replace('[', '').replac
 covDf = spark.createDataFrame(covRdd, ["id", "cov"])
 covVec = covDf.select(covDf["id"],list_to_vector_udf(covDf["cov"]).alias("cov"))
 #covVec.first()
-mfccDf = meanVec.join(covVec, on=['id'], how='left_outer')
+mfccDf = meanVec.join(covVec, on=['id'], how='inner').dropDuplicates()
 assembler = VectorAssembler(inputCols=["mean", "cov"],outputCol="mfccSkl")
 mfccDfMerged = assembler.transform(mfccDf).select("id", "mfccSkl").dropDuplicates()
 #print("Assembled columns 'mean', 'var', 'cov' to vector column 'features'")
@@ -220,8 +220,8 @@ varVecEuc = varDfEuc.select(varDfEuc["id"],list_to_vector_udf(varDfEuc["var"]).a
 covRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 covDfEuc = spark.createDataFrame(covRddEuc, ["id", "cov"])
 covVecEuc = covDfEuc.select(covDfEuc["id"],list_to_vector_udf(covDfEuc["cov"]).alias("cov"))
-mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='left_outer')
-mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='left_outer')
+mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='inner')
+mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
 assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="mfccEuc")
 mfccEucDfMerged = assembler.transform(mfccEucDf).select("id", "mfccEuc").dropDuplicates()
 
@@ -236,12 +236,12 @@ mfccEucDfMerged = assembler.transform(mfccEucDf).select("id", "mfccEuc").dropDup
 #########################################################
 #   Gather all features in one dataframe
 #
-featureDF = mfccEucDfMerged.join(mfccDfMerged, on=["id"], how='left_outer')
-featureDF = featureDF.join(chromaDf, on=['id'], how='left_outer')
-featureDF = featureDF.join(notesDf, on=['id'], how='left_outer')
-featureDF = featureDF.join(rp_df, on=['id'], how='left_outer')
-featureDF = featureDF.join(rh_df, on=['id'], how='left_outer')
-featureDF = featureDF.join(bh_df, on=['id'], how='left_outer').dropDuplicates()
+featureDF = mfccEucDfMerged.join(mfccDfMerged, on=["id"], how='inner')
+featureDF = featureDF.join(chromaDf, on=['id'], how='inner')
+featureDF = featureDF.join(notesDf, on=['id'], how='inner')
+featureDF = featureDF.join(rp_df, on=['id'], how='inner')
+featureDF = featureDF.join(rh_df, on=['id'], how='inner')
+featureDF = featureDF.join(bh_df, on=['id'], how='inner').dropDuplicates()
 #print(featureDF.count())
 fullFeatureDF = featureDF
 fullFeatureDF.toPandas().to_csv("featureDF.csv", encoding='utf-8')
@@ -426,8 +426,11 @@ def get_nearest_neighbors_pre_filtered(song, outname):
     out_name = outname#"output.csv"
     mergedSim.toPandas().to_csv(out_name, encoding='utf-8')
 
-songname = "music/Reggae/Damian Marley - Confrontation.mp3"
-get_nearest_neighbors_pre_filtered(songname, "Reggae.csv")
+#song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
+#song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
+song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+
+get_nearest_neighbors_pre_filtered(song, "Electro_pregroup_prefiltered.csv")
 
 #song = "music/Soundtrack/Flesh And Bone - Dakini_ Movement IV.mp3"
 #get_nearest_neighbors(song, "Soundtrack.csv")
