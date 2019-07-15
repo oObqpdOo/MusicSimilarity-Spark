@@ -274,7 +274,7 @@ def get_nearest_neighbors(song, outname):
 
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3".replace(";","").replace(".","").replace(",","").replace(" ","")    #private
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
-song = "music/Oldschool/Stranger Things (Soundtrack)/26 - Rock You Like a Hurricane [Explicit].mp3".replace(";","").replace(".","").replace(",","").replace(" ","")    #100 testset
+song = "music/Oldschool/Stranger Things (Soundtrack)/26 - Rock You Like a Hurricane [Explicit].mp3".encode('utf-8','replace').replace(";","").replace(".","").replace(",","").replace(" ","")    #100 testset
 
 
 songs = sc.textFile("features/out.files", use_unicode=True)
@@ -285,7 +285,7 @@ list1 = list1.map(lambda x: x.replace(";","").replace(".","").replace(",","").re
 list1l = list1.collect()
 
 for i in list1l[51:100]: 
-    #outname = str(i).replace('.mp3', '').replace('music/', '').rpartition('/')[0] + ".csv"
+    #outname = str(i).encode('utf-8','replace').replace('.mp3', '').replace('music/', '').rpartition('/')[0] + ".csv"
     outname = i.replace('.mp3', '').replace('music/', '').replace('/', '_').replace('mp3', '') + ".csv"
     #has to be encoded back to ascii string to print    
     outname = outname.encode('ascii','ignore')    

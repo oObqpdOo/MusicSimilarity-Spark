@@ -83,7 +83,7 @@ list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 #########################################################
 #   Pre- Process RP for Euclidean
 #
-rp = sc.textFile("features/out[0-9]*.rp")
+rp = sc.textFile("features[0-9]/out[0-9]*.rp")
 rp = rp.map(lambda x: x.split(","))
 kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
 
@@ -91,7 +91,7 @@ kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").re
 #   Pre- Process BH for Euclidean
 #
 
-bh = sc.textFile("features/out[0-9]*.bh")
+bh = sc.textFile("features[0-9]/out[0-9]*.bh")
 bh = bh.map(lambda x: x.split(";"))
 kv_bh = bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 
@@ -100,7 +100,7 @@ kv_bh = bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").r
 #   Pre- Process Notes for Levenshtein
 #
 
-notes = sc.textFile("features/out[0-9]*.notes")
+notes = sc.textFile("features[0-9]/out[0-9]*.notes")
 notes = notes.map(lambda x: x.split(';'))
 notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
 notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
@@ -109,7 +109,7 @@ notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ',
 #   Pre- Process MFCC for SKL and JS
 #
 
-mfcc = sc.textFile("features/out[0-9]*.mfcckl")
+mfcc = sc.textFile("features[0-9]/out[0-9]*.mfcckl")
 mfcc = mfcc.map(lambda x: x.split(';'))
 
 meanRdd = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
@@ -133,7 +133,7 @@ mfccDfMerged = assembler.transform(mfccDf)
 #   Pre- Process Chroma for cross-correlation
 #
 
-chroma = sc.textFile("features/out[0-9]*.chroma")
+chroma = sc.textFile("features[0-9]/out[0-9]*.chroma")
 chroma = chroma.map(lambda x: x.split(';'))
 chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 chromaDf = spark.createDataFrame(chromaRdd, ["id", "chroma"])
@@ -143,7 +143,7 @@ chromaVec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]
 #   Pre- Process MFCC for Euclidean
 #
 
-mfcceuc = sc.textFile("features/out[0-9]*.mfcc")
+mfcceuc = sc.textFile("features[0-9]/out[0-9]*.mfcc")
 mfcceuc = mfcceuc.map(lambda x: x.split(';'))
 mfcceuc = mfcceuc.map(lambda x: (x[0], list(x[1:])))
 
@@ -263,7 +263,7 @@ def get_nearest_neighbors(song, outname):
 
     mergedSim = neighbors_rp_euclidean.join(neighbors_notes, on=['id'], how='inner')
     #mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_mfcc_eucl, on=['id'], how='inner')
+    mergedSim = mergedSim.join(neighbors_mfcc_eucl, on=['id'], how='inner').dropDuplicates()
     #mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner')
     #mergedSim = mergedSim.join(neighbors_mfcc_skl, on=['id'], how='inner').dropDuplicates()
     #mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_chroma + mergedSim.scaled_mfcc + mergedSim.scaled_skl + mergedSim.scaled_bh) / 5)
@@ -274,9 +274,14 @@ def get_nearest_neighbors(song, outname):
 
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3".replace(";","").replace(".","").replace(",","").replace(" ","")    #private
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
-song = "music/Oldschool/Stranger Things (Soundtrack)/26 - Rock You Like a Hurricane [Explicit].mp3".replace(";","").replace(".","").replace(",","").replace(" ","")    #100 testset
 
-get_nearest_neighbors(song, "df_precise2.csv")
+song = "music/Songs/Klassik/Rachmaninoff - Idil Biret - Op. 3_ No. 2. Prelude in C-Sharp Minor.mp3".replace(";","").replace(".","").replace(",","").replace(" ","")     #100 testset
+get_nearest_neighbors(song, "Rachmaninoff.csv")
+
+song = "music/Oldschool/Stranger Things (Soundtrack)/26 - Rock You Like a Hurricane [Explicit].mp3".encode('utf-8','replace').replace(";","").replace(".","").replace(",","").replace(" ","")     #100 testset
+get_nearest_neighbors(song, "Hurricane.csv")
+
+
 
 #song = "music/Reggae/Damian Marley - Confrontation.mp3"
 #get_nearest_neighbors_fast(song, "Reggae_fast.csv")
