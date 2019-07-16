@@ -138,7 +138,7 @@ def get_neighbors_rp_euclidean(song):
     #
     rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
     rp = rp.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rp = rp.map(lambda x: x.split(';'))
     rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(",")))
     kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
@@ -160,7 +160,7 @@ def get_neighbors_rh_euclidean(song):
     #
     rh = sc.textFile("features[0-9]*/out[0-9]*.rh")
     rh = rh.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    rh = rh.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    rh = rh.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rh = rh.map(lambda x: x.split(';'))
     rh = rh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(",")))
     kv_rh= rh.map(lambda x: (x[0], list(x[1:])))
@@ -224,7 +224,7 @@ def get_neighbors_mfcc_euclidean(song):
     #
     mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
     mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
     mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
     mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
@@ -245,7 +245,7 @@ def get_neighbors_mfcc_skl(song):
     #
     mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
     mfcc = mfcc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcc = mfcc.map(lambda x: x.split(';'))
     mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
     mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
@@ -268,7 +268,7 @@ def get_neighbors_mfcc_js(song):
     #
     mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
     mfcc = mfcc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcc = mfcc.map(lambda x: x.split(';'))
     mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
     mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))

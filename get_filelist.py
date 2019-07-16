@@ -31,7 +31,7 @@ def parallel_python_process(process_id, cpu_filelist):
     count = 1
     for file_name in cpu_filelist:
         path = str(PurePath(file_name))
-        filename = path.replace(".","").replace(";","").replace(",","").replace("mp3",".mp3").replace("wav",".wav").replace("aiff",".aiff").replace("flac",".flac").replace("ogg",".ogg")        
+        filename = path.replace(".","__").replace(";","").replace(",","").replace("__mp3",".mp3").replace("__aiff",".aiff").replace("__aif",".aif").replace("__au",".au").replace("__m4a", ".m4a").replace("__wav",".wav").replace("__flac",".flac").replace("__ogg",".ogg")  # rel. filename as from find_files      
         print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist)))               
         with open("features0/out.files", "a") as myfile:
             print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 

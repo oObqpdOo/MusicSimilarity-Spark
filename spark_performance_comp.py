@@ -61,7 +61,7 @@ def get_neighbors_rp_euclidean_rdd_noscale(song):
     #
     rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
     rp = rp.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rp = rp.map(lambda x: x.split(';'))
     rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(",")))
     kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
@@ -90,7 +90,7 @@ def get_neighbors_rp_euclidean_rdd_noscale(song):
     #
     mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
     mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
     mfcceuc = mfcceuc.map(lambda x: (x[0], x[1].split(',')))
     mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
@@ -110,7 +110,7 @@ def get_neighbors_rp_euclidean_rdd(song):
     #
     rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
     rp = rp.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rp = rp.map(lambda x: x.split(';'))
     rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(",")))
     kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
@@ -151,7 +151,7 @@ def get_neighbors_mfcc_euclidean_rdd(song):
     #
     mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
     mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
     mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
     mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
