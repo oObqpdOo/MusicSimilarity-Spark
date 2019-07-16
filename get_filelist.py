@@ -31,9 +31,9 @@ def parallel_python_process(process_id, cpu_filelist):
     count = 1
     for file_name in cpu_filelist:
         path = str(PurePath(file_name))
-        filename = path.replace(".","").replace(";","").replace(",","").replace("mp3",".mp3").replace("wav",".wav").replace("flac",".flac").replace("ogg",".ogg")        
+        filename = path.replace(".","").replace(";","").replace(",","").replace("mp3",".mp3").replace("wav",".wav").replace("aiff",".aiff").replace("flac",".flac").replace("ogg",".ogg")        
         print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist)))               
-        with open("features/out.files", "a") as myfile:
+        with open("features0/out.files", "a") as myfile:
             print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
             line = (filename + "     :       " + str(process_id))
             myfile.write(line + '\n')       
@@ -88,7 +88,7 @@ def process_stuff (startjob, maxparts):
     print("Split problem in parts: ")
     print parts
 
-    with open("features/out.files", "w") as myfile:
+    with open("features0/out.files", "w") as myfile:
         myfile.write("")
         myfile.close()
 

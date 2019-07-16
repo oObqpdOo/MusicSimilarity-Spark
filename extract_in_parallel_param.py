@@ -543,23 +543,23 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
     #return (end_time - start_time)
     #PARAMETER: mfcc_kl, mfcc_euclid, notes, chroma, bh
     if f_mfcc_euclid == 1:    
-        with open("features/out" + str(process_id) + ".mfcc", "w") as myfile:
+        with open("features0/out" + str(process_id) + ".mfcc", "w") as myfile:
             myfile.write("")
             myfile.close()
     if f_mfcc_kl == 1:    
-        with open("features/out" + str(process_id) + ".mfcckl", "w") as myfile:
+        with open("features0/out" + str(process_id) + ".mfcckl", "w") as myfile:
             myfile.write("")
             myfile.close()
     if f_chroma == 1:
-        with open("features/out" + str(process_id) + ".chroma", "w") as myfile:
+        with open("features0/out" + str(process_id) + ".chroma", "w") as myfile:
             myfile.write("")
             myfile.close()       
     if f_bh == 1:   
-        with open("features/out" + str(process_id) + ".bh", "w") as myfile:
+        with open("features0/out" + str(process_id) + ".bh", "w") as myfile:
             myfile.write("")
             myfile.close()
     if f_notes == 1:        
-        with open("features/out" + str(process_id) + ".notes", "w") as myfile:
+        with open("features0/out" + str(process_id) + ".notes", "w") as myfile:
             myfile.write("")
             myfile.close()
 
@@ -571,9 +571,9 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
         path = str(PurePath(file_name))
         print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
         bpmret, hist, key, scale, notes, chroma_matrix, mean, cov, var, cov_kl = compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh)
-        filename = path.replace(".","").replace(";","").replace(",","").replace("mp3",".mp3").replace("wav",".wav").replace("flac",".flac").replace("ogg",".ogg")        
+        filename = path.replace(".","").replace(";","").replace(",","").replace("aiff",".aiff").replace("mp3",".mp3").replace("wav",".wav").replace("flac",".flac").replace("ogg",".ogg")        
         if f_mfcc_euclid == 1:                
-            with open("features/out" + str(process_id) + ".mfcc", "a") as myfile:
+            with open("features0/out" + str(process_id) + ".mfcc", "a") as myfile:
                 print ("MFCC File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 str_mean = np.array2string(mean, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
                 str_var = np.array2string(var, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
@@ -582,7 +582,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 myfile.write(line + '\n')       
                 myfile.close()
         if f_chroma == 1:  
-            with open("features/out" + str(process_id) + ".chroma", "a") as myfile:
+            with open("features0/out" + str(process_id) + ".chroma", "a") as myfile:
                 print ("Chroma Full - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 transposed_chroma = np.zeros(chroma_matrix.shape)
                 transposed_chroma = transpose_chroma_matrix(key, scale, chroma_matrix)
@@ -591,7 +591,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 myfile.write(line + '\n')       
                 myfile.close()
         if f_bh == 1:  
-            with open("features/out" + str(process_id) + ".bh", "a") as myfile:
+            with open("features0/out" + str(process_id) + ".bh", "a") as myfile:
                 print ("Beat Histogram - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 bpmret = str(bpmret)
                 hist = np.array2string(hist, separator=',', suppress_small=True).replace('\n', '')
@@ -599,7 +599,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 myfile.write(line + '\n')       
                 myfile.close()
         if f_notes == 1:  
-            with open("features/out" + str(process_id) + ".notes", "a") as myfile:
+            with open("features0/out" + str(process_id) + ".notes", "a") as myfile:
                 print ("Chroma Notes - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 key = str(key)
                 transposed_notes = []
@@ -611,7 +611,7 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 myfile.write(line + '\n')       
                 myfile.close()
         if f_mfcc_kl == 1:                
-            with open("features/out" + str(process_id) + ".mfcckl", "a") as myfile:
+            with open("features0/out" + str(process_id) + ".mfcckl", "a") as myfile:
                 print ("MFCC Kullback-Leibler " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
                 str_mean = np.array2string(mean, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
                 str_cov_kl = np.array2string(cov_kl, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')

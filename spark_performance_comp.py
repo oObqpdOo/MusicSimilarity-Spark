@@ -59,11 +59,11 @@ def get_neighbors_rp_euclidean_rdd_noscale(song):
     #########################################################
     #   Pre- Process RH for Euclidean
     #
-    rp = sc.textFile("features/out[0-9]*.rp")
+    rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
     rp = rp.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rp = rp.map(lambda x: x.split(';'))
-    rp = rp.map(lambda x: (x[0], x[1].split(",")))
+    rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(",")))
     kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
     rp_vec = kv_rp.map(lambda x: (x[0], Vectors.dense(x[1])))
     #########################################################
@@ -75,10 +75,10 @@ def get_neighbors_rp_euclidean_rdd_noscale(song):
     #########################################################
     #   Pre- Process Notes for Levenshtein
     #
-    notes = sc.textFile("features/out[0-9]*.notes")
+    notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
     notes = notes.map(lambda x: x.split(';'))
     notes = notes.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
-    notes = notes.map(lambda x: (x[0], x[3].replace(',','').replace(' ',''), x[1], x[2]))
+    notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[3].replace(',','').replace(' ',''), x[1], x[2]))
     #########################################################
     #   Get Neighbors
     #  
@@ -88,9 +88,9 @@ def get_neighbors_rp_euclidean_rdd_noscale(song):
     #########################################################
     #   Pre- Process MFCC for Euclidean
     #
-    mfcceuc = sc.textFile("features/out[0-9]*.mfcc")
+    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
     mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
     mfcceuc = mfcceuc.map(lambda x: (x[0], x[1].split(',')))
     mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
@@ -108,11 +108,11 @@ def get_neighbors_rp_euclidean_rdd(song):
     #########################################################
     #   Pre- Process RH for Euclidean
     #
-    rp = sc.textFile("features/out[0-9]*.rp")
+    rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
     rp = rp.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rp = rp.map(lambda x: x.split(';'))
-    rp = rp.map(lambda x: (x[0], x[1].split(",")))
+    rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(",")))
     kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
     rp_vec = kv_rp.map(lambda x: (x[0], Vectors.dense(x[1])))
     #########################################################
@@ -130,10 +130,10 @@ def get_neighbors_notes_rdd(song):
     #########################################################
     #   Pre- Process Notes for Levenshtein
     #
-    notes = sc.textFile("features/out[0-9]*.notes")
+    notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
     notes = notes.map(lambda x: x.split(';'))
     notes = notes.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
-    notes = notes.map(lambda x: (x[0], x[3].replace(',','').replace(' ',''), x[1], x[2]))
+    notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[3].replace(',','').replace(' ',''), x[1], x[2]))
     #########################################################
     #   Get Neighbors
     #  
@@ -149,11 +149,11 @@ def get_neighbors_mfcc_euclidean_rdd(song):
     #########################################################
     #   Pre- Process MFCC for Euclidean
     #
-    mfcceuc = sc.textFile("features/out[0-9]*.mfcc")
+    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
     mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0], x[1].split(',')))
+    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
     mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
     #########################################################
     #   Get Neighbors
@@ -171,9 +171,9 @@ def get_neighbors_rp_euclidean_dataframe(song):
     #########################################################
     #   List to Vector UDF
     list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
-    rp = sc.textFile("features/out[0-9]*.rp")
+    rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
     rp = rp.map(lambda x: x.split(","))
-    kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
+    kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
     comparator = kv_rp.lookup(song)
     comparator_value = comparator[0]
     df = spark.createDataFrame(kv_rp, ["id", "features"])
@@ -195,9 +195,9 @@ def get_neighbors_mfcc_euclidean_dataframe(song):
     #########################################################
     #   Pre- Process MFCC for Euclidean
     #
-    mfcceuc = sc.textFile("features/out[0-9]*.mfcc")
+    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0], list(x[1:])))
+    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
     meanRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][0].replace(' ', '').replace('[', '').replace(']', '').split(','))))
     meanDfEuc = spark.createDataFrame(meanRddEuc, ["id", "mean"])
     meanVecEuc = meanDfEuc.select(meanDfEuc["id"],list_to_vector_udf(meanDfEuc["mean"]).alias("mean"))
@@ -227,9 +227,9 @@ def get_neighbors_notes_dataframe(song):
     #########################################################
     #   Pre- Process Notes for Levenshtein
     #
-    notes = sc.textFile("features/out[0-9]*.notes")
+    notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
     notes = notes.map(lambda x: x.split(';'))
-    notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
+    notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
     notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
     df = spark.createDataFrame(notes, ["id", "key", "scale", "notes"])
     filterDF = df.filter(df.id == song)
@@ -251,23 +251,23 @@ def get_nearest_neighbors_pregroup(song, outname):
     list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
     #########################################################
     #   Pre- Process RP for Euclidean
-    rp = sc.textFile("features/out[0-9]*.rp")
+    rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
     rp = rp.map(lambda x: x.split(","))
-    kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
+    kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
     rp_df = spark.createDataFrame(kv_rp, ["id", "rp"])
     rp_df = rp_df.select(rp_df["id"],list_to_vector_udf(rp_df["rp"]).alias("rp"))
     #########################################################
     #   Pre- Process Notes for Levenshtein
-    notes = sc.textFile("features/out[0-9]*.notes")
+    notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
     notes = notes.map(lambda x: x.split(';'))
-    notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
+    notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
     notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
     notesDf = spark.createDataFrame(notes, ["id", "key", "scale", "notes"])
     #########################################################
     #   Pre- Process MFCC for Euclidean
-    mfcceuc = sc.textFile("features/out[0-9]*.mfcc")
+    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0], list(x[1:])))
+    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
     meanRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][0].replace(' ', '').replace('[', '').replace(']', '').split(','))))
     meanDfEuc = spark.createDataFrame(meanRddEuc, ["id", "mean"])
     meanVecEuc = meanDfEuc.select(meanDfEuc["id"],list_to_vector_udf(meanDfEuc["mean"]).alias("mean"))
@@ -354,6 +354,7 @@ def get_nearest_neighbors_rdd(song, outname):
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 result = get_nearest_neighbors_dataframe(song, "Electro_dataframe.csv")
 result.show()

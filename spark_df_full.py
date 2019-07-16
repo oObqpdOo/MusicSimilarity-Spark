@@ -149,39 +149,39 @@ list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 #   Pre- Process RH and RP for Euclidean
 #
 
-rh = sc.textFile("features/out[0-9]*.rh")
+rh = sc.textFile("features[0-9]*/out[0-9]*.rh")
 rh = rh.map(lambda x: x.split(","))
-kv_rh= rh.map(lambda x: (x[0], list(x[1:])))
+kv_rh= rh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
 
-rp = sc.textFile("features/out[0-9]*.rp")
+rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
 rp = rp.map(lambda x: x.split(","))
-kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
+kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
 
 #########################################################
 #   Pre- Process BH for Euclidean
 #
 
-bh = sc.textFile("features/out[0-9]*.bh")
+bh = sc.textFile("features[0-9]*/out[0-9]*.bh")
 bh = bh.map(lambda x: x.split(";"))
-kv_bh = bh.map(lambda x: (x[0], x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
+kv_bh = bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 
 
 #########################################################
 #   Pre- Process Notes for Levenshtein
 #
 
-notes = sc.textFile("features/out[0-9]*.notes")
+notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
 notes = notes.map(lambda x: x.split(';'))
-notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
+notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
 notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
 
 #########################################################
 #   Pre- Process Chroma for cross-correlation
 #
 
-chroma = sc.textFile("features/out[0-9]*.chroma")
+chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
 chroma = chroma.map(lambda x: x.split(';'))
-chromaRdd = chroma.map(lambda x: (x[0],(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
+chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 chromaDf = spark.createDataFrame(chromaRdd, ["id", "chroma"])
 chromaVec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
 
@@ -189,19 +189,16 @@ chromaVec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]
 #   Pre- Process MFCC for SKL and JS
 #
 
-mfcc = sc.textFile("features/out[0-9]*.mfcckl")
+mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")
 mfcc = mfcc.map(lambda x: x.split(';'))
-
-meanRdd = mfcc.map(lambda x: (x[0],(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
+meanRdd = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 meanDf = spark.createDataFrame(meanRdd, ["id", "mean"])
 meanVec = meanDf.select(meanDf["id"],list_to_vector_udf(meanDf["mean"]).alias("mean"))
 #meanVec.first()
-
-covRdd = mfcc.map(lambda x: (x[0],(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
+covRdd = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 covDf = spark.createDataFrame(covRdd, ["id", "cov"])
 covVec = covDf.select(covDf["id"],list_to_vector_udf(covDf["cov"]).alias("cov"))
 #covVec.first()
-
 mfccDf = meanVec.join(covVec, on=['id'], how='inner').dropDuplicates()
 assembler = VectorAssembler(inputCols=["mean", "cov"],outputCol="features")
 mfccDfMerged = assembler.transform(mfccDf)
@@ -213,25 +210,20 @@ mfccDfMerged = assembler.transform(mfccDf)
 #   Pre- Process MFCC for Euclidean
 #
 
-mfcceuc = sc.textFile("features/out[0-9]*.mfcc")
+mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
 mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-mfcceuc = mfcceuc.map(lambda x: (x[0], list(x[1:])))
-
+mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
 meanRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][0].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 meanDfEuc = spark.createDataFrame(meanRddEuc, ["id", "mean"])
 meanVecEuc = meanDfEuc.select(meanDfEuc["id"],list_to_vector_udf(meanDfEuc["mean"]).alias("mean"))
-
 varRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 varDfEuc = spark.createDataFrame(varRddEuc, ["id", "var"])
 varVecEuc = varDfEuc.select(varDfEuc["id"],list_to_vector_udf(varDfEuc["var"]).alias("var"))
-
 covRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 covDfEuc = spark.createDataFrame(covRddEuc, ["id", "cov"])
 covVecEuc = covDfEuc.select(covDfEuc["id"],list_to_vector_udf(covDfEuc["cov"]).alias("cov"))
-
 mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='inner')
 mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
-
 assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="features")
 mfccEucDfMerged = assembler.transform(mfccEucDf)
 
@@ -413,6 +405,8 @@ def get_nearest_neighbors_pre_filtered(song, outname):
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+
+song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 get_nearest_neighbors_fast(song, "Electro_df_fast.csv")
 get_nearest_neighbors_precise(song, "Electro_df_precise.csv")

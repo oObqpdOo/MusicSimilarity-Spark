@@ -136,11 +136,11 @@ def get_neighbors_rp_euclidean(song):
     #########################################################
     #   Pre- Process RP for Euclidean
     #
-    rp = sc.textFile("features/out[0-9]*.rp")
+    rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
     rp = rp.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rp = rp.map(lambda x: x.split(';'))
-    rp = rp.map(lambda x: (x[0], x[1].split(",")))
+    rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(",")))
     kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
     rp_vec = kv_rp.map(lambda x: (x[0], Vectors.dense(x[1])))
     #########################################################
@@ -158,11 +158,11 @@ def get_neighbors_rh_euclidean(song):
     #########################################################
     #   Pre- Process RH for Euclidean
     #
-    rh = sc.textFile("features/out[0-9]*.rh")
+    rh = sc.textFile("features[0-9]*/out[0-9]*.rh")
     rh = rh.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    rh = rh.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    rh = rh.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rh = rh.map(lambda x: x.split(';'))
-    rh = rh.map(lambda x: (x[0], x[1].split(",")))
+    rh = rh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(",")))
     kv_rh= rh.map(lambda x: (x[0], list(x[1:])))
     rh_vec = kv_rh.map(lambda x: (x[0], Vectors.dense(x[1])))
     #########################################################
@@ -181,10 +181,10 @@ def get_neighbors_bh_euclidean(song):
     #########################################################
     #   Pre- Process BH for Euclidean
     #
-    bh = sc.textFile("features/out[0-9]*.bh")
+    bh = sc.textFile("features[0-9]*/out[0-9]*.bh")
     bh = bh.map(lambda x: x.split(";"))
     kv_bh = bh.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    bh_vec = kv_bh.map(lambda x: (x[0], Vectors.dense(x[2]), x[1]))
+    bh_vec = kv_bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), Vectors.dense(x[2]), x[1]))
     #########################################################
     #   Get Neighbors
     #  
@@ -203,10 +203,10 @@ def get_neighbors_notes(song):
     #########################################################
     #   Pre- Process Notes for Levenshtein
     #
-    notes = sc.textFile("features/out[0-9]*.notes")
+    notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
     notes = notes.map(lambda x: x.split(';'))
     notes = notes.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
-    notes = notes.map(lambda x: (x[0], x[3].replace(',','').replace(' ',''), x[1], x[2]))
+    notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[3].replace(',','').replace(' ',''), x[1], x[2]))
     #########################################################
     #   Get Neighbors
     #  
@@ -222,11 +222,11 @@ def get_neighbors_mfcc_euclidean(song):
     #########################################################
     #   Pre- Process MFCC for Euclidean
     #
-    mfcceuc = sc.textFile("features/out[0-9]*.mfcc")
+    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
     mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0], x[1].split(',')))
+    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
     mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
     #########################################################
     #   Get Neighbors
@@ -243,11 +243,11 @@ def get_neighbors_mfcc_skl(song):
     #########################################################
     #   Pre- Process MFCC for SKL and JS
     #
-    mfcc = sc.textFile("features/out[0-9]*.mfcckl")            
+    mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
     mfcc = mfcc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcc = mfcc.map(lambda x: x.split(';'))
-    mfcc = mfcc.map(lambda x: (x[0], x[1].split(',')))
+    mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
     mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
     #########################################################
     #   Get Neighbors
@@ -266,11 +266,11 @@ def get_neighbors_mfcc_js(song):
     #########################################################
     #   Pre- Process MFCC for SKL and JS
     #
-    mfcc = sc.textFile("features/out[0-9]*.mfcckl")            
+    mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
     mfcc = mfcc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('aiff,', 'aiff;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcc = mfcc.map(lambda x: x.split(';'))
-    mfcc = mfcc.map(lambda x: (x[0], x[1].split(',')))
+    mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
     mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
     #########################################################
     #   Get Neighbors
@@ -290,10 +290,10 @@ def get_neighbors_chroma_corr_valid(song):
     #########################################################
     #   Pre- Process Chroma for cross-correlation
     #
-    chroma = sc.textFile("features/out[0-9]*.chroma")
+    chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
     chroma = chroma.map(lambda x: x.split(';'))
     chromaRdd = chroma.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(']', ''),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
+    chromaVec = chromaRdd.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), Vectors.dense(x[1])))
     comparator = chromaVec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
     comparator_value = Vectors.dense(comparator[0])
     #print(np.array(chromaVec.first()[1]))
@@ -348,7 +348,7 @@ def get_nearest_neighbors_fast(song, outname):
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 song = "music/Electronic/The XX - Intro.mp3"    #100 testset
-
+song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 result = get_nearest_neighbors_fast(song, "Electro_rdd_fast.csv")
 result.sortBy(lambda x: x[1], ascending = True).take(10)
