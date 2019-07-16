@@ -10,7 +10,7 @@ from pyspark.mllib.linalg import Vectors, VectorUDT
 from pyspark.ml.feature import VectorAssembler
 import numpy as np
 import scipy as sp
-from scipy.signal import butter, lfilter, freqz, correlate2d
+from scipy.signal import butter, lfilter, freqz, correlate2d, sosfilt
 
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
@@ -35,15 +35,29 @@ def chroma_cross_correlate(chroma1_par, chroma2_par):
 def chroma_cross_correlate_full(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
     chroma1 = np.empty([length1,12])
-    chroma1 = chroma1_par.reshape(length1, 12)
     length2 = chroma2_par.size/12
     chroma2 = np.empty([length2,12])
-    chroma2 = chroma2_par.reshape(length2, 12)
+    if(length1 > length2):
+        chroma1 = chroma1_par.reshape(length1, 12)
+        chroma2 = chroma2_par.reshape(length2, 12)
+    else:
+        chroma2 = chroma1_par.reshape(length1, 12)
+        chroma1 = chroma2_par.reshape(length2, 12)    
     corr = sp.signal.correlate2d(chroma1, chroma2, mode='full')
-    #transposed_chroma = np.transpose(transposed_chroma)
-    #mean_line = transposed_chroma[12]
-    #print np.max(corr)
-    return np.max(corr)
+    transposed_chroma = corr.transpose()  
+    #print "length1: " + str(length1)
+    #print "length2: " + str(length2)
+    #transposed_chroma = transposed_chroma / (min(length1, length2))
+    index = np.where(transposed_chroma == np.amax(transposed_chroma))
+    index = int(index[0])
+    #print "index: " + str(index)
+    transposed_chroma = transposed_chroma.transpose()
+    transposed_chroma = np.transpose(transposed_chroma)
+    mean_line = transposed_chroma[index]
+    sos = sp.signal.butter(1, 0.1, 'high', analog=False, output='sos')
+    mean_line = sp.signal.sosfilt(sos, mean_line)
+    #print np.max(mean_line)
+    return np.max(mean_line)
 
 def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
@@ -298,7 +312,7 @@ def get_neighbors_chroma_corr_valid(song):
     comparator_value = Vectors.dense(comparator[0])
     #print(np.array(chromaVec.first()[1]))
     #print(np.array(comparator_value))
-    resultChroma = chromaVec.map(lambda x: (x[0], chroma_cross_correlate_valid(np.array(x[1]), np.array(comparator_value))))
+    resultChroma = chromaVec.map(lambda x: (x[0], chroma_cross_correlate_full(np.array(x[1]), np.array(comparator_value))))
     #drop non valid rows    
     max_val = resultChroma.max(lambda x:x[1])[1]
     min_val = resultChroma.min(lambda x:x[1])[1]  
