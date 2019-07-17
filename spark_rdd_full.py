@@ -61,22 +61,25 @@ def chroma_cross_correlate_full(chroma1_par, chroma2_par):
 
 def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
-    chroma1 = np.empty([length1,12])
+    chroma1 = np.empty([12, length1])
     length2 = chroma2_par.size/12
-    chroma2 = np.empty([length2,12])
+    chroma2 = np.empty([12, length2])
     if(length1 > length2):
-        chroma1 = chroma1_par.reshape(length1, 12)
-        chroma2 = chroma2_par.reshape(length2, 12)
+        chroma1 = chroma1_par.reshape(12, length1)
+        chroma2 = chroma2_par.reshape(12, length2)
     else:
-        chroma2 = chroma1_par.reshape(length1, 12)
-        chroma1 = chroma2_par.reshape(length2, 12)    
+        chroma2 = chroma1_par.reshape(12, length1)
+        chroma1 = chroma2_par.reshape(12, length2)      
     corr = sp.signal.correlate2d(chroma1, chroma2, mode='same')
-    transposed_chroma = corr.transpose()  
-    transposed_chroma = transposed_chroma / (min(length1, length2))
-    transposed_chroma = transposed_chroma.transpose()
-    transposed_chroma = np.transpose(transposed_chroma)
-    mean_line = transposed_chroma[6]
+    #left out according to ellis' 2007 paper
+    #transposed_chroma = transposed_chroma / (min(length1, length2))
+    index = 5
+    mean_line = corr[index]
+    #remove offset to get rid of initial filter peak(highpass of jump from 0-20)
+    mean_line = mean_line - mean_line[0]
     #print np.max(mean_line)
+    sos = sp.signal.butter(1, 0.1, 'high', analog=False, output='sos')
+    mean_line = sp.signal.sosfilt(sos, mean_line)[:]
     return np.max(mean_line)
 
 #get 13 mean and 13x13 cov as vectors
@@ -312,7 +315,7 @@ def get_neighbors_chroma_corr_valid(song):
     comparator_value = Vectors.dense(comparator[0])
     #print(np.array(chromaVec.first()[1]))
     #print(np.array(comparator_value))
-    resultChroma = chromaVec.map(lambda x: (x[0], chroma_cross_correlate_full(np.array(x[1]), np.array(comparator_value))))
+    resultChroma = chromaVec.map(lambda x: (x[0], chroma_cross_correlate_valid(np.array(x[1]), np.array(comparator_value))))
     #drop non valid rows    
     max_val = resultChroma.max(lambda x:x[1])[1]
     min_val = resultChroma.min(lambda x:x[1])[1]  

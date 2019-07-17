@@ -81,22 +81,25 @@ def chroma_cross_correlate_full(chroma1_par, chroma2_par):
 
 def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
-    chroma1 = np.empty([length1,12])
+    chroma1 = np.empty([12, length1])
     length2 = chroma2_par.size/12
-    chroma2 = np.empty([length2,12])
+    chroma2 = np.empty([12, length2])
     if(length1 > length2):
-        chroma1 = chroma1_par.reshape(length1, 12)
-        chroma2 = chroma2_par.reshape(length2, 12)
+        chroma1 = chroma1_par.reshape(12, length1)
+        chroma2 = chroma2_par.reshape(12, length2)
     else:
-        chroma2 = chroma1_par.reshape(length1, 12)
-        chroma1 = chroma2_par.reshape(length2, 12)    
+        chroma2 = chroma1_par.reshape(12, length1)
+        chroma1 = chroma2_par.reshape(12, length2)      
     corr = sp.signal.correlate2d(chroma1, chroma2, mode='same')
-    transposed_chroma = corr.transpose()  
-    transposed_chroma = transposed_chroma /(min(length1, length2))
-    transposed_chroma = transposed_chroma.transpose()
-    transposed_chroma = np.transpose(transposed_chroma)
-    mean_line = transposed_chroma[6]
+    #left out according to ellis' 2007 paper
+    #transposed_chroma = transposed_chroma / (min(length1, length2))
+    index = 5
+    mean_line = corr[index]
+    #remove offset to get rid of initial filter peak(highpass of jump from 0-20)
+    mean_line = mean_line - mean_line[0]
     #print np.max(mean_line)
+    sos = sp.signal.butter(1, 0.1, 'high', analog=False, output='sos')
+    mean_line = sp.signal.sosfilt(sos, mean_line)[:]
     return np.max(mean_line)
 
 
@@ -265,7 +268,7 @@ fullFeatureDF = featureDF
 
 
 def get_neighbors_mfcc_skl(song, featureDF):
-    comparator_value = Vectors.dense(song.select("mfccSkl").collect()[0][0]) 
+    comparator_value = song[0]["mfccSkl"]
     distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
     result = featureDF.withColumn('distances_skl', distance_udf(F.col('mfccSkl'))).select("id", "distances_skl")
     #thresholding 
@@ -273,38 +276,38 @@ def get_neighbors_mfcc_skl(song, featureDF):
     return result
 
 def get_neighbors_mfcc_js(song, featureDF):
-    comparator_value = Vectors.dense(song.select("mfccSkl").collect()[0][0])   
+    comparator_value = song[0]["mfccSkl"]
     distance_udf = F.udf(lambda x: float(jensen_shannon(x, comparator_value)), DoubleType())
     result = featureDF.withColumn('distances_js', distance_udf(F.col('mfccSkl'))).select("id", "distances_js")
     result = result.filter(result.distances_js != np.inf)    
     return result
 
 def get_neighbors_rp_euclidean(song, featureDF):
-    comparator_value = Vectors.dense(song.select("rp").collect()[0][0]) 
+    comparator_value = song[0]["rp"]
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = featureDF.withColumn('distances_rp', distance_udf(F.col('rp'))).select("id", "distances_rp")
     return result
 
 def get_neighbors_rh_euclidean(song, featureDF):
-    comparator_value = Vectors.dense(song.select("rh").collect()[0][0]) 
+    comparator_value = song[0]["rh"]
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = featureDF.withColumn('distances_rh', distance_udf(F.col('rh'))).select("id", "distances_rh")
     return result
 
 def get_neighbors_bh_euclidean(song, featureDF):
-    comparator_value = Vectors.dense(song.select("bh").collect()[0][0]) 
+    comparator_value = song[0]["bh"]
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = featureDF.withColumn('distances_bh', distance_udf(F.col('bh'))).select("id", "bpm", "distances_bh")
     return result
 
 def get_neighbors_mfcc_euclidean(song, featureDF):
-    comparator_value = Vectors.dense(song.select("mfccEuc").collect()[0][0])
+    comparator_value = song[0]["mfccEuc"]
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = featureDF.withColumn('distances_mfcc', distance_udf(F.col('mfccEuc'))).select("id", "distances_mfcc")
     return result
 
 def get_neighbors_notes(song, featureDF):
-    comparator_value = song.select("notes").collect()[0][0]
+    comparator_value = song[0]["notes"]
     df_merged = featureDF.withColumn("compare", lit(comparator_value))
     df_levenshtein = df_merged.withColumn("distances_levenshtein", levenshtein(col("notes"), col("compare")))
     #df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()    
@@ -312,8 +315,8 @@ def get_neighbors_notes(song, featureDF):
     return result
 
 def get_neighbors_chroma_corr_valid(song, featureDF):
-    comparator_value = Vectors.dense(song.select("chroma").collect()[0][0])
-    distance_udf = F.udf(lambda x: float(chroma_cross_correlate_full(x, comparator_value)), DoubleType())
+    comparator_value = song[0]["chroma"]
+    distance_udf = F.udf(lambda x: float(chroma_cross_correlate_valid(x, comparator_value)), DoubleType())
     result = featureDF.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr")
     return result
 
@@ -321,7 +324,6 @@ def perform_scaling(unscaled_df):
     aggregated = unscaled_df.agg(F.min(unscaled_df.distances_bh),F.max(unscaled_df.distances_bh),F.mean(unscaled_df.distances_bh),F.stddev(unscaled_df.distances_bh),
         F.min(unscaled_df.distances_rh),F.max(unscaled_df.distances_rh),F.mean(unscaled_df.distances_rh),F.stddev(unscaled_df.distances_rh),
         F.min(unscaled_df.distances_rp),F.max(unscaled_df.distances_rp),F.mean(unscaled_df.distances_rp),F.stddev(unscaled_df.distances_rp),
-        F.min(unscaled_df.distances_bh),F.max(unscaled_df.distances_bh),F.mean(unscaled_df.distances_bh),F.stddev(unscaled_df.distances_bh),
         F.min(unscaled_df.distances_corr),F.max(unscaled_df.distances_corr),F.mean(unscaled_df.distances_corr),F.stddev(unscaled_df.distances_corr),
         F.min(unscaled_df.distances_levenshtein),F.max(unscaled_df.distances_levenshtein),F.mean(unscaled_df.distances_levenshtein),F.stddev(unscaled_df.distances_levenshtein),
         F.min(unscaled_df.distances_mfcc),F.max(unscaled_df.distances_mfcc),F.mean(unscaled_df.distances_mfcc),F.stddev(unscaled_df.distances_mfcc),
@@ -333,7 +335,7 @@ def perform_scaling(unscaled_df):
     ##############################
     max_val = aggregated.collect()[0]["max(distances_rp)"]
     min_val = aggregated.collect()[0]["min(distances_rp)"]
-    result = unscaled_df.withColumn('scaled_rp', (unscaled_df.distances_rp-min_val)/(max_val-min_val)).select("id", "key", "scale", "bpm", "scaled_rp")
+    result = unscaled_df.withColumn('scaled_rp', (unscaled_df.distances_rp-min_val)/(max_val-min_val))
     ##############################    
     max_val = aggregated.collect()[0]["max(distances_rh)"]
     min_val = aggregated.collect()[0]["min(distances_rh)"]
@@ -361,13 +363,12 @@ def perform_scaling(unscaled_df):
     ##############################
     max_val = aggregated.collect()[0]["max(distances_mfcc)"]
     min_val = aggregated.collect()[0]["min(distances_mfcc)"]
-    result = result.withColumn('scaled_mfcc', (unscaled_df.distances_mfcc-min_val)/(max_val-min_val))
+    result = result.withColumn('scaled_mfcc', (unscaled_df.distances_mfcc-min_val)/(max_val-min_val)).select("id", "key", "scale", "bpm", "scaled_rp", "scaled_rh", "scaled_bh", "scaled_notes", "scaled_chroma", "scaled_skl", "scaled_js", "scaled_mfcc")
     ##############################
     return result
 
 def get_nearest_neighbors(song, outname):
-    song = fullFeatureDF.filter(featureDF.id == song)
-
+    song = fullFeatureDF.filter(featureDF.id == song).collect()
     neighbors_rp_euclidean = get_neighbors_rp_euclidean(song, fullFeatureDF)
     neighbors_rh_euclidean = get_neighbors_rh_euclidean(song, fullFeatureDF)    
     neighbors_notes = get_neighbors_notes(song, fullFeatureDF)
@@ -376,12 +377,10 @@ def get_nearest_neighbors(song, outname):
     neighbors_mfcc_skl = get_neighbors_mfcc_skl(song, fullFeatureDF)
     neighbors_mfcc_js = get_neighbors_mfcc_js(song, fullFeatureDF)
     neighbors_chroma = get_neighbors_chroma_corr_valid(song, fullFeatureDF)
-    
     #print neighbors_mfcc_skl.first()
     #print neighbors_rp_euclidean.first()
     #neighbors_notes.show()
     #JOIN could also left_inner and handle 'nones'
-   
     mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_rh_euclidean, on=['id'], how='inner')
@@ -389,18 +388,18 @@ def get_nearest_neighbors(song, outname):
     mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_mfcc_skl, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner').dropDuplicates()
-
-    mergedSim = perform_scaling(mergedSim)
-    
-    #mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc) / 3)
-    mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_mfcc + mergedSim.scaled_corr + mergedSim.scaled_bh + mergedSim.scaled_rp + mergedSim.scaled_skl + mergedSim.scaled_js + mergedSim.scaled_rh) / 8)
-    mergedSim = mergedSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
-    mergedSim.show()
+    scaledSim = perform_scaling(mergedSim)
+    #scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_notes + scaledSim.scaled_rp + scaledSim.scaled_mfcc) / 3)
+    scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_notes + scaledSim.scaled_mfcc + scaledSim.scaled_chroma + scaledSim.scaled_bh + scaledSim.scaled_rp + scaledSim.scaled_skl + scaledSim.scaled_js + scaledSim.scaled_rh) / 8)
+    scaledSim = scaledSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
+    #scaledSim.show()
     out_name = outname#"output.csv"
-    mergedSim.toPandas().to_csv(out_name, encoding='utf-8')
+    scaledSim.toPandas().to_csv(out_name, encoding='utf-8')
 
 
 song = "music/Electronic/The XX - Intro.mp3"    #100 testset
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
-get_nearest_neighbors(song, "Electro_pregroup_full.csv")
+get_nearest_neighbors(song, "Electro_pregroup_speed.csv")
+
+
 

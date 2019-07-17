@@ -37,22 +37,25 @@ spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrC
 
 def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
-    chroma1 = np.empty([length1,12])
+    chroma1 = np.empty([12, length1])
     length2 = chroma2_par.size/12
-    chroma2 = np.empty([length2,12])
+    chroma2 = np.empty([12, length2])
     if(length1 > length2):
-        chroma1 = chroma1_par.reshape(length1, 12)
-        chroma2 = chroma2_par.reshape(length2, 12)
+        chroma1 = chroma1_par.reshape(12, length1)
+        chroma2 = chroma2_par.reshape(12, length2)
     else:
-        chroma2 = chroma1_par.reshape(length1, 12)
-        chroma1 = chroma2_par.reshape(length2, 12)    
+        chroma2 = chroma1_par.reshape(12, length1)
+        chroma1 = chroma2_par.reshape(12, length2)      
     corr = sp.signal.correlate2d(chroma1, chroma2, mode='same')
-    transposed_chroma = corr.transpose()  
-    transposed_chroma = transposed_chroma / (min(length1, length2))
-    transposed_chroma = transposed_chroma.transpose()
-    transposed_chroma = np.transpose(transposed_chroma)
-    mean_line = transposed_chroma[6]
+    #left out according to ellis' 2007 paper
+    #transposed_chroma = transposed_chroma / (min(length1, length2))
+    index = 5
+    mean_line = corr[index]
+    #remove offset to get rid of initial filter peak(highpass of jump from 0-20)
+    mean_line = mean_line - mean_line[0]
     #print np.max(mean_line)
+    sos = sp.signal.butter(1, 0.1, 'high', analog=False, output='sos')
+    mean_line = sp.signal.sosfilt(sos, mean_line)[:]
     return np.max(mean_line)
 
 def chroma_cross_correlate_full(chroma1_par, chroma2_par):
@@ -197,7 +200,7 @@ def get_neighbors_chroma_corr_valid(song):
     df_vec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
-    distance_udf = F.udf(lambda x: float(chroma_cross_correlate_full(x, comparator_value)), DoubleType())
+    distance_udf = F.udf(lambda x: float(chroma_cross_correlate_valid(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr")
     max_val = result.agg({"distances_corr": "max"}).collect()[0]
     max_val = max_val["max(distances_corr)"]
