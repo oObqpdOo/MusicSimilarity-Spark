@@ -9,6 +9,7 @@ from pyspark.ml.param.shared import *
 from pyspark.mllib.linalg import Vectors, VectorUDT
 from pyspark.ml.feature import VectorAssembler
 import numpy as np
+import time
 
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
@@ -276,15 +277,22 @@ def get_nearest_neighbors_fast(song, outname):
     return mergedSim
 
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
-#song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
-song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
+#song = "music/Electronic/The XX - Intro.mp3"    #100 testset
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")
 
-result = get_nearest_neighbors_fast(song, "Electro_rdd_fast.csv")
-print(result.sortBy(lambda x: x[1], ascending = True).take(10))
+time_dict = {}
 
-result = get_nearest_neighbors_full(song, "Electro_rdd_full.csv")
+tic1 = int(round(time.time() * 1000))
+result = get_nearest_neighbors_fast(song, "Electro_rdd_fast.csv")
+tac1 = int(round(time.time() * 1000))
+time_dict['m1']= tac1 - tic1
+
 print(result.sortBy(lambda x: x[1], ascending = True).take(10))
+print time_dict
+
+#result = get_nearest_neighbors_full(song, "Electro_rdd_full.csv")
+#print(result.sortBy(lambda x: x[1], ascending = True).take(10))
 
 
 
