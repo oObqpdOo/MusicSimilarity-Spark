@@ -37,15 +37,8 @@ sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
 spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrCreate()
 
-songs = sc.textFile("features[0-9]*/out.files", use_unicode=True)
-list1 = songs.map(lambda x: x.split(':'))
-#DO NOT USE str(x[0]) USE x[0].encode('utf-8') instead!!
-list1 = list1.map(lambda x: x[0])
-list1 = list1.map(lambda x: x.replace(";","").replace(".","").replace(",","").replace(" ",""))
-list1l = list1.collect()
-
-
-list1l = (glob.glob("results/covers80/*.csv"))
+list1l = (glob.glob("results/testset/*.csv"))
+count = 0
 
 ################################################################################
 #
@@ -68,29 +61,14 @@ for i in list1l[:]:
     #create DF
     rdd = rdd.map(lambda x: (x[0], x[1].split(',')))
     rdd = rdd.map(lambda x: (x[0], x[1][0], x[1][1], x[1][2], x[1][3], x[1][4], x[1][5], x[1][6], x[1][7], x[1][8], x[1][9], x[1][10]))
-    rddDF = spark.createDataFrame(rdd, ["cover", "id", "rp", "key", "scale", "notes", "bpm", "bh", "mfcc", "chroma", "skl", "agg"])
-    rddRes = rddDF.withColumn('newdist', (rddDF.notes + rddDF.notes + rddDF.rp) / 3).select("id", "cover", "newdist").orderBy('newdist', ascending=True).limit(2)
-    #rddRes.show()
-    originalSong = rddRes.select("cover").limit(1).collect()[0]["cover"]
-    originalID = rddRes.select("id").limit(1).collect()[0]["id"]
-    #then drop row
-    rddRes = rddRes.filter(rddRes.id != originalID)
-    countdf = rddRes.groupBy("cover").agg(F.count("cover")).withColumn('original', F.lit(originalSong))
-    countdf = countdf.filter(countdf.cover == originalSong)
-    #countdf.show()
+    rddDF = spark.createDataFrame(rdd, ["genre", "id", "rp", "key", "scale", "notes", "bpm", "bh", "mfcc", "chroma", "skl", "agg"])
     if count == 0:
-        result = countdf
+        result = rddDF
     else:
-        result = result.union(countdf)
+        result = result.union(rddDF)
     count = count + 1
 
 result.show()
-#result.toPandas().to_csv("__genre_estimation.csv", encoding='utf-8')
-resultreduce = result.rdd
-#map (original -> detected), count
-resultreducekey = resultreduce.map(lambda x: ((x[2], x[0]), (x[1])))
-reduced = resultreducekey.reduceByKey(lambda x, y: x + y)
-reducedDF = spark.createDataFrame(reduced, ["original vs detected", "count"])
-reducedDF.toPandas().to_csv("__cover_chroma_notes_rp.csv", encoding='utf-8')
+result.toPandas().to_csv("__feature_eval.csv", encoding='utf-8')
 
 
