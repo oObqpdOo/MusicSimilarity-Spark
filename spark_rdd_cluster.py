@@ -279,6 +279,7 @@ def get_nearest_neighbors_fast(song, outname):
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+song = "music/I_Love_You/faith_hill+Faith+10-I_Love_You.mp3"
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")
 
 time_dict = {}
