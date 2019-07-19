@@ -90,17 +90,19 @@ def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
     else:
         chroma2 = chroma1_par.reshape(12, length1)
         chroma1 = chroma2_par.reshape(12, length2)      
-    corr = sp.signal.correlate2d(chroma1, chroma2, mode='same')
-    #left out according to ellis' 2007 paper
-    #transposed_chroma = transposed_chroma / (min(length1, length2))
-    index = 5
-    mean_line = corr[index]
+    #full
+    #correlation = np.zeros([length1 + length2 - 1])
+    #valid
+    #correlation = np.zeros([max(length1, length2) - min(length1, length2) + 1])
+    #same
+    correlation = np.zeros([max(length1, length2)])
+    for i in range(12):
+        correlation = correlation + np.correlate(chroma1[i], chroma2[i], "same")    
     #remove offset to get rid of initial filter peak(highpass of jump from 0-20)
-    mean_line = mean_line - mean_line[0]
-    #print np.max(mean_line)
-    sos = sp.signal.butter(1, 0.1, 'high', analog=False, output='sos')
-    mean_line = sp.signal.sosfilt(sos, mean_line)[:]
-    return np.max(mean_line)
+    correlation = correlation - correlation[0]
+    sos = butter(1, 0.1, 'high', analog=False, output='sos')
+    correlation = sosfilt(sos, correlation)[:]
+    return np.max(correlation)
 
 
 
