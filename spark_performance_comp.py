@@ -180,10 +180,9 @@ def get_neighbors_rp_euclidean_dataframe(song):
     comparator_value = Vectors.dense(comparator[0])
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_rp', distance_udf(F.col('features'))).select("id", "distances_rp")
-    max_val = result.agg({"distances_rp": "max"}).collect()[0]
-    max_val = max_val["max(distances_rp)"]
-    min_val = result.agg({"distances_rp": "min"}).collect()[0]
-    min_val = min_val["min(distances_rp)"]
+    aggregated = result.agg(F.min(result.distances_rp),F.max(result.distances_rp))
+    max_val = aggregated.collect()[0]["max(distances_rp)"]
+    min_val = aggregated.collect()[0]["min(distances_rp)"]
     return result.withColumn('scaled_rp', (result.distances_rp-min_val)/(max_val-min_val)).select("id", "scaled_rp")
 
 
@@ -215,10 +214,9 @@ def get_neighbors_mfcc_euclidean_dataframe(song):
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_mfcc', distance_udf(F.col('features'))).select("id", "distances_mfcc")
-    max_val = result.agg({"distances_mfcc": "max"}).collect()[0]
-    max_val = max_val["max(distances_mfcc)"]
-    min_val = result.agg({"distances_mfcc": "min"}).collect()[0]
-    min_val = min_val["min(distances_mfcc)"]
+    aggregated = result.agg(F.min(result.distances_mfcc),F.max(result.distances_mfcc))
+    max_val = aggregated.collect()[0]["max(distances_mfcc)"]
+    min_val = aggregated.collect()[0]["min(distances_mfcc)"]
     return result.withColumn('scaled_mfcc', (result.distances_mfcc-min_val)/(max_val-min_val)).select("id", "scaled_mfcc")
 
 
@@ -237,10 +235,9 @@ def get_neighbors_notes_dataframe(song):
     df_levenshtein = df_merged.withColumn("distances_levenshtein", levenshtein(col("notes"), col("compare")))
     #df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()    
     result = df_levenshtein.select("id", "key", "scale", "distances_levenshtein")
-    max_val = result.agg({"distances_levenshtein": "max"}).collect()[0]
-    max_val = max_val["max(distances_levenshtein)"]
-    min_val = result.agg({"distances_levenshtein": "min"}).collect()[0]
-    min_val = min_val["min(distances_levenshtein)"]
+    aggregated = result.agg(F.min(result.distances_levenshtein),F.max(result.distances_levenshtein))
+    max_val = aggregated.collect()[0]["max(distances_levenshtein)"]
+    min_val = aggregated.collect()[0]["min(distances_levenshtein)"]
     return result.withColumn('scaled_levenshtein', (result.distances_levenshtein-min_val)/(max_val-min_val)).select("id", "key", "scale", "scaled_levenshtein")
 
 

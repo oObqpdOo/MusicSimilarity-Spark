@@ -152,6 +152,7 @@ bh = sc.textFile("features[0-9]*/out[0-9]*.bh")
 bh = bh.map(lambda x: x.split(";"))
 kv_bh = bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 
+
 #########################################################
 #   Pre- Process Notes for Levenshtein
 #
@@ -227,9 +228,10 @@ def get_neighbors_chroma_corr_valid(song):
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     distance_udf = F.udf(lambda x: float(chroma_cross_correlate_valid(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr")
-    aggregated = result.agg(F.min(result.distances_corr),F.max(result.distances_corr))
-    max_val = aggregated.collect()[0]["max(distances_corr)"]
-    min_val = aggregated.collect()[0]["min(distances_corr)"]
+    max_val = result.agg({"distances_corr": "max"}).collect()[0]
+    max_val = max_val["max(distances_corr)"]
+    min_val = result.agg({"distances_corr": "min"}).collect()[0]
+    min_val = min_val["min(distances_corr)"]
     return result.withColumn('scaled_corr', 1 - (result.distances_corr-min_val)/(max_val-min_val)).select("id", "scaled_corr")
 
 def get_neighbors_mfcc_euclidean(song):
@@ -238,10 +240,12 @@ def get_neighbors_mfcc_euclidean(song):
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_mfcc', distance_udf(F.col('features'))).select("id", "distances_mfcc")
-    aggregated = result.agg(F.min(result.distances_mfcc),F.max(result.distances_mfcc))
-    max_val = aggregated.collect()[0]["max(distances_mfcc)"]
-    min_val = aggregated.collect()[0]["min(distances_mfcc)"]
+    max_val = result.agg({"distances_mfcc": "max"}).collect()[0]
+    max_val = max_val["max(distances_mfcc)"]
+    min_val = result.agg({"distances_mfcc": "min"}).collect()[0]
+    min_val = min_val["min(distances_mfcc)"]
     return result.withColumn('scaled_mfcc', (result.distances_mfcc-min_val)/(max_val-min_val)).select("id", "scaled_mfcc")
+
 
 def get_neighbors_mfcc_skl(song):
     df_vec = mfccDfMerged.select(mfccDfMerged["id"],list_to_vector_udf(mfccDfMerged["features"]).alias("features"))
@@ -252,9 +256,10 @@ def get_neighbors_mfcc_skl(song):
     result = df_vec.withColumn('distances_skl', distance_udf(F.col('features'))).select("id", "distances_skl")
     #thresholding 
     #result = result.filter(result.distances_skl <= 1000)  
-    aggregated = result.agg(F.min(result.distances_skl),F.max(result.distances_skl))
-    max_val = aggregated.collect()[0]["max(distances_skl)"]
-    min_val = aggregated.collect()[0]["min(distances_skl)"]
+    max_val = result.agg({"distances_skl": "max"}).collect()[0]
+    max_val = max_val["max(distances_skl)"]
+    min_val = result.agg({"distances_skl": "min"}).collect()[0]
+    min_val = min_val["min(distances_skl)"]
     return result.withColumn('scaled_skl', (result.distances_skl-min_val)/(max_val-min_val)).select("id", "scaled_skl")
 
 def get_neighbors_mfcc_js(song):
@@ -267,9 +272,10 @@ def get_neighbors_mfcc_js(song):
     #drop non valid rows    
     #result = result.filter(result.distances_js.isNotNull())
     result = result.filter(result.distances_js != np.inf)    
-    aggregated = result.agg(F.min(result.distances_js),F.max(result.distances_js))
-    max_val = aggregated.collect()[0]["max(distances_js)"]
-    min_val = aggregated.collect()[0]["min(distances_js)"]
+    max_val = result.agg({"distances_js": "max"}).collect()[0]
+    max_val = max_val["max(distances_js)"]
+    min_val = result.agg({"distances_js": "min"}).collect()[0]
+    min_val = min_val["min(distances_js)"]
     return result.withColumn('scaled_js', (result.distances_js-min_val)/(max_val-min_val)).select("id", "scaled_js")
 
 def get_neighbors_rp_euclidean(song):
@@ -280,9 +286,10 @@ def get_neighbors_rp_euclidean(song):
     comparator_value = Vectors.dense(comparator[0])
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_rp', distance_udf(F.col('features'))).select("id", "distances_rp")
-    aggregated = result.agg(F.min(result.distances_rp),F.max(result.distances_rp))
-    max_val = aggregated.collect()[0]["max(distances_rp)"]
-    min_val = aggregated.collect()[0]["min(distances_rp)"]
+    max_val = result.agg({"distances_rp": "max"}).collect()[0]
+    max_val = max_val["max(distances_rp)"]
+    min_val = result.agg({"distances_rp": "min"}).collect()[0]
+    min_val = min_val["min(distances_rp)"]
     return result.withColumn('scaled_rp', (result.distances_rp-min_val)/(max_val-min_val)).select("id", "scaled_rp")
 
 def get_neighbors_rh_euclidean(song):
@@ -293,9 +300,10 @@ def get_neighbors_rh_euclidean(song):
     comparator_value = Vectors.dense(comparator[0])
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_rh', distance_udf(F.col('features'))).select("id", "distances_rh")
-    aggregated = result.agg(F.min(result.distances_rh),F.max(result.distances_rh))
-    max_val = aggregated.collect()[0]["max(distances_rh)"]
-    min_val = aggregated.collect()[0]["min(distances_rh)"]
+    max_val = result.agg({"distances_rh": "max"}).collect()[0]
+    max_val = max_val["max(distances_rh)"]
+    min_val = result.agg({"distances_rh": "min"}).collect()[0]
+    min_val = min_val["min(distances_rh)"]
     return result.withColumn('scaled_rh', (result.distances_rh-min_val)/(max_val-min_val)).select("id", "scaled_rh")
 
 def get_neighbors_notes(song):
@@ -306,10 +314,12 @@ def get_neighbors_notes(song):
     df_levenshtein = df_merged.withColumn("distances_levenshtein", levenshtein(col("notes"), col("compare")))
     #df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()    
     result = df_levenshtein.select("id", "key", "scale", "distances_levenshtein")
-    aggregated = result.agg(F.min(result.distances_levenshtein),F.max(result.distances_levenshtein))
-    max_val = aggregated.collect()[0]["max(distances_levenshtein)"]
-    min_val = aggregated.collect()[0]["min(distances_levenshtein)"]
+    max_val = result.agg({"distances_levenshtein": "max"}).collect()[0]
+    max_val = max_val["max(distances_levenshtein)"]
+    min_val = result.agg({"distances_levenshtein": "min"}).collect()[0]
+    min_val = min_val["min(distances_levenshtein)"]
     return result.withColumn('scaled_levenshtein', (result.distances_levenshtein-min_val)/(max_val-min_val)).select("id", "key", "scale", "scaled_levenshtein")
+
 
 def get_neighbors_bh_euclidean(song):
     df = spark.createDataFrame(kv_bh, ["id", "bpm", "features"])
@@ -317,10 +327,13 @@ def get_neighbors_bh_euclidean(song):
     comparator_value = filterDF.collect()[0][2]
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df.withColumn('distances_bh', distance_udf(F.col('features'))).select("id", "bpm", "distances_bh")
-    aggregated = result.agg(F.min(result.distances_bh),F.max(result.distances_bh))
-    max_val = aggregated.collect()[0]["max(distances_bh)"]
-    min_val = aggregated.collect()[0]["min(distances_bh)"]
+    max_val = result.agg({"distances_bh": "max"}).collect()[0]
+    max_val = max_val["max(distances_bh)"]
+    min_val = result.agg({"distances_bh": "min"}).collect()[0]
+    min_val = min_val["min(distances_bh)"]
     return result.withColumn('scaled_bh', (result.distances_bh-min_val)/(max_val-min_val)).select("id", "bpm", "scaled_bh")
+
+
 
 def get_nearest_neighbors(song, outname):
     neighbors_mfcc_skl = get_neighbors_mfcc_skl(song)
