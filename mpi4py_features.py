@@ -446,38 +446,49 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
     gc.collect()
     return 1
 
-def process_stuff():
-    # f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh
-    do_mfcc_kl = 1
-    do_mfcc_euclid = 1
-    do_notes = 1
-    do_chroma = 1
-    do_bh = 1
+def process_stuff(startjob, maxparts, batchsz, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
 
-    startjob = 0        
+    startjob = int(startjob)
+    maxparts = int(maxparts) + 1
+    files_per_part = int(batchsz)
+
+    print("starting with: ")    
+    print(startjob)
+    print("ending with: ")
+    print(maxparts - 1)
+    # Divide the task into subtasks - such that each subtask processes around 25 songs
+    print("files per part: ")
+    print(files_per_part)
+    
     start = 0
     end = len(filelist)
     print("used cores: " + str(size))
     ncpus = size
-    print("files per part: ")
-    files_per_part = 25
-    print(files_per_part)
-    # Divide the task into subtasks - such that each subtask processes around 25 songs
+
     parts = (len(filelist) / files_per_part) + 1
     print("Split problem in parts: ")
     print(str(parts))
-    with open("features0/out" + str(rank) + ".files", "w") as myfile:
-        myfile.write("")
-        myfile.close()
     step = (end - start) / parts + 1
-    for index in xrange(startjob + rank, parts, size):
+    if maxparts > parts:
+        maxparts = parts
+    for index in xrange(startjob + rank, maxparts, size):
         if index < parts:        
             starti = start+index*step
             endi = min(start+(index+1)*step, end)
-            print("calling rank " + str(rank) + " size " + str(size) + " starti " + str(starti) + " endi " + str(endi))
-            parallel_python_process(index, filelist[starti:endi], do_mfcc_kl, do_mfcc_euclid, do_notes, do_chroma, do_bh)
+            print("calling process  " + str(rank) + " index " + str(index) + " size " + str(size) + " starti " + str(starti) + " endi " + str(endi))
+            parallel_python_process(index, filelist[starti:endi], f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh)
             gc.collect()
     gc.enable()
     gc.collect()
 
-process_stuff()
+do_mfcc_kl = 1
+do_mfcc_euclid = 1
+do_notes = 1
+do_chroma = 1
+do_bh = 1
+startbatch = 2
+endbatch = 2
+batchsize = 25
+
+# BATCH FEATURE EXTRACTION:
+process_stuff(startbatch, endbatch, batchsize, do_mfcc_kl, do_mfcc_euclid, do_notes, do_chroma, do_bh)
