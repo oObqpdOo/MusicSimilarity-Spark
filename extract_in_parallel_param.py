@@ -50,7 +50,20 @@ def symmetric_kullback_leibler(mean1, mean2, cov1, cov2):#
     #print div
     return div
 
+
 def transpose_chroma_matrix(key, scale, chroma_param):
+
+    if key == 'Ab':
+        key = 'G#'
+    if key == 'Gb':
+        key = 'F#'
+    if key == 'Eb':
+        key = 'D#'
+    if key == 'Db':
+        key = 'C#'
+    if key == 'Bb':
+        key = 'A#'
+
     #print key
     #print scale 
     chroma_param = chroma_param.transpose()
@@ -73,6 +86,18 @@ def transpose_chroma_matrix(key, scale, chroma_param):
     return transposed_chroma    
             
 def transpose_chroma_notes(key, scale, notes):
+
+    if key == 'Ab':
+        key = 'G#'
+    if key == 'Gb':
+        key = 'F#'
+    if key == 'Eb':
+        key = 'D#'
+    if key == 'Db':
+        key = 'C#'
+    if key == 'Bb':
+        key = 'A#'
+
     #print key
     #print scale 
     transposed = notes

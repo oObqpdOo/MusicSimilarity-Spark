@@ -27,10 +27,10 @@ status = MPI.Status()   # get MPI status object
 
 gc.enable()
 filelist = []
-for filename in Path('music').glob('**/*.mp3'):
+for filename in Path('/beegfs/ja62lel').glob('**/*.mp3'):
     filelist.append(filename)
-for filename in Path('music').glob('**/*.wav'):
-    filelist.append(filename)  
+for filename in Path('/beegfs/ja62lel').glob('**/*.wav'):
+    filelist.append(filename)
 print("length of filelist" + str(len(filelist)))
 
 np.set_printoptions(threshold=np.inf)
@@ -95,7 +95,7 @@ def transpose_chroma_notes(key, scale, notes):
     return transposed
 
 def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
-    gc.enable()        
+    gc.enable()
     # Loading audio file
     #will resample if sampleRate is different!
     audio = es.MonoLoader(filename=path, sampleRate=fs)()
@@ -135,7 +135,7 @@ def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
     scale = 0
     notes = 0
     chroma_matrix = 0
-    mean = 0  
+    mean = 0
     cov = 0
     var = 0
     cov_kl = 0
@@ -176,13 +176,13 @@ def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
 
         #plt.imshow(mfccs.T, origin='lower', aspect='auto', interpolation='nearest')
         #plt.ylabel('MFCC Coefficient Index')
-        #plt.xlabel('Frame Index')    
+        #plt.xlabel('Frame Index')
         #plt.colorbar()
 
     #####################################
     # extract beat features and histogram
     #####################################
-    if f_bh == 1 or f_chroma == 1 or f_notes == 1: 
+    if f_bh == 1 or f_chroma == 1 or f_notes == 1:
         # Compute beat positions and BPM
         rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
         bpm, beats, beats_confidence, _, beats_intervals = rhythm_extractor(audio)
@@ -245,7 +245,7 @@ def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
 
     ###################################
     # NO FILTER - comment next line in
-    #loader.audio >> framecutter.signal        
+    #loader.audio >> framecutter.signal
     ###################################
     framecutter.frame >> windowing.frame >> spectrum.frame
     spectrum.spectrum >> spectralpeaks.spectrum
@@ -263,7 +263,7 @@ def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
     #print("Estimated key and scale:", pool['tonal.key_key'] + " " + pool['tonal.key_scale'])
     #print(pool['tonal.hpcp'].T)
     chroma = pool['tonal.hpcp'].T
-    key = pool['tonal.key_key'] 
+    key = pool['tonal.key_key']
     scale = pool['tonal.key_scale']
 
     if f_chroma == 1:
@@ -291,7 +291,7 @@ def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
             chroma_matrix[mat_index] = value
             mat_index = mat_index + 1
 
-        #chroma_align = chroma_align.transpose()   
+        #chroma_align = chroma_align.transpose()
         #plt.figure(figsize=(10, 4))
         #librosa.display.specshow(chroma_align, y_axis='chroma', x_axis='time')
         #plt.vlines(times, 0, 12, alpha=0.5, color='r', linestyle='--', label='Beats')
@@ -331,13 +331,13 @@ def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
 
                 i[low_values_flags] = 0
             else:
-                i.fill(0)     
+                i.fill(0)
         chroma = chroma.transpose()
         # Compute beat positions and BPM
         prev_beat = 0
         act_beat = 0
         sum_key = np.zeros(12)
-        chroma = chroma.transpose()  
+        chroma = chroma.transpose()
         for i in beats_frames:
             act_beat = i
             sum_key = sum(chroma[prev_beat:act_beat])
@@ -350,7 +350,7 @@ def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
             fill = np.zeros(len(j))
             if(np.all(chroma[prev_beat:act_beat] == 0)):
                 fill[ind] = 0
-            else:    
+            else:
                 fill[ind] = 1
             chroma[prev_beat:act_beat] = fill
             #print(chroma[prev_beat:act_beat])
@@ -362,23 +362,23 @@ def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
             del i
 
         prev_beat = 0
-        act_beat = 0    
+        act_beat = 0
         for i in beats_frames:
             act_beat = i
             sum_key = sum(chroma[prev_beat:act_beat])
             ind = np.where(sum_key == np.max(sum_key))
             prev_beat = i
             notes.append(ind[0][0])
-            prev_beat = i 
+            prev_beat = i
 
-        #chroma = chroma.transpose()  
+        #chroma = chroma.transpose()
         #plt.figure(figsize=(10, 4))
         #librosa.display.specshow(chroma, y_axis='chroma', x_axis='time')
         #plt.vlines(times, 0, 12, alpha=0.5, color='r', linestyle='--', label='Beats')
         #plt.colorbar()
         #plt.title('Chromagram')
         #plt.tight_layout()
-        #chroma = chroma.transpose() 
+        #chroma = chroma.transpose()
     gc.collect()
     return bpm, histogram, key, scale, notes, chroma_matrix, mean, cov, var, cov_kl
 
@@ -386,61 +386,61 @@ def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
 def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
     #return (end_time - start_time)
     #PARAMETER: mfcc_kl, mfcc_euclid, notes, chroma, bh
-    if f_mfcc_euclid == 1:    
+    if f_mfcc_euclid == 1:
         with open("features0/out" + str(process_id) + ".mfcc", "w") as myfile:
             myfile.write("")
             myfile.close()
-    if f_mfcc_kl == 1:    
+    if f_mfcc_kl == 1:
         with open("features0/out" + str(process_id) + ".mfcckl", "w") as myfile:
             myfile.write("")
             myfile.close()
     if f_chroma == 1:
         with open("features0/out" + str(process_id) + ".chroma", "w") as myfile:
             myfile.write("")
-            myfile.close()       
-    if f_bh == 1:   
+            myfile.close()
+    if f_bh == 1:
         with open("features0/out" + str(process_id) + ".bh", "w") as myfile:
             myfile.write("")
             myfile.close()
-    if f_notes == 1:        
+    if f_notes == 1:
         with open("features0/out" + str(process_id) + ".notes", "w") as myfile:
             myfile.write("")
             myfile.close()
     count = 1
     for file_name in cpu_filelist:
         path = str(PurePath(file_name))
-        print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
+        print ("File " + path + " " + str(count) + " von " + str(len(cpu_filelist)))
         bpmret, hist, key, scale, notes, chroma_matrix, mean, cov, var, cov_kl = compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh)
         filename = path.replace(".","").replace(";","").replace(",","").replace("mp3",".mp3").replace("aiff",".aiff").replace("aif",".aif").replace("au",".au").replace("m4a", ".m4a").replace("wav",".wav").replace("flac",".flac").replace("ogg",".ogg")  # rel. filename as from find_files
-        if f_mfcc_euclid == 1:                
+        if f_mfcc_euclid == 1:
             with open("features0/out" + str(process_id) + ".mfcc", "a") as myfile:
-                print ("MFCC File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
+                print ("MFCC File " + path + " " + str(count) + " von " + str(len(cpu_filelist)))
                 str_mean = np.array2string(mean, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
                 str_var = np.array2string(var, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
                 str_cov = np.array2string(cov, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
                 line = (filename + "; " + str_mean + "; " + str_var + "; " + str_cov).replace('\n', '')
-                myfile.write(line + '\n')       
+                myfile.write(line + '\n')
                 myfile.close()
-        if f_chroma == 1:  
+        if f_chroma == 1:
             with open("features0/out" + str(process_id) + ".chroma", "a") as myfile:
-                print ("Chroma Full - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
+                print ("Chroma Full - File " + path + " " + str(count) + " von " + str(len(cpu_filelist)))
                 transposed_chroma = np.zeros(chroma_matrix.shape)
                 transposed_chroma = transpose_chroma_matrix(key, scale, chroma_matrix)
                 chroma_str = np.array2string(transposed_chroma.transpose(), separator=',', suppress_small=True).replace('\n', '')
                 line = (filename + "; " + chroma_str).replace('\n', '')
-                myfile.write(line + '\n')       
+                myfile.write(line + '\n')
                 myfile.close()
-        if f_bh == 1:  
+        if f_bh == 1:
             with open("features0/out" + str(process_id) + ".bh", "a") as myfile:
-                print ("Beat Histogram - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
+                print ("Beat Histogram - File " + path + " " + str(count) + " von " + str(len(cpu_filelist)))
                 bpmret = str(bpmret)
                 hist = np.array2string(hist, separator=',', suppress_small=True).replace('\n', '')
                 line = (filename + "; " + bpmret + "; " + hist).replace('\n', '')
-                myfile.write(line + '\n')       
+                myfile.write(line + '\n')
                 myfile.close()
-        if f_notes == 1:  
+        if f_notes == 1:
             with open("features0/out" + str(process_id) + ".notes", "a") as myfile:
-                print ("Chroma Notes - File " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
+                print ("Chroma Notes - File " + path + " " + str(count) + " von " + str(len(cpu_filelist)))
                 key = str(key)
                 transposed_notes = []
                 transposed_notes = transpose_chroma_notes(key, scale, notes)
@@ -448,15 +448,15 @@ def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, 
                 scale = str(scale).replace('\n', '')
                 transposed_notes = str(transposed_notes).replace('\n', '')
                 line = (filename + "; " + key + "; " + scale + "; " + transposed_notes).replace('\n', '')
-                myfile.write(line + '\n')       
+                myfile.write(line + '\n')
                 myfile.close()
-        if f_mfcc_kl == 1:                
+        if f_mfcc_kl == 1:
             with open("features0/out" + str(process_id) + ".mfcckl", "a") as myfile:
-                print ("MFCC Kullback-Leibler " + path + " " + str(count) + " von " + str(len(cpu_filelist))) 
+                print ("MFCC Kullback-Leibler " + path + " " + str(count) + " von " + str(len(cpu_filelist)))
                 str_mean = np.array2string(mean, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
                 str_cov_kl = np.array2string(cov_kl, precision=8, separator=',', suppress_small=True).replace('\n', '')#.strip('[ ]')
                 line = (filename + "; " + str_mean + "; " + str_cov_kl).replace('\n', '')
-                myfile.write(line + '\n')       
+                myfile.write(line + '\n')
                 myfile.close()
         count = count + 1
         del bpmret, hist, key, scale, notes, chroma_matrix, mean, cov, var, cov_kl
@@ -472,14 +472,14 @@ def process_stuff(startjob, maxparts, batchsz, f_mfcc_kl, f_mfcc_euclid, f_notes
     maxparts = int(maxparts) + 1
     files_per_part = int(batchsz)
 
-    print("starting with: ")    
+    print("starting with: ")
     print(startjob)
     print("ending with: ")
     print(maxparts - 1)
     # Divide the task into subtasks - such that each subtask processes around 25 songs
     print("files per part: ")
     print(files_per_part)
-    
+
     start = 0
     end = len(filelist)
     print("used cores: " + str(size))
@@ -492,7 +492,7 @@ def process_stuff(startjob, maxparts, batchsz, f_mfcc_kl, f_mfcc_euclid, f_notes
     if maxparts > parts:
         maxparts = parts
     for index in xrange(startjob + rank, maxparts, size):
-        if index < parts:        
+        if index < parts:
             starti = start+index*step
             endi = min(start+(index+1)*step, end)
             print("calling process  " + str(rank) + " index " + str(index) + " size " + str(size) + " starti " + str(starti) + " endi " + str(endi))
