@@ -143,6 +143,7 @@ reducedDF.toPandas().to_csv("__genre_mfcc_skl.csv", encoding='utf-8')
 #
 #
 
+count = 0
 for i in list1l: 
     #outname = "results/testset/" + i.replace('.mp3', '').replace('music/', '').replace('/', '_').replace('mp3', '') + ".csv"
     outname = i    
@@ -188,6 +189,7 @@ reducedDF.toPandas().to_csv("__genre_mfcc_rp.csv", encoding='utf-8')
 #
 #
 
+count = 0
 for i in list1l: 
     #outname = "results/testset/" + i.replace('.mp3', '').replace('music/', '').replace('/', '_').replace('mp3', '') + ".csv"
     outname = i    
