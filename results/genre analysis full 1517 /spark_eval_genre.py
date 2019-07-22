@@ -273,10 +273,6 @@ reduced = resultreducekey.reduceByKey(lambda x, y: x + y)
 reducedDF = spark.createDataFrame(reduced, ["original vs detected", "count"])
 reducedDF.toPandas().to_csv("__genre_skl.csv", encoding='utf-8')
 
-
-list1l = (glob.glob("results/testset1517js/*.csv"))
-count = 0
-
 ################################################################################
 #
 #   rddDF.mfcc + rddDF.skl + rddDF.js / 3
@@ -414,3 +410,49 @@ resultreducekey = resultreduce.map(lambda x: ((x[2], x[0]), (x[1])))
 reduced = resultreducekey.reduceByKey(lambda x, y: x + y)
 reducedDF = spark.createDataFrame(reduced, ["original vs detected", "count"])
 reducedDF.toPandas().to_csv("__genre_js_mfcc.csv", encoding='utf-8')
+
+################################################################################
+#
+#   rddDF.js + rddDF.skl / 2
+#
+#
+
+count = 0
+for i in list1l: 
+    #outname = "results/testset/" + i.replace('.mp3', '').replace('music/', '').replace('/', '_').replace('mp3', '') + ".csv"
+    outname = i    
+    #outname = outname.encode('ascii','ignore')    
+    print outname 
+    rdd = sc.textFile(outname)
+    rdd = rdd.map(lambda x: x.replace('music/','').split('/'))
+    #drop csv header
+    rdd = rdd.mapPartitionsWithIndex(lambda idx, it: islice(it, 1, None) if idx == 0 else it)
+    #clean id
+    rdd = rdd.map(lambda x: (x[0].split(','), x[1])).map(lambda x: (x[0][1], x[1]))
+    #create DF
+    rdd = rdd.map(lambda x: (x[0], x[1].split(',')))
+    #rdd = rdd.map(lambda x: (x[0], x[1][0], x[1][1], x[1][2], x[1][3], x[1][4], x[1][5], x[1][6], x[1][7], x[1][8], x[1][9], x[1][10]))
+    rdd = rdd.map(lambda x: (x[0], x[1][0], x[1][1], x[1][2], x[1][3], x[1][4], x[1][5], x[1][6], x[1][7], x[1][8], x[1][9], x[1][10], x[1][11], x[1][12]))
+    #rddDF = spark.createDataFrame(rdd, ["genre", "id", "rp", "key", "scale", "notes", "bpm", "bh", "mfcc", "chroma", "skl", "agg"])
+    rddDF = spark.createDataFrame(rdd, ["genre", "id", "key", "scale", "bpm", "rp", "rh", "bh", "notes", "chroma", "skl", "js", "mfcc", "agg"])
+    rddRes = rddDF.withColumn('newdist', (rddDF.js + rddDF.skl) / 2).select("id", "genre", "newdist").orderBy('newdist', ascending=True).limit(11)
+    #rddRes.show()
+    originalGenre = rddRes.select("genre").limit(1).collect()[0]["genre"]
+    originalID = rddRes.select("id").limit(1).collect()[0]["id"]
+    #then drop row
+    rddRes = rddRes.filter(rddRes.id != originalID)
+    countdf = rddRes.groupBy("genre").agg(F.count("genre")).withColumn('original', F.lit(originalGenre))
+    if count == 0:
+        result = countdf
+    else:
+        result = result.union(countdf)
+    count = count + 1
+
+#result.show()
+#result.toPandas().to_csv("__genre_estimation.csv", encoding='utf-8')
+resultreduce = result.rdd
+#map (original -> detected), count
+resultreducekey = resultreduce.map(lambda x: ((x[2], x[0]), (x[1])))
+reduced = resultreducekey.reduceByKey(lambda x, y: x + y)
+reducedDF = spark.createDataFrame(reduced, ["original vs detected", "count"])
+reducedDF.toPandas().to_csv("__genre_js_skl.csv", encoding='utf-8')
