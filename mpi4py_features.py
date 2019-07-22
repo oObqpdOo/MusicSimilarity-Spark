@@ -486,8 +486,8 @@ do_mfcc_euclid = 1
 do_notes = 1
 do_chroma = 1
 do_bh = 1
-startbatch = 2
-endbatch = 2
+startbatch = 0
+endbatch = 1000000
 batchsize = 25
 
 # BATCH FEATURE EXTRACTION:

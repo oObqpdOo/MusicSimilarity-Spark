@@ -36,7 +36,7 @@ rank = comm.rank        # rank of this process
 status = MPI.Status()   # get MPI status object
 
 startbatch = 0
-endbatch = 100
+endbatch = 1000000
 batchsize = 25
 
 # NOTE: this function has been moved to rp_feature_io.py and is maintained here for backwards compatibility
