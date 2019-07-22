@@ -31,7 +31,21 @@ from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
 
 confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
-confLocal = SparkConf().setMaster("local").setAppName("MusicSimilarity Local")
+confCluster.set("spark.driver.memory", "3g")
+confCluster.set("spark.executor.memory", "3g")
+confCluster.set("spark.driver.memoryOverhead", "3g")
+confCluster.set("spark.executor.memoryOverhead", "3g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+confCluster.set("yarn.nodemanager.resource.memory-mb", "8192")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "2048")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "4")
+confCluster.set("spark.executor.cores", "4")
+#
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
 
@@ -403,8 +417,8 @@ song = "music/Electronic/The XX - Intro.mp3"    #100 testset
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 #get_nearest_neighbors_fast(song, "result.csv")
-get_nearest_neighbors_precise(song, "result.csv")
-#get_nearest_neighbors_full(song, "result.csv")
+#get_nearest_neighbors_precise(song, "result.csv")
+get_nearest_neighbors_full(song, "result.csv")
 
 #song = "music/Reggae/Damian Marley - Confrontation.mp3"
 #get_nearest_neighbors_fast(song, "Reggae_fast.csv")
