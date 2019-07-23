@@ -24,6 +24,7 @@ import time # for time measuring
 import datetime # for time printing
 import argparse
 import numpy as np
+import time as time
 
 from audiofile_read import * # reading wav and mp3 files
 from rp_feature_io import CSVFeatureWriter, HDF5FeatureWriter, read_csv_features, load_multiple_hdf5_feature_files
@@ -548,9 +549,8 @@ if __name__ == '__main__':
     print "File types:",
     print "ALL FILES (NO EXTENSION CHECK)" if args.noextensioncheck else audiofile_types
 
-	import time as time
-	time_dict = {}
-	tic1 = int(round(time.time() * 1000))
+    time_dict = {}
+    tic1 = int(round(time.time() * 1000))
 
 
     # BATCH RP FEATURE EXTRACTION:
@@ -558,10 +558,10 @@ if __name__ == '__main__':
                               args.pathprefix, args.label, args.append, args.appenddiff, args.noextensioncheck, args.forceresampling,
                               args.hdf5, log_AudioTypes = True)
 
-	tac1 = int(round(time.time() * 1000))
-	time_dict['MPI TIME FEATURE']= tac1 - tic1
-	#if rank == 0:
-	print("Process " + str(rank) + " time: " + str(time_dict)) 
+    tac1 = int(round(time.time() * 1000))
+    time_dict['MPI TIME FEATURE']= tac1 - tic1
+    #if rank == 0:
+    print("Process " + str(rank) + " time: " + str(time_dict)) 
 
     # EXAMPLE ON HOW TO READ THE FEATURE FILES
     #ids, features = read_feature_files(args.output_filename,feature_types)

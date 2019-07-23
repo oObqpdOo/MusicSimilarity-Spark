@@ -18,6 +18,7 @@ import essentia.streaming as ess
 from essentia.standard import *
 from pathlib import Path, PurePath
 from time import time, sleep
+import time as time
 
 # Initializations and preliminaries
 comm = MPI.COMM_WORLD   # get MPI communicator object
@@ -510,7 +511,6 @@ startbatch = 0
 endbatch = 1000000
 batchsize = 25
 
-import time as time
 time_dict = {}
 tic1 = int(round(time.time() * 1000))
 

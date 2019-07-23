@@ -549,19 +549,18 @@ if __name__ == '__main__':
     print "File types:",
     print "ALL FILES (NO EXTENSION CHECK)" if args.noextensioncheck else audiofile_types
 
-	import time as time
-	time_dict = {}
-	tic1 = int(round(time.time() * 1000))
+    time_dict = {}
+    tic1 = int(round(time.time() * 1000))
 
     # BATCH RP FEATURE EXTRACTION:
     extract_all_files_generic(args.input_path,args.output_filename,feature_types, audiofile_types,
                               args.pathprefix, args.label, args.append, args.appenddiff, args.noextensioncheck, args.forceresampling,
                               args.hdf5, log_AudioTypes = True)
 
-	tac1 = int(round(time.time() * 1000))
-	time_dict['MPI TIME FEATURE']= tac1 - tic1
-	#if rank == 0:
-	print("Process " + str(rank) + " time: " + str(time_dict)) 
+    tac1 = int(round(time.time() * 1000))
+    time_dict['MPI TIME FEATURE']= tac1 - tic1
+    #if rank == 0:
+    print("Process " + str(rank) + " time: " + str(time_dict)) 
 
     # EXAMPLE ON HOW TO READ THE FEATURE FILES
     #ids, features = read_feature_files(args.output_filename,feature_types)
