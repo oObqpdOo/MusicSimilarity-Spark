@@ -88,6 +88,18 @@ startbatch = 0
 endbatch = 1000000
 batchsize = 25
 
+import time as time
+time_dict = {}
+tic1 = int(round(time.time() * 1000))
+
 # BATCH FEATURE EXTRACTION:
 process_stuff(startbatch, endbatch, batchsize, do_mfcc_kl, do_mfcc_euclid, do_notes, do_chroma, do_bh)
+
+tac1 = int(round(time.time() * 1000))
+time_dict['MPI TIME FEATURE']= tac1 - tic1
+#if rank == 0:
+print("Process " + str(rank) + " time: " + str(time_dict)) 
+
+
+
 
