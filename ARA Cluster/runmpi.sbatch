@@ -6,7 +6,24 @@
 #SBATCH -p shared
 
 MAX = 36 as per wiki https://ara-wiki.rz.uni-jena.de/index.php?title=Hauptseite
-#SBATCH -n 36
+https://slurm.schedmd.com/cpu_management.html - tasks for the job
+-n = TASKS - usually 1 task per node - in this case: n = Nodes * CPUs = 36 * 36 or 36 * 72
+#SBATCH -n 1296
+
+
+MAX = 36 as per wiki https://ara-wiki.rz.uni-jena.de/index.php?title=Hauptseite
+-N = NODES - hard requests 36 nodes
+#SBATCH -N 36
+
+-c equals --cpus-per-task ! per TASK not per NODE - per node = #avail cpus anyway
+#SBATCH --cpus-per-task=2 
+#SBATCH --ntasks-per-core=1
+
+this allows to distribute tasks without knowledge of cpu count
+#SBATCH --ntasks-per-node=36
+ 
+#SBATCH --mem-per-cpu=5000
+
 
 Timeout
 #SBATCH --time=04:00:00
