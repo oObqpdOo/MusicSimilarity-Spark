@@ -97,7 +97,6 @@ def transpose_chroma_notes(key, scale, notes):
 
 def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
     gc.enable()
-		test
     # Loading audio file
     #will resample if sampleRate is different!
     try: 
