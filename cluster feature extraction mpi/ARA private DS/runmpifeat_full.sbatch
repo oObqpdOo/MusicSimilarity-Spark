@@ -3,11 +3,11 @@
 #SBATCH -J mpi4py_features
 #SBATCH -o mpi4py_features.out
 #SBATCH -e mpi4py_features.err
-#SBATCH --time=00:10:00
-#SBATCH -n 1296
+#SBATCH --time=04:00:00
+#SBATCH -n 648
 #SBATCH -N 36
-#SBATCH --ntasks-per-node=36
-#SBATCH --mem-per-cpu=5000
+#SBATCH --ntasks-per-node=18
+#SBATCH --mem-per-cpu=10000
 
 module load nvidia/cuda/10.1.168
 module load compiler/gcc/7.3.0

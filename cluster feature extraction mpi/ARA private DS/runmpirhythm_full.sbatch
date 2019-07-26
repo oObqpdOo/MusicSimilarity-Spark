@@ -3,7 +3,7 @@
 #SBATCH -J mpi4py_rhythm
 #SBATCH -o mpi4py_rhythm.out
 #SBATCH -e mpi4py_rhythm.err
-#SBATCH --time=00:10:00
+#SBATCH --time=04:00:00
 #SBATCH -n 648
 #SBATCH -N 36
 #SBATCH --cpus-per-task=4 
