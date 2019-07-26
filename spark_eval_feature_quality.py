@@ -52,7 +52,7 @@ count = 0
 for i in list1l[4:5]: 
     #outname = "results/testset/" + i.replace('.mp3', '').replace('music/', '').replace('/', '_').replace('mp3', '') + ".csv"
     outname = i    
-    outname = "results/genre/genre100/Klassik_Liszt-Totentanz.csv"
+    outname = "results/genre/genre1517all/Rock&Pop_Dead_To_Fall-Eternal_Gates_of_Hell.csv"
     #outname = outname.encode('ascii','ignore')    
     print outname 
     rdd = sc.textFile(outname)
@@ -63,10 +63,10 @@ for i in list1l[4:5]:
     rdd = rdd.map(lambda x: (x[0].split(','), x[1])).map(lambda x: (x[0][1], x[1]))
     #create DF
     rdd = rdd.map(lambda x: (x[0], x[1].split(',')))
-    #rdd = rdd.map(lambda x: (x[0], x[1][0], x[1][1], x[1][2], x[1][3], x[1][4], x[1][5], x[1][6], x[1][7], x[1][8], x[1][9], x[1][10], x[1][11],x[1][12]))
-    rdd = rdd.map(lambda x: (x[0], x[1][0], x[1][1], x[1][2], x[1][3], x[1][4], x[1][5], x[1][6], x[1][7], x[1][8], x[1][9], x[1][10]))
-    #rddDF = spark.createDataFrame(rdd, ["genre", "id", "key", "scale", "bpm", "rp", "rh", "bh", "notes", "chroma", "js", "skl", "mfcc", "agg"])
-    rddDF = spark.createDataFrame(rdd, ["genre", "id", "rp", "key", "scale", "notes", "bpm", "bh", "mfcc", "chroma", "skl", "agg"])
+    rdd = rdd.map(lambda x: (x[0], x[1][0], x[1][1], x[1][2], x[1][3], x[1][4], x[1][5], x[1][6], x[1][7], x[1][8], x[1][9], x[1][10], x[1][11],x[1][12]))
+    #rdd = rdd.map(lambda x: (x[0], x[1][0], x[1][1], x[1][2], x[1][3], x[1][4], x[1][5], x[1][6], x[1][7], x[1][8], x[1][9], x[1][10]))
+    rddDF = spark.createDataFrame(rdd, ["genre", "id", "key", "scale", "bpm", "rp", "rh", "bh", "notes", "chroma", "js", "skl", "mfcc", "agg"])
+    #rddDF = spark.createDataFrame(rdd, ["genre", "id", "rp", "key", "scale", "notes", "bpm", "bh", "mfcc", "chroma", "skl", "agg"])
     if count == 0:
         result = rddDF
     else:
