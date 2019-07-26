@@ -17,4 +17,4 @@ module load libs/lapack/intel-2018
 module load tools/python/2.7
 module load mpi/openmpi/3.1.2-gcc-7.3.0
 
-srun -n $SLURM_NTASKS --mpi=openmpi python mpi4py_ara_rhythm.py -rp -rh /beegfs/ja62lel/ features0/out
+srun -n $SLURM_NTASKS --mpi=openmpi python mpi4py_ara_rhythm.py -rp -rh /beegfs/ja62lel/fma_full features0/out

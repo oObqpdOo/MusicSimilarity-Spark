@@ -3,7 +3,7 @@
 #SBATCH -J mpi4py_files
 #SBATCH -o mpi4py_files.out
 #SBATCH -e mpi4py_files.err
-#SBATCH --time=00:01:00
+#SBATCH --time=00:10:00
 #SBATCH -n 1296
 #SBATCH -N 36
 #SBATCH --ntasks-per-node=36
