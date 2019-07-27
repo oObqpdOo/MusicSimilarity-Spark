@@ -276,7 +276,7 @@ def extract_all_files_generic(in_path,
             starti = start+index*step
             endi = min(start+(index+1)*step, end)
             print("calling process  " + str(rank) + " index " + str(index) + " size " + str(size) + " starti " + str(starti) + " endi " + str(endi))
-            extract_all_files(filelist[starti:endi], in_path, out_file + str(index), feature_types, label, append, no_extension_check, force_resampling, out_HDF5, log_AudioTypes, log_Errors, verbose)
+            extract_all_files(filelist[starti:endi], in_path, (out_file.encode('utf-8') + str(index)).encode('ascii', errors='ignore'), feature_types, label, append, no_extension_check, force_resampling, out_HDF5, log_AudioTypes, log_Errors, verbose)
             gc.collect()
     gc.enable()
     gc.collect()
@@ -372,7 +372,7 @@ def extract_all_files(filelist,
 
     for fil in filelist:  # iterate over all files
         try:
-            fil = fil.encode('utf-8')
+            fil = fil#.decode('utf-8')#.encode('ascii', errors='ignore')
             if n > 0:
                 elaps_time = time.time() - start_time
                 remain_time = elaps_time * n_files / n - elaps_time # n is the number of files done here
@@ -468,7 +468,6 @@ def extract_all_files(filelist,
             err += 1
             if error_logwriter:
                 error_logwriter.writerow([fil,str(e)])
-            continue
 
     try:
         if out_file:  # close all output files
