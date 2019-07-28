@@ -28,10 +28,16 @@ status = MPI.Status()   # get MPI status object
 
 gc.enable()
 filelist = []
-for filename in Path('/beegfs/ja62lel').glob('**/*.mp3'):
+for filename in Path('/beegfs/ja62lel/fma_full').glob('**/*.mp3'):
     filelist.append(filename)
-for filename in Path('/beegfs/ja62lel').glob('**/*.wav'):
+for filename in Path('/beegfs/ja62lel/fma_full').glob('**/*.wav'):
     filelist.append(filename)
+for filename in Path('/beegfs/ja62lel/fma_full').glob('**/*.aiff'):
+    filelist.append(filename) 
+for filename in Path('/beegfs/ja62lel/fma_full').glob('**/*.flac'):
+    filelist.append(filename) 
+for filename in Path('/beegfs/ja62lel/fma_full').glob('**/*.ogg'):
+    filelist.append(filename) 
 print("length of filelist" + str(len(filelist)))
 
 np.set_printoptions(threshold=np.inf)

@@ -372,7 +372,6 @@ def extract_all_files(filelist,
 
     for fil in filelist:  # iterate over all files
         try:
-            fil = fil.encode('utf-8')
             if n > 0:
                 elaps_time = time.time() - start_time
                 remain_time = elaps_time * n_files / n - elaps_time # n is the number of files done here
@@ -468,7 +467,6 @@ def extract_all_files(filelist,
             err += 1
             if error_logwriter:
                 error_logwriter.writerow([fil,str(e)])
-            continue
 
     try:
         if out_file:  # close all output files
