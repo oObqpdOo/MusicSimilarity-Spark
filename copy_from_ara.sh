@@ -1,3 +1,3 @@
 #!/bin/bash
 
-scp ara:MA/result.csv ./
+scp ara:ara/*.csv ./

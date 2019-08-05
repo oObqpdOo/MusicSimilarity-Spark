@@ -446,8 +446,8 @@ def get_nearest_neighbors_pregroup(song, outname):
     #########################################################
     mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc) / 3)
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
-    #mergedSim.limit(20).show()    
-    mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    mergedSim.limit(20).show()    
+    #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
 def get_nearest_neighbors_speed(song, outname):
     #########################################################
@@ -505,8 +505,8 @@ def get_nearest_neighbors_speed(song, outname):
     #scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_notes + scaledSim.scaled_rp + scaledSim.scaled_mfcc) / 3)
     scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_notes + scaledSim.scaled_mfcc + scaledSim.scaled_rp) / 3)
     scaledSim = scaledSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
-    #scaledSim.limit(20).show()    
-    scaledSim.toPandas().to_csv(outname, encoding='utf-8')
+    scaledSim.limit(20).show()    
+    #scaledSim.toPandas().to_csv(outname, encoding='utf-8')
 
 def get_nearest_neighbors_dataframe_old(song, outname):
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean_dataframe_old(song)
@@ -516,8 +516,8 @@ def get_nearest_neighbors_dataframe_old(song, outname):
     mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner').dropDuplicates()
     mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc) / 3)
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
-    #mergedSim.limit(20).show()    
-    mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    mergedSim.limit(20).show()    
+    #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
 def get_nearest_neighbors_dataframe(song, outname):
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean_dataframe(song)
@@ -527,8 +527,8 @@ def get_nearest_neighbors_dataframe(song, outname):
     mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner').dropDuplicates()
     mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc) / 3)
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
-    #mergedSim.limit(20).show()    
-    mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    mergedSim.limit(20).show()    
+    #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
 def get_nearest_neighbors_rdd(song, outname):
     neighbors_rp_euclidean = get_neighbors_rp_euclidean_rdd(song)
@@ -537,8 +537,8 @@ def get_nearest_neighbors_rdd(song, outname):
     mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean)
     mergedSim = mergedSim.join(neighbors_notes)
     mergedSim = mergedSim.map(lambda x: (x[0], ((x[1][0][1] + x[1][1] + x[1][0][0]) / 3))).sortBy(lambda x: x[1], ascending = True)
-    #print(mergedSim.sortBy(lambda x: x[1], ascending = True).take(20))    
-    mergedSim.sortBy(lambda x: x[1], ascending = True).toDF().toPandas().to_csv(outname, encoding='utf-8')
+    print(mergedSim.sortBy(lambda x: x[1], ascending = True).take(20))    
+    #mergedSim.sortBy(lambda x: x[1], ascending = True).toDF().toPandas().to_csv(outname, encoding='utf-8')
 
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
@@ -567,10 +567,10 @@ get_nearest_neighbors_dataframe(song, "perf_dataframe_speed.csv")
 tac4 = int(round(time.time() * 1000))
 time_dict['dataframe_speed']= tac4 - tic4
 
-tic5 = int(round(time.time() * 1000))
-get_nearest_neighbors_rdd(song, "perf_rdd.csv")
-tac5 = int(round(time.time() * 1000))
-time_dict['rdd']= tac5 - tic5
+#tic5 = int(round(time.time() * 1000))
+#get_nearest_neighbors_rdd(song, "perf_rdd.csv")
+#tac5 = int(round(time.time() * 1000))
+#time_dict['rdd']= tac5 - tic5
 
 print time_dict
 

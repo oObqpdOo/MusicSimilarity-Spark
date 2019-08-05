@@ -1,0 +1,55 @@
+#######################################################################################################
+
+Features: MFCC Eucl, Notes, RP
+Dataset 1517 Artists + private + covers80 = 11563 songs
+
+(MIT csv out)
+
+{'premerged_speed': 52075, 'dataframe_old': 63259, 'premerged_old': 149526, 'dataframe_speed': 44696, 'rdd': 1525220}
+
+cluster:________________________
+RDD (MIT csv out):      1525220ms
+PREMERGED DF:           149526ms
+PREMERGED SPEED DF:     52075ms
+UNIQUE DFs:             63259ms
+UNIQUE DFs Speed:       44696ms
+
+#######################################################################################################
+
+MANY SMALL FILES
+
+#######################################################################################################
+
+Features: MFCC Eucl, Notes, RP
+Dataset fma = 102811 songs
+
+(OHNE csv out)
+
+
+
+cluster:________________________
+PREMERGED DF:            ms
+PREMERGED SPEED DF:      ms
+UNIQUE DFs:              ms
+UNIQUE DFs Speed:        ms
+
+#######################################################################################################
+
+FEW LARGE FILES
+
+#######################################################################################################
+
+Features: MFCC Eucl, Notes, RP
+Dataset fma = 102811 songs
+
+(OHNE csv out)
+
+
+
+cluster:________________________
+PREMERGED DF:            ms
+PREMERGED SPEED DF:      ms
+UNIQUE DFs:              ms
+UNIQUE DFs Speed:        ms
+
+#######################################################################################################

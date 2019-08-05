@@ -330,8 +330,8 @@ def perform_scaling(unscaled_df):
         F.min(unscaled_df.distances_js),F.max(unscaled_df.distances_js),F.mean(unscaled_df.distances_js),F.stddev(unscaled_df.distances_js),
         F.min(unscaled_df.distances_skl),F.max(unscaled_df.distances_skl),F.mean(unscaled_df.distances_skl),F.stddev(unscaled_df.distances_skl))
     ##############################
-    var_val = aggregated.collect()[0]["stddev_samp(distances_bh)"]
-    mean_val = aggregated.collect()[0]["avg(distances_bh)"]
+    #var_val = aggregated.collect()[0]["stddev_samp(distances_bh)"]
+    #mean_val = aggregated.collect()[0]["avg(distances_bh)"]
     ##############################
     max_val = aggregated.collect()[0]["max(distances_rp)"]
     min_val = aggregated.collect()[0]["min(distances_rp)"]

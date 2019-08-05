@@ -14,12 +14,13 @@ pathname = './'
 
 
 extension = ".files"
+outname = "out0"
 filelist = []
 
 for filename in Path(pathname).glob('**/*' + extension):
     filelist.append(filename)
 
-with open("out" + extension, 'wb') as wfd:
+with open(outname + extension, 'wb') as wfd:
     for f in filelist:
         with open(str(f),'rb') as fd:
             shutil.copyfileobj(fd, wfd)
@@ -35,7 +36,7 @@ filelist = []
 for filename in Path(pathname).glob('**/*' + extension):
     filelist.append(filename)
 
-with open("out" + extension, 'wb') as wfd:
+with open(outname + extension, 'wb') as wfd:
     for f in filelist:
         with open(str(f),'rb') as fd:
             shutil.copyfileobj(fd, wfd)
@@ -51,7 +52,7 @@ filelist = []
 for filename in Path(pathname).glob('**/*' + extension):
     filelist.append(filename)
 
-with open("out" + extension, 'wb') as wfd:
+with open(outname + extension, 'wb') as wfd:
     for f in filelist:
         with open(str(f),'rb') as fd:
             shutil.copyfileobj(fd, wfd)
@@ -67,7 +68,7 @@ filelist = []
 for filename in Path(pathname).glob('**/*' + extension):
     filelist.append(filename)
 
-with open("out" + extension, 'wb') as wfd:
+with open(outname + extension, 'wb') as wfd:
     for f in filelist:
         with open(str(f),'rb') as fd:
             shutil.copyfileobj(fd, wfd)
@@ -83,7 +84,7 @@ filelist = []
 for filename in Path(pathname).glob('**/*' + extension):
     filelist.append(filename)
 
-with open("out" + extension, 'wb') as wfd:
+with open(outname + extension, 'wb') as wfd:
     for f in filelist:
         with open(str(f),'rb') as fd:
             shutil.copyfileobj(fd, wfd)
@@ -99,7 +100,7 @@ filelist = []
 for filename in Path(pathname).glob('**/*' + extension):
     filelist.append(filename)
 
-with open("out" + extension, 'wb') as wfd:
+with open(outname + extension, 'wb') as wfd:
     for f in filelist:
         with open(str(f),'rb') as fd:
             shutil.copyfileobj(fd, wfd)
@@ -115,7 +116,7 @@ filelist = []
 for filename in Path(pathname).glob('**/*' + extension):
     filelist.append(filename)
 
-with open("out" + extension, 'wb') as wfd:
+with open(outname + extension, 'wb') as wfd:
     for f in filelist:
         with open(str(f),'rb') as fd:
             shutil.copyfileobj(fd, wfd)
@@ -131,7 +132,7 @@ filelist = []
 for filename in Path(pathname).glob('**/*' + extension):
     filelist.append(filename)
 
-with open("out" + extension, 'wb') as wfd:
+with open(outname + extension, 'wb') as wfd:
     for f in filelist:
         with open(str(f),'rb') as fd:
             shutil.copyfileobj(fd, wfd)
