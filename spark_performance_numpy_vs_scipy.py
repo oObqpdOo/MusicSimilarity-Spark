@@ -130,8 +130,8 @@ def get_nearest_neighbors_scipy(song, outname):
     mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
-song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
-#song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+#song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
+song = "music/Electronic/The XX - Intro.mp3"    #100 testset
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 time_dict = {}

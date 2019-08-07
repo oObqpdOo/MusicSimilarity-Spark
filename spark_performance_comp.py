@@ -194,21 +194,12 @@ def get_neighbors_mfcc_euclidean_dataframe(song):
     #   Pre- Process MFCC for Euclidean
     #
     mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+    mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
-    meanRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][0].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    meanDfEuc = spark.createDataFrame(meanRddEuc, ["id", "mean"])
-    meanVecEuc = meanDfEuc.select(meanDfEuc["id"],list_to_vector_udf(meanDfEuc["mean"]).alias("mean"))
-    varRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    varDfEuc = spark.createDataFrame(varRddEuc, ["id", "var"])
-    varVecEuc = varDfEuc.select(varDfEuc["id"],list_to_vector_udf(varDfEuc["var"]).alias("var"))
-    covRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    covDfEuc = spark.createDataFrame(covRddEuc, ["id", "cov"])
-    covVecEuc = covDfEuc.select(covDfEuc["id"],list_to_vector_udf(covDfEuc["cov"]).alias("cov"))
-    mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='inner')
-    mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
-    assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="features")
-    mfccEucDfMerged = assembler.transform(mfccEucDf)
+    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+    mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
+    mfccEucDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
     df_vec = mfccEucDfMerged.select(mfccEucDfMerged["id"],list_to_vector_udf(mfccEucDfMerged["features"]).alias("features"))
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
@@ -268,21 +259,12 @@ def get_neighbors_mfcc_euclidean_dataframe_old(song):
     #   Pre- Process MFCC for Euclidean
     #
     mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+    mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
-    meanRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][0].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    meanDfEuc = spark.createDataFrame(meanRddEuc, ["id", "mean"])
-    meanVecEuc = meanDfEuc.select(meanDfEuc["id"],list_to_vector_udf(meanDfEuc["mean"]).alias("mean"))
-    varRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    varDfEuc = spark.createDataFrame(varRddEuc, ["id", "var"])
-    varVecEuc = varDfEuc.select(varDfEuc["id"],list_to_vector_udf(varDfEuc["var"]).alias("var"))
-    covRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    covDfEuc = spark.createDataFrame(covRddEuc, ["id", "cov"])
-    covVecEuc = covDfEuc.select(covDfEuc["id"],list_to_vector_udf(covDfEuc["cov"]).alias("cov"))
-    mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='inner')
-    mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
-    assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="features")
-    mfccEucDfMerged = assembler.transform(mfccEucDf)
+    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+    mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
+    mfccEucDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
     df_vec = mfccEucDfMerged.select(mfccEucDfMerged["id"],list_to_vector_udf(mfccEucDfMerged["features"]).alias("features"))
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
@@ -374,22 +356,14 @@ def get_nearest_neighbors_pregroup(song, outname):
     notesDf = spark.createDataFrame(notes, ["id", "key", "scale", "notes"])
     #########################################################
     #   Pre- Process MFCC for Euclidean
+    #
     mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+    mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
-    meanRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][0].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    meanDfEuc = spark.createDataFrame(meanRddEuc, ["id", "mean"])
-    meanVecEuc = meanDfEuc.select(meanDfEuc["id"],list_to_vector_udf(meanDfEuc["mean"]).alias("mean"))
-    varRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    varDfEuc = spark.createDataFrame(varRddEuc, ["id", "var"])
-    varVecEuc = varDfEuc.select(varDfEuc["id"],list_to_vector_udf(varDfEuc["var"]).alias("var"))
-    covRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    covDfEuc = spark.createDataFrame(covRddEuc, ["id", "cov"])
-    covVecEuc = covDfEuc.select(covDfEuc["id"],list_to_vector_udf(covDfEuc["cov"]).alias("cov"))
-    mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='inner')
-    mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
-    assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="mfccEuc")
-    mfccEucDfMerged = assembler.transform(mfccEucDf).select("id", "mfccEuc").dropDuplicates()
+    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+    mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
+    mfccEucDfMerged = spark.createDataFrame(mfccVec, ["id", "mfccEuc"])
     #########################################################
     #   Gather all features in one dataframe
     #
@@ -461,21 +435,12 @@ def get_nearest_neighbors_speed(song, outname):
     #   Pre- Process MFCC for Euclidean
     #
     mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+    mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
-    meanRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][0].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    meanDfEuc = spark.createDataFrame(meanRddEuc, ["id", "mean"])
-    meanVecEuc = meanDfEuc.select(meanDfEuc["id"],list_to_vector_udf(meanDfEuc["mean"]).alias("mean"))
-    varRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    varDfEuc = spark.createDataFrame(varRddEuc, ["id", "var"])
-    varVecEuc = varDfEuc.select(varDfEuc["id"],list_to_vector_udf(varDfEuc["var"]).alias("var"))
-    covRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    covDfEuc = spark.createDataFrame(covRddEuc, ["id", "cov"])
-    covVecEuc = covDfEuc.select(covDfEuc["id"],list_to_vector_udf(covDfEuc["cov"]).alias("cov"))
-    mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='inner')
-    mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
-    assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="mfccEuc")
-    mfccEucDfMerged = assembler.transform(mfccEucDf).select("id", "mfccEuc").dropDuplicates()
+    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+    mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
+    mfccEucDfMerged = spark.createDataFrame(mfccVec, ["id", "mfccEuc"])
     #########################################################
     #   Gather all features in one dataframe
     #
@@ -528,8 +493,8 @@ def get_nearest_neighbors_rdd(song, outname):
     #mergedSim.sortBy(lambda x: x[1], ascending = True).toDF().toPandas().to_csv(outname, encoding='utf-8')
 
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
-song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
-#song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+#song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
+song = "music/Electronic/The XX - Intro.mp3"    #100 testset
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 time_dict = {}

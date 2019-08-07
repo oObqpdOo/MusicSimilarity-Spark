@@ -203,47 +203,27 @@ chromaDf = spark.createDataFrame(chromaRdd, ["id", "chroma"])
 chromaVec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
 
 #########################################################
-#   Pre- Process MFCC for SKL and JS
-#
-
-mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")
-mfcc = mfcc.map(lambda x: x.split(';'))
-meanRdd = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-meanDf = spark.createDataFrame(meanRdd, ["id", "mean"])
-meanVec = meanDf.select(meanDf["id"],list_to_vector_udf(meanDf["mean"]).alias("mean"))
-#meanVec.first()
-covRdd = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-covDf = spark.createDataFrame(covRdd, ["id", "cov"])
-covVec = covDf.select(covDf["id"],list_to_vector_udf(covDf["cov"]).alias("cov"))
-#covVec.first()
-mfccDf = meanVec.join(covVec, on=['id'], how='inner').dropDuplicates()
-assembler = VectorAssembler(inputCols=["mean", "cov"],outputCol="features")
-mfccDfMerged = assembler.transform(mfccDf)
-#print("Assembled columns 'mean', 'var', 'cov' to vector column 'features'")
-#mfccDfMerged.select("features", "id").show(truncate=False)
-#mfccDfMerged.first()
-
-#########################################################
 #   Pre- Process MFCC for Euclidean
 #
 
 mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
-meanRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][0].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-meanDfEuc = spark.createDataFrame(meanRddEuc, ["id", "mean"])
-meanVecEuc = meanDfEuc.select(meanDfEuc["id"],list_to_vector_udf(meanDfEuc["mean"]).alias("mean"))
-varRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-varDfEuc = spark.createDataFrame(varRddEuc, ["id", "var"])
-varVecEuc = varDfEuc.select(varDfEuc["id"],list_to_vector_udf(varDfEuc["var"]).alias("var"))
-covRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-covDfEuc = spark.createDataFrame(covRddEuc, ["id", "cov"])
-covVecEuc = covDfEuc.select(covDfEuc["id"],list_to_vector_udf(covDfEuc["cov"]).alias("cov"))
-mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='inner')
-mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
-assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="features")
-mfccEucDfMerged = assembler.transform(mfccEucDf)
+mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
+mfccEucDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
 
+#########################################################
+#   Pre- Process MFCC for SKL and JS
+#
+mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
+mfcc = mfcc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+mfcc = mfcc.map(lambda x: x.split(';'))
+mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
+mfccDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
 
 def get_neighbors_chroma_corr_valid(song):
     df_vec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
@@ -407,39 +387,6 @@ get_nearest_neighbors_fast(song, "Electro_df_fast.csv")
 get_nearest_neighbors_precise(song, "Electro_df_precise.csv")
 get_nearest_neighbors_full(song, "Electro_df_full.csv")
 
-#song = "music/Reggae/Damian Marley - Confrontation.mp3"
-#get_nearest_neighbors_fast(song, "Reggae_fast.csv")
-#song = "music/Reggae/Damian Marley - Confrontation.mp3"
-#get_nearest_neighbors_precise(song, "Reggae_precise.csv")
-#song = "music/Reggae/Damian Marley - Confrontation.mp3"
-#get_nearest_neighbors_full(song, "Reggae_full.csv")
-
-#song = "music/Soundtrack/Flesh And Bone - Dakini_ Movement IV.mp3"
-#get_nearest_neighbors_fast(song, "Soundtrack_fast.csv")
-#song = "music/Hip Hop/Kid Cudi - Mr Rager.mp3"
-#get_nearest_neighbors_fast(song, "HipHop_fast.csv")
-#song = "music/Metal/Gojira - Global warming.mp3"
-#get_nearest_neighbors_fast(song, "Metal_fast.csv")
-#song = "music/Electronic/Dynatron - Pulse Power.mp3"
-#get_nearest_neighbors_fast(song, "Electronic 2_fast.csv")
-
-#song = "music/Soundtrack/Flesh And Bone - Dakini_ Movement IV.mp3"
-#get_nearest_neighbors_precise(song, "Soundtrack_precise.csv")
-#song = "music/Hip Hop/Kid Cudi - Mr Rager.mp3"
-#get_nearest_neighbors_precise(song, "HipHop_precise.csv")
-#song = "music/Metal/Gojira - Global warming.mp3"
-#get_nearest_neighbors_precise(song, "Metal_precise.csv")
-#song = "music/Electronic/Dynatron - Pulse Power.mp3"
-#get_nearest_neighbors_precise(song, "Electronic 2_precise.csv")
-
-#song = "music/Soundtrack/Flesh And Bone - Dakini_ Movement IV.mp3"
-#get_nearest_neighbors_full(song, "Soundtrack_full.csv")
-#song = "music/Hip Hop/Kid Cudi - Mr Rager.mp3"
-#get_nearest_neighbors_full(song, "HipHop_full.csv")
-#song = "music/Metal/Gojira - Global warming.mp3"
-#get_nearest_neighbors_full(song, "Metal_full.csv")
-#song = "music/Electronic/Dynatron - Pulse Power.mp3"
-#get_nearest_neighbors_full(song, "Electronic 2_full.csv")
 
 
 

@@ -37,29 +37,23 @@ spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrC
 
 def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
-    chroma1 = np.empty([12, length1])
+    chroma1 = np.empty([length1,12])
     length2 = chroma2_par.size/12
-    chroma2 = np.empty([12, length2])
+    chroma2 = np.empty([length2,12])
     if(length1 > length2):
-        chroma1 = chroma1_par.reshape(12, length1)
-        chroma2 = chroma2_par.reshape(12, length2)
+        chroma1 = chroma1_par.reshape(length1, 12)
+        chroma2 = chroma2_par.reshape(length2, 12)
     else:
-        chroma2 = chroma1_par.reshape(12, length1)
-        chroma1 = chroma2_par.reshape(12, length2)      
-    #full
-    #correlation = np.zeros([length1 + length2 - 1])
-    #valid
-    #correlation = np.zeros([max(length1, length2) - min(length1, length2) + 1])
-    #same
-    correlation = np.zeros([max(length1, length2)])
-    for i in range(12):
-        correlation = correlation + np.correlate(chroma1[i], chroma2[i], "same")    
-    #remove offset to get rid of initial filter peak(highpass of jump from 0-20)
-    correlation = correlation - correlation[0]
-    sos = butter(1, 0.1, 'high', analog=False, output='sos')
-    correlation = sosfilt(sos, correlation)[:]
-    return np.max(correlation)
-
+        chroma2 = chroma1_par.reshape(length1, 12)
+        chroma1 = chroma2_par.reshape(length2, 12)    
+    corr = sp.signal.correlate2d(chroma1, chroma2, mode='same')
+    transposed_chroma = corr.transpose()  
+    transposed_chroma = transposed_chroma / (min(length1, length2))
+    transposed_chroma = transposed_chroma.transpose()
+    transposed_chroma = np.transpose(transposed_chroma)
+    mean_line = transposed_chroma[6]
+    #print np.max(mean_line)
+    return np.max(mean_line)
 
 def chroma_cross_correlate_full(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
@@ -109,57 +103,31 @@ def symmetric_kullback_leibler(vec1, vec2):
     #print div
     return div
 
-#get 13 mean and 13x13 cov as vectors
-def jensen_shannon(vec1, vec2):
-    mean1 = np.empty([13, 1])
-    mean1 = vec1[0:13]
-    #print mean1
-    cov1 = np.empty([13,13])
-    cov1 = vec1[13:].reshape(13, 13)
-    #print cov1
-    mean2 = np.empty([13, 1])
-    mean2 = vec2[0:13]
-    #print mean1
-    cov2 = np.empty([13,13])
-    cov2 = vec2[13:].reshape(13, 13)
-    #print cov1
-    mean_m = 0.5 * (mean1 + mean2)
-    cov_m = 0.5 * (cov1 + mean1 * np.transpose(mean1)) + 0.5 * (cov2 + mean2 * np.transpose(mean2)) - (mean_m * np.transpose(mean_m))
-    div = 0.5 * np.log(np.linalg.det(cov_m)) - 0.25 * np.log(np.linalg.det(cov1)) - 0.25 * np.log(np.linalg.det(cov2))
-    #print("JENSEN_SHANNON_DIVERGENCE")    
-    if np.isnan(div):
-        div = np.inf
-        #div = None
-    if div <= 0:
-        div = div * (-1)
-    #print div
-    return div
 
 list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 
+
 #########################################################
-#   Pre- Process RP and RH for Euclidean
+#   Pre- Process RP for Euclidean
 #
-rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
+rp = sc.textFile("features/out[0-9]*.rp")
 rp = rp.map(lambda x: x.split(","))
-kv_rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
-rh = sc.textFile("features[0-9]*/out[0-9]*.rh")
-rh = rh.map(lambda x: x.split(","))
-kv_rh = rh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
+kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
 
 #########################################################
 #   Pre- Process BH for Euclidean
 #
 
-bh = sc.textFile("features[0-9]*/out[0-9]*.bh")
+bh = sc.textFile("features/out[0-9]*.bh")
 bh = bh.map(lambda x: x.split(";"))
 kv_bh = bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
+
 
 #########################################################
 #   Pre- Process Notes for Levenshtein
 #
 
-notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
+notes = sc.textFile("features/out[0-9]*.notes")
 notes = notes.map(lambda x: x.split(';'))
 notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
 notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
@@ -168,7 +136,7 @@ notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ',
 #   Pre- Process MFCC for SKL and JS
 #
 
-mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")
+mfcc = sc.textFile("features/out[0-9]*.mfcckl")
 mfcc = mfcc.map(lambda x: x.split(';'))
 
 meanRdd = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
@@ -192,7 +160,7 @@ mfccDfMerged = assembler.transform(mfccDf)
 #   Pre- Process Chroma for cross-correlation
 #
 
-chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
+chroma = sc.textFile("features/out[0-9]*.chroma")
 chroma = chroma.map(lambda x: x.split(';'))
 chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 chromaDf = spark.createDataFrame(chromaRdd, ["id", "chroma"])
@@ -202,7 +170,7 @@ chromaVec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]
 #   Pre- Process MFCC for Euclidean
 #
 
-mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+mfcceuc = sc.textFile("features/out[0-9]*.mfcc")
 mfcceuc = mfcceuc.map(lambda x: x.split(';'))
 mfcceuc = mfcceuc.map(lambda x: (x[0], list(x[1:])))
 
@@ -224,16 +192,20 @@ mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
 assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="features")
 mfccEucDfMerged = assembler.transform(mfccEucDf)
 
+
 def get_neighbors_chroma_corr_valid(song):
     df_vec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
-    distance_udf = F.udf(lambda x: float(chroma_cross_correlate_valid(x, comparator_value)), DoubleType())
+    distance_udf = F.udf(lambda x: float(chroma_cross_correlate_full(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr")
-    aggregated = result.agg(F.min(result.distances_corr),F.max(result.distances_corr))
-    max_val = aggregated.collect()[0]["max(distances_corr)"]
-    min_val = aggregated.collect()[0]["min(distances_corr)"]
+    max_val = result.agg({"distances_corr": "max"}).collect()[0]
+    max_val = max_val["max(distances_corr)"]
+    min_val = result.agg({"distances_corr": "min"}).collect()[0]
+    min_val = min_val["min(distances_corr)"]
     return result.withColumn('scaled_corr', 1 - (result.distances_corr-min_val)/(max_val-min_val)).select("id", "scaled_corr")
+
+
 
 def get_neighbors_mfcc_euclidean(song):
     df_vec = mfccEucDfMerged.select(mfccEucDfMerged["id"],list_to_vector_udf(mfccEucDfMerged["features"]).alias("features"))
@@ -241,10 +213,13 @@ def get_neighbors_mfcc_euclidean(song):
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_mfcc', distance_udf(F.col('features'))).select("id", "distances_mfcc")
-    aggregated = result.agg(F.min(result.distances_mfcc),F.max(result.distances_mfcc))
-    max_val = aggregated.collect()[0]["max(distances_mfcc)"]
-    min_val = aggregated.collect()[0]["min(distances_mfcc)"]
+    max_val = result.agg({"distances_mfcc": "max"}).collect()[0]
+    max_val = max_val["max(distances_mfcc)"]
+    min_val = result.agg({"distances_mfcc": "min"}).collect()[0]
+    min_val = min_val["min(distances_mfcc)"]
     return result.withColumn('scaled_mfcc', (result.distances_mfcc-min_val)/(max_val-min_val)).select("id", "scaled_mfcc")
+
+
 
 def get_neighbors_mfcc_skl(song):
     df_vec = mfccDfMerged.select(mfccDfMerged["id"],list_to_vector_udf(mfccDfMerged["features"]).alias("features"))
@@ -255,25 +230,11 @@ def get_neighbors_mfcc_skl(song):
     result = df_vec.withColumn('distances_skl', distance_udf(F.col('features'))).select("id", "distances_skl")
     #thresholding 
     #result = result.filter(result.distances_skl <= 1000)  
-    aggregated = result.agg(F.min(result.distances_skl),F.max(result.distances_skl))
-    max_val = aggregated.collect()[0]["max(distances_skl)"]
-    min_val = aggregated.collect()[0]["min(distances_skl)"]
+    max_val = result.agg({"distances_skl": "max"}).collect()[0]
+    max_val = max_val["max(distances_skl)"]
+    min_val = result.agg({"distances_skl": "min"}).collect()[0]
+    min_val = min_val["min(distances_skl)"]
     return result.withColumn('scaled_skl', (result.distances_skl-min_val)/(max_val-min_val)).select("id", "scaled_skl")
-
-def get_neighbors_mfcc_js(song):
-    df_vec = mfccDfMerged.select(mfccDfMerged["id"],list_to_vector_udf(mfccDfMerged["features"]).alias("features"))
-    filterDF = df_vec.filter(df_vec.id == song)
-    comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
-    #print comparator_value
-    distance_udf = F.udf(lambda x: float(jensen_shannon(x, comparator_value)), DoubleType())
-    result = df_vec.withColumn('distances_js', distance_udf(F.col('features'))).select("id", "distances_js")
-    #drop non valid rows    
-    #result = result.filter(result.distances_js.isNotNull())
-    result = result.filter(result.distances_js != np.inf)    
-    aggregated = result.agg(F.min(result.distances_js),F.max(result.distances_js))
-    max_val = aggregated.collect()[0]["max(distances_js)"]
-    min_val = aggregated.collect()[0]["min(distances_js)"]
-    return result.withColumn('scaled_js', (result.distances_js-min_val)/(max_val-min_val)).select("id", "scaled_js")
 
 def get_neighbors_rp_euclidean(song):
     comparator = kv_rp.lookup(song)
@@ -283,23 +244,12 @@ def get_neighbors_rp_euclidean(song):
     comparator_value = Vectors.dense(comparator[0])
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_rp', distance_udf(F.col('features'))).select("id", "distances_rp")
-    aggregated = result.agg(F.min(result.distances_rp),F.max(result.distances_rp))
-    max_val = aggregated.collect()[0]["max(distances_rp)"]
-    min_val = aggregated.collect()[0]["min(distances_rp)"]
+    max_val = result.agg({"distances_rp": "max"}).collect()[0]
+    max_val = max_val["max(distances_rp)"]
+    min_val = result.agg({"distances_rp": "min"}).collect()[0]
+    min_val = min_val["min(distances_rp)"]
     return result.withColumn('scaled_rp', (result.distances_rp-min_val)/(max_val-min_val)).select("id", "scaled_rp")
 
-def get_neighbors_rh_euclidean(song):
-    comparator = kv_rh.lookup(song)
-    comparator_value = comparator[0]
-    df = spark.createDataFrame(kv_rh, ["id", "features"])
-    df_vec = df.select(df["id"],list_to_vector_udf(df["features"]).alias("features"))
-    comparator_value = Vectors.dense(comparator[0])
-    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
-    result = df_vec.withColumn('distances_rh', distance_udf(F.col('features'))).select("id", "distances_rh")
-    aggregated = result.agg(F.min(result.distances_rh),F.max(result.distances_rh))
-    max_val = aggregated.collect()[0]["max(distances_rh)"]
-    min_val = aggregated.collect()[0]["min(distances_rh)"]
-    return result.withColumn('scaled_rh', (result.distances_rh-min_val)/(max_val-min_val)).select("id", "scaled_rh")
 
 def get_neighbors_notes(song):
     df = spark.createDataFrame(notes, ["id", "key", "scale", "notes"])
@@ -309,10 +259,12 @@ def get_neighbors_notes(song):
     df_levenshtein = df_merged.withColumn("distances_levenshtein", levenshtein(col("notes"), col("compare")))
     #df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()    
     result = df_levenshtein.select("id", "key", "scale", "distances_levenshtein")
-    aggregated = result.agg(F.min(result.distances_levenshtein),F.max(result.distances_levenshtein))
-    max_val = aggregated.collect()[0]["max(distances_levenshtein)"]
-    min_val = aggregated.collect()[0]["min(distances_levenshtein)"]
+    max_val = result.agg({"distances_levenshtein": "max"}).collect()[0]
+    max_val = max_val["max(distances_levenshtein)"]
+    min_val = result.agg({"distances_levenshtein": "min"}).collect()[0]
+    min_val = min_val["min(distances_levenshtein)"]
     return result.withColumn('scaled_levenshtein', (result.distances_levenshtein-min_val)/(max_val-min_val)).select("id", "key", "scale", "scaled_levenshtein")
+
 
 def get_neighbors_bh_euclidean(song):
     df = spark.createDataFrame(kv_bh, ["id", "bpm", "features"])
@@ -320,45 +272,47 @@ def get_neighbors_bh_euclidean(song):
     comparator_value = filterDF.collect()[0][2]
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df.withColumn('distances_bh', distance_udf(F.col('features'))).select("id", "bpm", "distances_bh")
-    aggregated = result.agg(F.min(result.distances_bh),F.max(result.distances_bh))
-    max_val = aggregated.collect()[0]["max(distances_bh)"]
-    min_val = aggregated.collect()[0]["min(distances_bh)"]
+    max_val = result.agg({"distances_bh": "max"}).collect()[0]
+    max_val = max_val["max(distances_bh)"]
+    min_val = result.agg({"distances_bh": "min"}).collect()[0]
+    min_val = min_val["min(distances_bh)"]
     return result.withColumn('scaled_bh', (result.distances_bh-min_val)/(max_val-min_val)).select("id", "bpm", "scaled_bh")
+
+
 
 def get_nearest_neighbors(song, outname):
     neighbors_mfcc_skl = get_neighbors_mfcc_skl(song)
     neighbors_rp_euclidean = get_neighbors_rp_euclidean(song)
-    neighbors_rh_euclidean = get_neighbors_rh_euclidean(song)
     neighbors_bh_euclidean = get_neighbors_bh_euclidean(song)
     neighbors_notes = get_neighbors_notes(song)
-    neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song)
-    neighbors_mfcc_js = get_neighbors_mfcc_js(song)
     neighbors_chroma = get_neighbors_chroma_corr_valid(song)
+    neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song)
 
     mergedSim = neighbors_rp_euclidean.join(neighbors_notes, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_rh_euclidean, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_mfcc_eucl, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_mfcc_skl, on=['id'], how='inner').dropDuplicates()
-    #mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc + mergedSim.scaled_skl + mergedSim.scaled_bh) / 5)
-    mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_corr + mergedSim.scaled_mfcc + mergedSim.scaled_skl + mergedSim.scaled_js + mergedSim.scaled_rh + mergedSim.scaled_bh) / 8)
+    mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_corr + mergedSim.scaled_mfcc + mergedSim.scaled_skl + mergedSim.scaled_bh) / 6)
     #mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc) / 3)
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
     mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
-songs = sc.textFile("features[0-9]*/testset.files", use_unicode=True)
-list1 = songs.map(lambda x: x.split(':'))
-#DO NOT USE str(x[0]) USE x[0].encode('utf-8') instead!!
-list1 = list1.map(lambda x: x[0])
-list1 = list1.map(lambda x: x.replace(";","").replace(".","").replace(",","").replace(" ",""))
+
+#song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3".replace(";","").replace(".","").replace(",","").replace(" ","")    #private
+#song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
+song = "music/Oldschool/Stranger Things (Soundtrack)/26 - Rock You Like a Hurricane [Explicit].mp3".replace(";","").replace(".","").replace(",","").replace(" ","")    #100 testset
+
+
+songs = sc.textFile("features0/list1.list")
+list1 = songs.map(lambda x: "music/" + str(x) + ".mp3").map(lambda x: x.replace(";","").replace(".","").replace(",","").replace(" ",""))
 list1l = list1.collect()
 
-for i in list1l[:]: 
-    #outname = str(i).encode('utf-8','replace').replace('.mp3', '').replace('music/', '').rpartition('/')[0] + ".csv"
-    outname = "results/testset/" + i.replace('.mp3', '').replace('music/', '').replace('/', '_').replace('mp3', '').replace("[","").replace("]","") + ".csv"
-    #has to be encoded back to ascii string to print    
-    outname = outname.encode('ascii','ignore')    
-    print outname 
+for i in list1l: 
+    outname = "results/covers80/" + str(i).replace('.mp3', '').replace('music/', '').replace("[","").replace("]","").rpartition('/')[0] + ".csv"
+    print outname    
     get_nearest_neighbors(i, outname)
+
+
+
+

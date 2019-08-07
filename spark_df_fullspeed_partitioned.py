@@ -39,6 +39,9 @@ spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrC
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 #song = "music/HURRICANE1.mp3"              #small testset
 
+numPartitions = 50
+
+
 def chroma_cross_correlate(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
     chroma1 = np.empty([12, length1])
@@ -166,11 +169,11 @@ list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 #   Pre- Process RH and RP for Euclidean
 #
 
-rh = sc.textFile("features[0-9]*/out[0-9]*.rh", minPartitions=20)
+rh = sc.textFile("features[0-9]*/out[0-9]*.rh", minPartitions=numPartitions)
 rh = rh.map(lambda x: x.split(","))
 kv_rh= rh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
 
-rp = sc.textFile("features[0-9]*/out[0-9]*.rp", minPartitions=20)
+rp = sc.textFile("features[0-9]*/out[0-9]*.rp", minPartitions=numPartitions)
 rp = rp.map(lambda x: x.split(","))
 kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
 
@@ -178,7 +181,7 @@ kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").re
 #   Pre- Process BH for Euclidean
 #
 
-bh = sc.textFile("features[0-9]*/out[0-9]*.bh", minPartitions=20)
+bh = sc.textFile("features[0-9]*/out[0-9]*.bh", minPartitions=numPartitions)
 bh = bh.map(lambda x: x.split(";"))
 kv_bh = bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 
@@ -187,7 +190,7 @@ kv_bh = bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").r
 #   Pre- Process Notes for Levenshtein
 #
 
-notes = sc.textFile("features[0-9]*/out[0-9]*.notes", minPartitions=20)
+notes = sc.textFile("features[0-9]*/out[0-9]*.notes", minPartitions=numPartitions)
 notes = notes.map(lambda x: x.split(';'))
 notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
 notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
@@ -196,53 +199,34 @@ notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ',
 #   Pre- Process Chroma for cross-correlation
 #
 
-chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma", minPartitions=20)
+chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma", minPartitions=numPartitions)
 chroma = chroma.map(lambda x: x.split(';'))
 chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 chromaDf = spark.createDataFrame(chromaRdd, ["id", "chroma"])
 chromaVec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
 
 #########################################################
-#   Pre- Process MFCC for SKL and JS
-#
-
-mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl", minPartitions=20)
-mfcc = mfcc.map(lambda x: x.split(';'))
-meanRdd = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-meanDf = spark.createDataFrame(meanRdd, ["id", "mean"])
-meanVec = meanDf.select(meanDf["id"],list_to_vector_udf(meanDf["mean"]).alias("mean"))
-#meanVec.first()
-covRdd = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-covDf = spark.createDataFrame(covRdd, ["id", "cov"])
-covVec = covDf.select(covDf["id"],list_to_vector_udf(covDf["cov"]).alias("cov"))
-#covVec.first()
-mfccDf = meanVec.join(covVec, on=['id'], how='inner').dropDuplicates()
-assembler = VectorAssembler(inputCols=["mean", "cov"],outputCol="features")
-mfccDfMerged = assembler.transform(mfccDf)
-#print("Assembled columns 'mean', 'var', 'cov' to vector column 'features'")
-#mfccDfMerged.select("features", "id").show(truncate=False)
-#mfccDfMerged.first()
-
-#########################################################
 #   Pre- Process MFCC for Euclidean
 #
 
-mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc", minPartitions=20)
+mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
-meanRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][0].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-meanDfEuc = spark.createDataFrame(meanRddEuc, ["id", "mean"])
-meanVecEuc = meanDfEuc.select(meanDfEuc["id"],list_to_vector_udf(meanDfEuc["mean"]).alias("mean"))
-varRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-varDfEuc = spark.createDataFrame(varRddEuc, ["id", "var"])
-varVecEuc = varDfEuc.select(varDfEuc["id"],list_to_vector_udf(varDfEuc["var"]).alias("var"))
-covRddEuc = mfcceuc.map(lambda x: (x[0],(x[1][2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-covDfEuc = spark.createDataFrame(covRddEuc, ["id", "cov"])
-covVecEuc = covDfEuc.select(covDfEuc["id"],list_to_vector_udf(covDfEuc["cov"]).alias("cov"))
-mfccEucDf = meanVecEuc.join(varVecEuc, on=['id'], how='inner')
-mfccEucDf = mfccEucDf.join(covVecEuc, on=['id'], how='inner').dropDuplicates()
-assembler = VectorAssembler(inputCols=["mean", "var", "cov"],outputCol="features")
-mfccEucDfMerged = assembler.transform(mfccEucDf)
+mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
+mfccEucDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
+
+#########################################################
+#   Pre- Process MFCC for SKL and JS
+#
+mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
+mfcc = mfcc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+mfcc = mfcc.map(lambda x: x.split(';'))
+mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
+mfccDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
 
 
 def get_neighbors_chroma_corr_valid(song):
@@ -394,18 +378,16 @@ def get_nearest_neighbors_precise(song, outname):
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
     mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
-def get_nearest_neighbors_pre_filtered(song, outname):
-    pass
 
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
-#song = "music/Electronic/The XX - Intro.mp3"    #100 testset
-
+song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+#song = "music/Oldschool/Raid the Arcade - Armada/12 - Rock You Like a Hurricane.mp3"
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
-#get_nearest_neighbors_fast(song, "Electro_df_fast.csv")
-get_nearest_neighbors_precise(song, "Electro_df_precise.csv")
-get_nearest_neighbors_full(song, "Electro_df_full.csv")
+get_nearest_neighbors_fast(song, "full_fast.csv")
+get_nearest_neighbors_precise(song, "full_precise.csv")
+get_nearest_neighbors_full(song, "full_all.csv")
 
 
 
