@@ -14,6 +14,27 @@ PREMERGED SPEED DF:     52075ms
 UNIQUE DFs:             63259ms
 UNIQUE DFs Speed:       44696ms
 
+
+#######################################################################################################
+
+ALL DS, SINGLE FILE, NO CSV
+
+#######################################################################################################
+
+Features: MFCC Eucl, Notes, RP
+Dataset fma = 114139 songs
+
+{'premerged_speed': 101893, 'dataframe_old': 206728, 'premerged_old': 247760, 'dataframe_speed': 154628}
+
+
+(OHNE csv out)
+
+cluster:________________________
+PREMERGED DF:            247760ms
+PREMERGED SPEED DF:      101893ms
+UNIQUE DFs:              206728ms
+UNIQUE DFs Speed:        154628ms
+
 #######################################################################################################
 
 MANY SMALL FILES
