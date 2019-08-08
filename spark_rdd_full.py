@@ -111,6 +111,10 @@ def jensen_shannon(vec1, vec2):
     return div
 
 #get 13 mean and 13x13 cov as vectors
+def is_invertible(a):
+    return a.shape[0] == a.shape[1] and np.linalg.matrix_rank(a) == a.shape[0]
+
+#get 13 mean and 13x13 cov as vectors
 def symmetric_kullback_leibler(vec1, vec2):
     mean1 = np.empty([13, 1])
     mean1 = vec1[0:13]
@@ -123,11 +127,12 @@ def symmetric_kullback_leibler(vec1, vec2):
     #print mean1
     cov2 = np.empty([13,13])
     cov2 = vec2[13:].reshape(13, 13)
-    #elem1 = np.trace(cov1 * np.linalg.inv(cov2))
-    #elem2 = np.trace(cov2 * np.linalg.inv(cov1))
-    #elem3 = np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) 
-    d = 13
-    div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
+    if (is_invertible(cov1) and is_invertible(cov2)):
+        d = 13
+        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
+    else: 
+        div = np.inf
+        print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
     #print div
     return div
 
@@ -274,7 +279,8 @@ def get_neighbors_mfcc_skl(song):
     comparator = mfccVec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
     comparator_value = Vectors.dense(comparator[0])
     resultMfcc = mfccVec.map(lambda x: (x[0], symmetric_kullback_leibler(np.array(x[1]), np.array(comparator_value))))
-    resultMfcc = resultMfcc.filter(lambda x: x[1] <= 100)  
+    #resultMfcc = resultMfcc.filter(lambda x: x[1] <= 100)      
+    resultMfcc = resultMfcc.filter(lambda x: x[1] != np.inf)        
     max_val = resultMfcc.max(lambda x:x[1])[1]
     min_val = resultMfcc.min(lambda x:x[1])[1]  
     resultMfcc = resultMfcc.map(lambda x: (x[0], (x[1]-min_val)/(max_val-min_val)))

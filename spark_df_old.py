@@ -135,7 +135,8 @@ def jensen_shannon(vec1, vec2):
     #print div
     return div
 
-
+def is_invertible(a):
+    return a.shape[0] == a.shape[1] and np.linalg.matrix_rank(a) == a.shape[0]
 
 #get 13 mean and 13x13 cov as vectors
 def symmetric_kullback_leibler(vec1, vec2):
@@ -150,14 +151,14 @@ def symmetric_kullback_leibler(vec1, vec2):
     #print mean1
     cov2 = np.empty([13,13])
     cov2 = vec2[13:].reshape(13, 13)
-    #elem1 = np.trace(cov1 * np.linalg.inv(cov2))
-    #elem2 = np.trace(cov2 * np.linalg.inv(cov1))
-    #elem3 = np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) 
-    d = 13
-    div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
+    if (is_invertible(cov1) and is_invertible(cov2)):
+        d = 13
+        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
+    else: 
+        div = np.inf
+        print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
     #print div
     return div
-
 
 list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 
@@ -239,6 +240,7 @@ def get_neighbors_mfcc_skl(song):
     result = df_vec.withColumn('distances_skl', distance_udf(F.col('features'))).select("id", "distances_skl")
     #thresholding 
     #result = result.filter(result.distances_skl <= 100)  
+    result = result.filter(result.distances_skl != np.inf)    
     max_val = result.agg({"distances_skl": "max"}).collect()[0]
     max_val = max_val["max(distances_skl)"]
     min_val = result.agg({"distances_skl": "min"}).collect()[0]
