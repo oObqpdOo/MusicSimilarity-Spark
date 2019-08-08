@@ -85,7 +85,7 @@ def chroma_cross_correlate_numpy(chroma1_par, chroma2_par):
 list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 
 #########################################################
-#   Pre- Process Chroma for cross-correlation
+#   Pre- Process Chroma for cross-correlation OLD
 #
 
 chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
@@ -94,8 +94,22 @@ chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace("
 chromaDf = sqlContext.createDataFrame(chromaRdd, ["id", "chroma"])
 chromaVec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
 
+#########################################################
+#   Pre- Process Chroma for cross-correlation NO UDF
+#
+
+chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
+chroma = chroma.map(lambda x: x.replace(' ', '').replace(';', ','))
+chroma = chroma.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+chroma = chroma.map(lambda x: x.split(';'))
+#try to filter out empty elements
+chroma = chroma.filter(lambda x: (not x[1] == '[]') and (x[1].startswith("[[0.") or x[1].startswith("[[1.")))
+chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
+chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
+chromaDf = spark.createDataFrame(chromaVec, ["id", "chroma"])
+
 def get_neighbors_chroma_corr_numpy(song):
-    df_vec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
+    df_vec = chromaDf
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     distance_udf = F.udf(lambda x: float(chroma_cross_correlate_numpy(x, comparator_value)), DoubleType())
@@ -106,7 +120,7 @@ def get_neighbors_chroma_corr_numpy(song):
     return result.withColumn('scaled_corr', 1 - (result.distances_corr-min_val)/(max_val-min_val)).select("id", "scaled_corr")
 
 def get_neighbors_chroma_corr_scipy(song):
-    df_vec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
+    df_vec = chromaDf
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     distance_udf = F.udf(lambda x: float(chroma_cross_correlate_scipy(x, comparator_value)), DoubleType())

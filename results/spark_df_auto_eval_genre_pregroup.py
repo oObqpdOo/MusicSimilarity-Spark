@@ -176,34 +176,40 @@ notesDf = spark.createDataFrame(notes, ["id", "key", "scale", "notes"])
 #########################################################
 #   Pre- Process Chroma for cross-correlation
 #
+
 chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
+chroma = chroma.map(lambda x: x.replace(' ', '').replace(';', ','))
+chroma = chroma.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 chroma = chroma.map(lambda x: x.split(';'))
+#try to filter out empty elements
+chroma = chroma.filter(lambda x: (not x[1] == '[]') and (x[1].startswith("[[0.") or x[1].startswith("[[1.")))
 chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-chromaDf = spark.createDataFrame(chromaRdd, ["id", "chroma"])
-chromaDf = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
+chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
+chromaDf = spark.createDataFrame(chromaVec, ["id", "chroma"])
 
 #########################################################
 #   Pre- Process MFCC for Euclidean
 #
 
 mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
-mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace(';', ','))
 mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
 mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
-mfccEucDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
+mfccEucDfMerged = spark.createDataFrame(mfccVec, ["id", "mfccEuc"])
 
 #########################################################
 #   Pre- Process MFCC for SKL and JS
 #
+
 mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
-mfcc = mfcc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+mfcc = mfcc.map(lambda x: x.replace(' ', '').replace(';', ','))
 mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcc = mfcc.map(lambda x: x.split(';'))
-mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
 mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
-mfccDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
+mfccDfMerged = spark.createDataFrame(mfccVec, ["id", "mfccSkl"])
 
 #print(rh_df.count())
 #print(rp_df.count())

@@ -197,34 +197,38 @@ notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ',
 #
 
 chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
+chroma = chroma.map(lambda x: x.replace(' ', '').replace(';', ','))
+chroma = chroma.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 chroma = chroma.map(lambda x: x.split(';'))
+#try to filter out empty elements
+chroma = chroma.filter(lambda x: (not x[1] == '[]') and (x[1].startswith("[[0.") or x[1].startswith("[[1.")))
 chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-chromaDf = spark.createDataFrame(chromaRdd, ["id", "chroma"])
-chromaVec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
+chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
+chromaDf = spark.createDataFrame(chromaVec, ["id", "chroma"])
 
 #########################################################
 #   Pre- Process MFCC for Euclidean
 #
 
 mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
-mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace(';', ','))
 mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
 mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
 mfccEucDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
 
 #########################################################
 #   Pre- Process MFCC for SKL and JS
 #
+
 mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
-mfcc = mfcc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+mfcc = mfcc.map(lambda x: x.replace(' ', '').replace(';', ','))
 mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcc = mfcc.map(lambda x: x.split(';'))
-mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
 mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
 mfccDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
-
 
 def get_neighbors_mfcc_skl(song):
     df_vec = mfccDfMerged.select(mfccDfMerged["id"],list_to_vector_udf(mfccDfMerged["features"]).alias("features"))
@@ -234,7 +238,7 @@ def get_neighbors_mfcc_skl(song):
     distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances_skl', distance_udf(F.col('features'))).select("id", "distances_skl")
     #thresholding 
-    result = result.filter(result.distances_skl <= 100)  
+    #result = result.filter(result.distances_skl <= 100)  
     max_val = result.agg({"distances_skl": "max"}).collect()[0]
     max_val = max_val["max(distances_skl)"]
     min_val = result.agg({"distances_skl": "min"}).collect()[0]
@@ -257,7 +261,6 @@ def get_neighbors_mfcc_js(song):
     min_val = result.agg({"distances_js": "min"}).collect()[0]
     min_val = min_val["min(distances_js)"]
     return result.withColumn('scaled_js', (result.distances_js-min_val)/(max_val-min_val)).select("id", "scaled_js")
-
 
 
 def get_neighbors_rp_euclidean(song):
@@ -406,43 +409,11 @@ song = "music/Electronic/The XX - Intro.mp3"    #100 testset
 
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
-get_nearest_neighbors_fast(song, "Electro_df_old_fast.csv")
-get_nearest_neighbors_precise(song, "Electro_df_old_precise.csv")
-get_nearest_neighbors_full(song, "Electro_df_old_full.csv")
+#get_nearest_neighbors_fast(song, "df_old_fast.csv")
+#get_nearest_neighbors_precise(song, "df_old_precise.csv")
+get_nearest_neighbors_full(song, "df_old_full.csv")
 
-#song = "music/Reggae/Damian Marley - Confrontation.mp3"
-#get_nearest_neighbors_fast(song, "Reggae_fast.csv")
-#song = "music/Reggae/Damian Marley - Confrontation.mp3"
-#get_nearest_neighbors_precise(song, "Reggae_precise.csv")
-#song = "music/Reggae/Damian Marley - Confrontation.mp3"
-#get_nearest_neighbors_full(song, "Reggae_full.csv")
 
-#song = "music/Soundtrack/Flesh And Bone - Dakini_ Movement IV.mp3"
-#get_nearest_neighbors_fast(song, "Soundtrack_fast.csv")
-#song = "music/Hip Hop/Kid Cudi - Mr Rager.mp3"
-#get_nearest_neighbors_fast(song, "HipHop_fast.csv")
-#song = "music/Metal/Gojira - Global warming.mp3"
-#get_nearest_neighbors_fast(song, "Metal_fast.csv")
-#song = "music/Electronic/Dynatron - Pulse Power.mp3"
-#get_nearest_neighbors_fast(song, "Electronic 2_fast.csv")
-
-#song = "music/Soundtrack/Flesh And Bone - Dakini_ Movement IV.mp3"
-#get_nearest_neighbors_precise(song, "Soundtrack_precise.csv")
-#song = "music/Hip Hop/Kid Cudi - Mr Rager.mp3"
-#get_nearest_neighbors_precise(song, "HipHop_precise.csv")
-#song = "music/Metal/Gojira - Global warming.mp3"
-#get_nearest_neighbors_precise(song, "Metal_precise.csv")
-#song = "music/Electronic/Dynatron - Pulse Power.mp3"
-#get_nearest_neighbors_precise(song, "Electronic 2_precise.csv")
-
-#song = "music/Soundtrack/Flesh And Bone - Dakini_ Movement IV.mp3"
-#get_nearest_neighbors_full(song, "Soundtrack_full.csv")
-#song = "music/Hip Hop/Kid Cudi - Mr Rager.mp3"
-#get_nearest_neighbors_full(song, "HipHop_full.csv")
-#song = "music/Metal/Gojira - Global warming.mp3"
-#get_nearest_neighbors_full(song, "Metal_full.csv")
-#song = "music/Electronic/Dynatron - Pulse Power.mp3"
-#get_nearest_neighbors_full(song, "Electronic 2_full.csv")
 
 
 
