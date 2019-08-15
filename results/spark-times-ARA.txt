@@ -74,3 +74,51 @@ UNIQUE DFs:              ms
 UNIQUE DFs Speed:        ms
 
 #######################################################################################################
+
+NEW CONFIG FILE: 
+
+{'premerged_speed': 86843, 'dataframe_old': 200124, 'premerged_old': 226007, 'dataframe_speed': 136724}
+
+#######################################################################################################
+
+
+
+
+NO ACTION
+
+{'AGG: ': 3358, 'RH: ': 62, 'CSV: ': 8059, 'PREPROCESS: ': 78355, 'TIME: ': 556373, 'JOIN: ': 662, 'JS: ': 65, 'BH: ': 65, 'CHROMA: ': 56, 'SKL: ': 65, 'NOTE: ': 80, 'SCALE: ': 504673, 'RP: ': 97, 'MFCC: ': 73}
+
+WITH ACTIONS
+
+{'AGG: ': 2293, 'RH: ': 56868, 'CSV: ': 8260, 'PREPROCESS: ': 111353, 'TIME: ': 556298, 'JOIN: ': 19147, 'JS: ': 64167, 'BH: ': 63991, 'CHROMA: ': 64186, 'SKL: ': 64077, 'NOTE: ': 60013, 'SCALE: ': 4968, 'RP: ': 50621, 'MFCC: ': 62675}
+
+WITH COUNT
+
+{'CHROMA: ': 64700, 'CSV: ': 8128, 'PREPROCESS: ': 118485, 'TIME: ': 264908, 'JOIN: ': 20104, 'JS: ': 64348, 'AGG: ': 1097, 'RP: ': 61642, 'SCALE: ': 2052}
+
+WITHOUT COUNT -> separate mergedSim and scaledSim; no config, split in 500
+
+{'PREPROCESS: ': 112774, 'CSV: ': 5903, 'TIME: ': 158071}
+
+WITHOUT COUNT -> separate mergedSim and scaledSim; no config, split in 1152
+
+{'PREPROCESS: ': 108411, 'TIME: ': 164324, 'AGG: ': 3206, 'CSV: ': 8563, 'SCALE: ': 121123}
+
+WITHOUT COUNT -> combined mergedSim and scaledSim; no config, , split in 500 --> 1 core / exec
+
+{'CSV: ': 5569, 'PREPROCESS: ': 131697, 'TIME: ': 239968, 'GETSIM: ': 645, 'AGG: ': 188431, 'COMPARATOR: ': 50547}
+
+WITHOUT COUNT -> separate mergedSim and scaledSim; old config, , split in 500 --> 4 core / exec
+
+{'PREPROCESS: ': 131906, 'TIME: ': 167169, 'AGG: ': 2713, 'CSV: ': 10180, 'SCALE: ': 121569}
+
+
+
+{'AGG: ': 2502, 'RH: ': 64126, 'CSV: ': 7359, 'PREPROCESS: ': 126704, 'TIME: ': 612006, 'JOIN: ': 32746, 'JS: ': 67153, 'BH: ': 66892, 'CHROMA: ': 67493, 'SKL: ': 66276, 'NOTE: ': 66725, 'SCALE: ': 4642, 'RP: ': 58541, 'MFCC: ': 66135}
+
+
+
+
+
+
+

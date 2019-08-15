@@ -1,0 +1,345 @@
+ara1.py --> 500 executors
+
+{'AGG: ': 2679, 'RH: ': 24379, 'CSV: ': 8818, 'PREPROCESS: ': 116516, 'TIME: ': 354278, 'JOIN: ': 117287, 'JS: ': 24139, 'BH: ': 24104, 'CHROMA: ': 24401, 'SKL: ': 24074, 'NOTE: ': 24296, 'SCALE: ': 10512, 'RP: ': 24581, 'MFCC: ': 24097}
+
+
+ara2.py --> 32 executors - 18 cores each
+
+{'AGG: ': 1267, 'RH: ': 22121, 'CSV: ': 7017, 'PREPROCESS: ': 108219, 'TIME: ': 200508, 'JOIN: ': 6737, 'JS: ': 20283, 'BH: ': 21880, 'CHROMA: ': 20665, 'SKL: ': 20512, 'NOTE: ': 20738, 'SCALE: ': 3759, 'RP: ': 22367, 'MFCC: ': 19563}
+
+ara2.py --> 32 executors - 32 cores each
+{'AGG: ': 4253, 'RH: ': 15446, 'CSV: ': 7814, 'PREPROCESS: ': 85937, 'TIME: ': 164953, 'JOIN: ': 10504, 'JS: ': 14950, 'BH: ': 14927, 'CHROMA: ': 15651, 'SKL: ': 17742, 'NOTE: ': 15096, 'SCALE: ': 3900, 'RP: ': 16372, 'MFCC: ': 19576}
+
+ara2.py --> 32 executors - 9 cores each
+
+{'AGG: ': 855, 'RH: ': 23615, 'CSV: ': 6690, 'PREPROCESS: ': 106115, 'TIME: ': 212701, 'JOIN: ': 8574, 'JS: ': 20838, 'BH: ': 20330, 'CHROMA: ': 23037, 'SKL: ': 25062, 'NOTE: ': 22118, 'SCALE: ': 5399, 'RP: ': 20917, 'MFCC: ': 20705}
+
+ara2.py --> 32 executors - 9 cores each
+
+{'AGG: ': 923, 'RH: ': 16939, 'CSV: ': 7513, 'PREPROCESS: ': 61548, 'TIME: ': 175247, 'JOIN: ': 7616, 'JS: ': 20487, 'BH: ': 17640, 'CHROMA: ': 18120, 'SKL: ': 20485, 'NOTE: ': 19473, 'SCALE: ': 3808, 'RP: ': 16116, 'MFCC: ': 15998}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
+repartition_count = 32
+
+{'AGG: ': 947, 'RH: ': 34014, 'CSV: ': 7946, 'PREPROCESS: ': 172508, 'TIME: ': 532358, 'JOIN: ': 169518, 'JS: ': 40283, 'BH: ': 43903, 'CHROMA: ': 64635, 'SKL: ': 31996, 'NOTE: ': 36203, 'SCALE: ': 5955, 'RP: ': 36849, 'MFCC: ': 31851}
+
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "2048")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "36")
+confCluster.set("spark.executor.cores", "36")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "16")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 16
+
+{'AGG: ': 1435, 'RH: ': 15349, 'CSV: ': 5715, 'PREPROCESS: ': 62463, 'TIME: ': 155615, 'JOIN: ': 6817, 'JS: ': 15682, 'BH: ': 15328, 'CHROMA: ': 16813, 'SKL: ': 16194, 'NOTE: ': 17776, 'SCALE: ': 3419, 'RP: ': 15799, 'MFCC: ': 15566}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "2048")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "36")
+confCluster.set("spark.executor.cores", "36")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "16")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 256
+
+{'AGG: ': 822, 'RH: ': 19620, 'CSV: ': 8568, 'PREPROCESS: ': 60722, 'TIME: ': 174048, 'JOIN: ': 10884, 'JS: ': 16427, 'BH: ': 16515, 'CHROMA: ': 16859, 'SKL: ': 17513, 'NOTE: ': 17575, 'SCALE: ': 7977, 'RP: ': 16301, 'MFCC: ': 16390}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "8g")
+confCluster.set("spark.executor.memory", "8g")
+confCluster.set("spark.driver.memoryOverhead", "4g")
+confCluster.set("spark.executor.memoryOverhead", "4g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "2048")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "4")
+confCluster.set("spark.executor.cores", "4")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "256")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 256
+
+{'AGG: ': 1603, 'RH: ': 24854, 'CSV: ': 7732, 'PREPROCESS: ': 94163, 'TIME: ': 246269, 'JOIN: ': 15464, 'JS: ': 25062, 'BH: ': 25006, 'CHROMA: ': 25143, 'SKL: ': 24779, 'NOTE: ': 24871, 'SCALE: ': 4039, 'RP: ': 25049, 'MFCC: ': 24957}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "8g")
+confCluster.set("spark.executor.memory", "8g")
+confCluster.set("spark.driver.memoryOverhead", "4g")
+confCluster.set("spark.executor.memoryOverhead", "4g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "2048")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "4")
+confCluster.set("spark.executor.cores", "4")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "0")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "16")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 256
+
+{'AGG: ': 1985, 'RH: ': 27269, 'CSV: ': 6390, 'PREPROCESS: ': 99190, 'TIME: ': 270692, 'JOIN: ': 11632, 'JS: ': 27197, 'BH: ': 27175, 'CHROMA: ': 29468, 'SKL: ': 31534, 'NOTE: ': 27031, 'SCALE: ': 3660, 'RP: ': 27936, 'MFCC: ': 27577}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "32")
+confCluster.set("spark.executor.cores", "32")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "32")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 32
+
+{'AGG: ': 849, 'RH: ': 15713, 'CSV: ': 5550, 'PREPROCESS: ': 57367, 'TIME: ': 144921, 'JOIN: ': 7997, 'JS: ': 14339, 'BH: ': 14551, 'CHROMA: ': 14538, 'SKL: ': 14535, 'NOTE: ': 14629, 'SCALE: ': 3671, 'RP: ': 14453, 'MFCC: ': 14582}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "8192")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "36")
+confCluster.set("spark.executor.cores", "36")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "16")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 16
+
+{'AGG: ': 830, 'RH: ': 16935, 'CSV: ': 7262, 'PREPROCESS: ': 60962, 'TIME: ': 171595, 'JOIN: ': 9559, 'JS: ': 19231, 'NOTE: ': 16286, 'CHROMA: ': 17451, 'COMPARATOR: ': 17497, 'SKL: ': 16365, 'BH: ': 16843, 'SCALE: ': 5083, 'RP: ': 19022, 'MFCC: ': 15910}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "8192")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "36")
+confCluster.set("spark.executor.cores", "2")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "16")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 16
+
+{'AGG: ': 784, 'RH: ': 46918, 'CSV: ': 6848, 'PREPROCESS: ': 153195, 'TIME: ': 438482, 'JOIN: ': 7310, 'JS: ': 46151, 'NOTE: ': 48182, 'CHROMA: ': 49316, 'COMPARATOR: ': 48241, 'SKL: ': 46983, 'BH: ': 46450, 'SCALE: ': 3934, 'RP: ': 47282, 'MFCC: ': 46469}
+
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "8192")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "36")
+confCluster.set("spark.executor.cores", "36")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "4")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "4")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 4
+
+{'AGG: ': 1021, 'RH: ': 37003, 'CSV: ': 11210, 'PREPROCESS: ': 91182, 'TIME: ': 357265, 'JOIN: ': 5975, 'JS: ': 36503, 'NOTE: ': 41437, 'CHROMA: ': 46190, 'COMPARATOR: ': 36702, 'SKL: ': 36610, 'BH: ': 37328, 'SCALE: ': 3406, 'RP: ': 37770, 'MFCC: ': 36793}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "32g")
+confCluster.set("spark.executor.memory", "32g")
+confCluster.set("spark.driver.memoryOverhead", "16g")
+confCluster.set("spark.executor.memoryOverhead", "16g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "18")
+confCluster.set("spark.executor.cores", "18")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "32")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 64
+
+{'AGG: ': 3735, 'RH: ': 15338, 'CSV: ': 9171, 'PREPROCESS: ': 63784, 'TIME: ': 159732, 'JOIN: ': 8123, 'JS: ': 15365, 'NOTE: ': 16096, 'CHROMA: ': 15884, 'COMPARATOR: ': 15320, 'SKL: ': 15449, 'BH: ': 15237, 'SCALE: ': 3663, 'RP: ': 19704, 'MFCC: ': 15299}
+
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "16g")
+confCluster.set("spark.executor.memory", "16g")
+confCluster.set("spark.driver.memoryOverhead", "8g")
+confCluster.set("spark.executor.memoryOverhead", "8g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "9")
+confCluster.set("spark.executor.cores", "9")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "0")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "128")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 256
+
+{'AGG: ': 4409, 'RH: ': 23104, 'CSV: ': 6405, 'PREPROCESS: ': 116084, 'TIME: ': 232300, 'JOIN: ': 15157, 'JS: ': 23009, 'NOTE: ': 23131, 'CHROMA: ': 22858, 'COMPARATOR: ': 22925, 'SKL: ': 23179, 'BH: ': 22778, 'SCALE: ': 3885, 'RP: ': 23740, 'MFCC: ': 23603}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "32g")
+confCluster.set("spark.executor.memory", "32g")
+confCluster.set("spark.driver.memoryOverhead", "16g")
+confCluster.set("spark.executor.memoryOverhead", "16g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "18")
+confCluster.set("spark.executor.cores", "18")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "32")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 512
+
+{'AGG: ': 5544, 'RH: ': 16002, 'CSV: ': 8298, 'PREPROCESS: ': 63149, 'TIME: ': 171565, 'JOIN: ': 13907, 'JS: ': 16082, 'NOTE: ': 16458, 'CHROMA: ': 16171, 'COMPARATOR: ': 16713, 'SKL: ': 16307, 'BH: ': 16357, 'SCALE: ': 3905, 'RP: ': 17366, 'MFCC: ': 16252}
+
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "16g")
+confCluster.set("spark.executor.memory", "16g")
+confCluster.set("spark.driver.memoryOverhead", "8g")
+confCluster.set("spark.executor.memoryOverhead", "8g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "9")
+confCluster.set("spark.executor.cores", "9")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "0")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "64")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 512
+
+{'AGG: ': 3916, 'RH: ': 23218, 'CSV: ': 9876, 'PREPROCESS: ': 97970, 'TIME: ': 235585, 'JOIN: ': 15222, 'JS: ': 23343, 'NOTE: ': 23426, 'CHROMA: ': 23566, 'COMPARATOR: ': 22915, 'SKL: ': 23274, 'BH: ': 24392, 'SCALE: ': 4222, 'RP: ': 23748, 'MFCC: ': 23728}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "32g")
+confCluster.set("spark.executor.memory", "32g")
+confCluster.set("spark.driver.memoryOverhead", "16g")
+confCluster.set("spark.executor.memoryOverhead", "16g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "18")
+confCluster.set("spark.executor.cores", "18")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "32")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 32
+
+{'AGG: ': 1904, 'RH: ': 15632, 'CSV: ': 11840, 'PREPROCESS: ': 62325, 'TIME: ': 166156, 'JOIN: ': 8411, 'JS: ': 16982, 'NOTE: ': 15843, 'CHROMA: ': 15315, 'COMPARATOR: ': 15028, 'SKL: ': 17100, 'BH: ': 15219, 'SCALE: ': 9259, 'RP: ': 15313, 'MFCC: ': 17866}
+
+?=?=========================================================================================
+
+confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "32")
+confCluster.set("spark.executor.cores", "32")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "32")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 32
+
+{'AGG: ': 2026, 'RH: ': 14698, 'CSV: ': 9876, 'PREPROCESS: ': 56877, 'TIME: ': 154860, 'JOIN: ': 8842, 'JS: ': 14456, 'NOTE: ': 14437, 'CHROMA: ': 15488, 'COMPARATOR: ': 14381, 'SKL: ': 14358, 'BH: ': 14658, 'SCALE: ': 7542, 'RP: ': 17957, 'MFCC: ': 14434}
+
+

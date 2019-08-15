@@ -32,20 +32,22 @@ from pyspark.sql import SQLContext, Row
 import sys
 
 confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
-confCluster.set("spark.driver.memory", "3g")
-confCluster.set("spark.executor.memory", "3g")
-confCluster.set("spark.driver.memoryOverhead", "3g")
-confCluster.set("spark.executor.memoryOverhead", "3g")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
 #Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
-confCluster.set("yarn.nodemanager.resource.memory-mb", "8192")
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
 #spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
-confCluster.set("spark.yarn.executor.memoryOverhead", "2048")
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
 #set cores of each executor and the driver -> less than avail -> more executors spawn
-confCluster.set("spark.driver.cores", "4")
-confCluster.set("spark.executor.cores", "4")
-#
+confCluster.set("spark.driver.cores", "32")
+confCluster.set("spark.executor.cores", "32")
 confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "32")
 confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 32
 
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
@@ -170,6 +172,9 @@ def symmetric_kullback_leibler(vec1, vec2):
     return div
 
 
+time_dict = {}
+
+tic1 = int(round(time.time() * 1000))
 list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 
 #########################################################
@@ -257,10 +262,22 @@ featureDF = featureDF.join(chromaDf, on=['id'], how='inner')
 featureDF = featureDF.join(notesDf, on=['id'], how='inner')
 featureDF = featureDF.join(rp_df, on=['id'], how='inner')
 featureDF = featureDF.join(rh_df, on=['id'], how='inner')
-featureDF = featureDF.join(bh_df, on=['id'], how='inner').dropDuplicates()
-#print(featureDF.count())
-fullFeatureDF = featureDF#.repartition(200)
+featureDF = featureDF.join(bh_df, on=['id'], how='inner').dropDuplicates().persist()
+
+#Force lazy evaluation to evaluate with an action
+trans = featureDF.count()
+print(featureDF.count())
+
+
+#########################################################
+#  16 Nodes, 192GB RAM each, 36 cores each (+ hyperthreading = 72)
+#   -> max 1152 executors
+
+fullFeatureDF = featureDF.repartition(repartition_count)
+print(fullFeatureDF.count())
 #fullFeatureDF.toPandas().to_csv("featureDF.csv", encoding='utf-8')
+tac1 = int(round(time.time() * 1000))
+time_dict['PREPROCESS: ']= tac1 - tic1
 
 def get_neighbors_mfcc_skl(song, featureDF):
     comparator_value = song[0]["mfccSkl"]
@@ -364,16 +381,54 @@ def perform_scaling(unscaled_df):
     return result
 
 def get_nearest_neighbors(song, outname):
-    song = fullFeatureDF.filter(featureDF.id == song).collect()
-    neighbors_rp_euclidean = get_neighbors_rp_euclidean(song, fullFeatureDF).persist()
-    neighbors_rh_euclidean = get_neighbors_rh_euclidean(song, fullFeatureDF).persist()    
-    neighbors_notes = get_neighbors_notes(song, fullFeatureDF).persist()
-    neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song, fullFeatureDF).persist()
-    neighbors_bh_euclidean = get_neighbors_bh_euclidean(song, fullFeatureDF).persist()
-    neighbors_mfcc_skl = get_neighbors_mfcc_skl(song, fullFeatureDF).persist()
-    neighbors_mfcc_js = get_neighbors_mfcc_js(song, fullFeatureDF).persist()
-    neighbors_chroma = get_neighbors_chroma_corr_valid(song, fullFeatureDF).persist()
+    tic1 = int(round(time.time() * 1000))
+    song = fullFeatureDF.filter(featureDF.id == song).collect()#
+    tac1 = int(round(time.time() * 1000))
+    time_dict['COMPARATOR: ']= tac1 - tic1
 
+    tic1 = int(round(time.time() * 1000))
+    neighbors_rp_euclidean = get_neighbors_rp_euclidean(song, fullFeatureDF).persist()
+    print(neighbors_rp_euclidean.count())
+    tac1 = int(round(time.time() * 1000))
+    time_dict['RP: ']= tac1 - tic1
+    tic1 = int(round(time.time() * 1000))
+    neighbors_rh_euclidean = get_neighbors_rh_euclidean(song, fullFeatureDF).persist()   
+    print(neighbors_rh_euclidean.count()) 
+    tac1 = int(round(time.time() * 1000))
+    time_dict['RH: ']= tac1 - tic1
+    tic1 = int(round(time.time() * 1000))
+    neighbors_notes = get_neighbors_notes(song, fullFeatureDF).persist()
+    print(neighbors_notes.count())
+    tac1 = int(round(time.time() * 1000))
+    time_dict['NOTE: ']= tac1 - tic1
+    tic1 = int(round(time.time() * 1000))
+    neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song, fullFeatureDF).persist()
+    print(neighbors_mfcc_eucl.count())
+    tac1 = int(round(time.time() * 1000))
+    time_dict['MFCC: ']= tac1 - tic1
+    tic1 = int(round(time.time() * 1000))
+    neighbors_bh_euclidean = get_neighbors_bh_euclidean(song, fullFeatureDF).persist()
+    print(neighbors_bh_euclidean.count())
+    tac1 = int(round(time.time() * 1000))
+    time_dict['BH: ']= tac1 - tic1
+    tic1 = int(round(time.time() * 1000))
+    neighbors_mfcc_skl = get_neighbors_mfcc_skl(song, fullFeatureDF).persist()
+    print(neighbors_mfcc_skl.count())
+    tac1 = int(round(time.time() * 1000))
+    time_dict['SKL: ']= tac1 - tic1
+    tic1 = int(round(time.time() * 1000))
+    neighbors_mfcc_js = get_neighbors_mfcc_js(song, fullFeatureDF).persist()
+    print(neighbors_mfcc_js.count())
+    tac1 = int(round(time.time() * 1000))
+    time_dict['JS: ']= tac1 - tic1
+    tic1 = int(round(time.time() * 1000))
+    neighbors_chroma = get_neighbors_chroma_corr_valid(song, fullFeatureDF).persist()
+    print(neighbors_chroma.count())
+    tac1 = int(round(time.time() * 1000))
+    time_dict['CHROMA: ']= tac1 - tic1
+
+
+    tic1 = int(round(time.time() * 1000))
     mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_rh_euclidean, on=['id'], how='inner')
@@ -381,6 +436,9 @@ def get_nearest_neighbors(song, outname):
     mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_mfcc_skl, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner').dropDuplicates().persist()
+    print(mergedSim.count())
+    tac1 = int(round(time.time() * 1000))
+    time_dict['JOIN: ']= tac1 - tic1
 
     neighbors_rp_euclidean.unpersist()
     neighbors_rh_euclidean.unpersist()    
@@ -391,17 +449,22 @@ def get_nearest_neighbors(song, outname):
     neighbors_mfcc_js.unpersist()
     neighbors_chroma.unpersist()
 
+    tic1 = int(round(time.time() * 1000))
     scaledSim = perform_scaling(mergedSim).persist()
-
     mergedSim.unpersist()
-    
+    tac1 = int(round(time.time() * 1000))
+    time_dict['SCALE: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
     #scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_notes + scaledSim.scaled_rp + scaledSim.scaled_mfcc) / 3)
     scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_notes + scaledSim.scaled_mfcc + scaledSim.scaled_chroma + scaledSim.scaled_bh + scaledSim.scaled_rp + scaledSim.scaled_skl + scaledSim.scaled_js + scaledSim.scaled_rh) / 8)
     scaledSim = scaledSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
-    #scaledSim.show()
-    out_name = outname#"output.csv"
-    scaledSim.toPandas().to_csv(out_name, encoding='utf-8')
+    scaledSim.show()
+    #scaledSim.toPandas().to_csv(outname, encoding='utf-8')
     scaledSim.unpersist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['AGG: ']= tac1 - tic1
+    return scaledSim
 
 if len (sys.argv) < 1 :
     #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
@@ -411,16 +474,19 @@ else:
 
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
-time_dict = {}
 tic1 = int(round(time.time() * 1000))
-
-get_nearest_neighbors(song, "result_group_full.csv")
-
+res = get_nearest_neighbors(song, "result_group_full.csv").persist()
 tac1 = int(round(time.time() * 1000))
 time_dict['TIME: ']= tac1 - tic1
+
+
+tic2 = int(round(time.time() * 1000))
+res.toPandas().to_csv("result_group_full.csv", encoding='utf-8')
+tac2 = int(round(time.time() * 1000))
+time_dict['CSV: ']= tac2 - tic2
+
 print time_dict
 
-
-
+featureDF.unpersist()
 
 
