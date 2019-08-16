@@ -30,7 +30,21 @@ from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
 from pyspark.sql import SparkSession
 confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
-confLocal = SparkConf().setMaster("local").setAppName("MusicSimilarity Local")
+confCluster.set("spark.driver.memory", "1g")
+confCluster.set("spark.executor.memory", "1g")
+confCluster.set("spark.driver.memoryOverhead", "500m")
+confCluster.set("spark.executor.memoryOverhead", "500m")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "512")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "1")
+confCluster.set("spark.executor.cores", "1")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "4")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "4")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
 spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrCreate()

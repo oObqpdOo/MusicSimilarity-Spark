@@ -52,88 +52,128 @@ sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
 #spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrCreate()
 
-def naive_levenshtein(s1, s2):
-    if len(s1) < len(s2):
-        return naive_levenshtein(s2, s1)
-    # len(s1) >= len(s2)
-    if len(s2) == 0:
-        return len(s1)
-    previous_row = range(len(s2) + 1)
-    for i, c1 in enumerate(s1):
-        current_row = [i + 1]
-        for j, c2 in enumerate(s2):
-            insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
-            deletions = current_row[j] + 1       # than s2
-            substitutions = previous_row[j] + (c1 != c2)
-            current_row.append(min(insertions, deletions, substitutions))
+#https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python
+def naive_levenshtein(source, target):
+    if len(source) < len(target):
+        return naive_levenshtein(target, source)
+    # So now we have len(source) >= len(target).
+    if len(target) == 0:
+        return len(source)
+    # We call tuple() to force strings to be used as sequences
+    # ('c', 'a', 't', 's') - numpy uses them as values by default.
+    source = np.array(tuple(source))
+    target = np.array(tuple(target))
+    # We use a dynamic programming algorithm, but with the
+    # added optimization that we only need the last two rows
+    # of the matrix.
+    previous_row = np.arange(target.size + 1)
+    for s in source:
+        # Insertion (target grows longer than source):
+        current_row = previous_row + 1
+        # Substitution or matching:
+        # Target and source items are aligned, and either
+        # are different (cost of 1), or are the same (cost of 0).
+        current_row[1:] = np.minimum(
+                current_row[1:],
+                np.add(previous_row[:-1], target != s))
+        # Deletion (target grows shorter than source):
+        current_row[1:] = np.minimum(
+                current_row[1:],
+                current_row[0:-1] + 1)
         previous_row = current_row
     return previous_row[-1]
 
+def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
+    length1 = chroma1_par.size/12
+    chroma1 = np.empty([12, length1])
+    length2 = chroma2_par.size/12
+    chroma2 = np.empty([12, length2])
+    if(length1 > length2):
+        chroma1 = chroma1_par.reshape(12, length1)
+        chroma2 = chroma2_par.reshape(12, length2)
+    else:
+        chroma2 = chroma1_par.reshape(12, length1)
+        chroma1 = chroma2_par.reshape(12, length2)      
+    #full
+    #correlation = np.zeros([length1 + length2 - 1])
+    #valid
+    #correlation = np.zeros([max(length1, length2) - min(length1, length2) + 1])
+    #same
+    correlation = np.zeros([max(length1, length2)])
+    for i in range(12):
+        correlation = correlation + np.correlate(chroma1[i], chroma2[i], "same")    
+    #remove offset to get rid of initial filter peak(highpass of jump from 0-20)
+    correlation = correlation - correlation[0]
+    sos = butter(1, 0.1, 'high', analog=False, output='sos')
+    correlation = sosfilt(sos, correlation)[:]
+    return np.max(correlation)
 
-def get_neighbors_rp_euclidean_rdd_noscale(song):
-    #########################################################
-    #   Pre- Process RH for Euclidean
-    #
-    rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
-    rp = rp.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
-    rp = rp.map(lambda x: x.split(';'))
-    rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(",")))
-    kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
-    rp_vec = kv_rp.map(lambda x: (x[0], Vectors.dense(x[1])))
-    #########################################################
-    #   Get Neighbors
-    #  
-    comparator = rp_vec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    comparator_value = comparator[0]
-    resultRH = rp_vec.map(lambda x: (x[0], distance.euclidean(x[1], comparator_value[0])))
-    #########################################################
-    #   Pre- Process Notes for Levenshtein
-    #
-    notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
-    notes = notes.map(lambda x: x.split(';'))
-    notes = notes.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
-    notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[3].replace(',','').replace(' ',''), x[1], x[2]))
-    #########################################################
-    #   Get Neighbors
-    #  
-    comparator = notes.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    comparator_value = comparator[0]
-    resultNotes = notes.map(lambda x: (x[0], naive_levenshtein(x[1], comparator_value[0]), x[1], x[2]))
-    #########################################################
-    #   Pre- Process MFCC for Euclidean
-    #
-    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
-    mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
-    mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0], x[1].split(',')))
-    mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
-    #########################################################
-    #   Get Neighbors
-    #
-    comparator = mfccVec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
-    comparator_value = Vectors.dense(comparator[0])
-    resultMfcc = mfccVec.map(lambda x: (x[0], distance.euclidean(x[1], comparator_value[0])))
-    mergedSim = resultMfcc.join(resultNotes)
-    mergedSim = mergedSim.join(resultRH)
-    mergedSim.toDF().toPandas().to_csv("debug.csv", encoding='utf-8')
+#get 13 mean and 13x13 cov as vectors
+def jensen_shannon(vec1, vec2):
+    mean1 = np.empty([13, 1])
+    mean1 = vec1[0:13]
+    #print mean1
+    cov1 = np.empty([13,13])
+    cov1 = vec1[13:].reshape(13, 13)
+    #print cov1
+    mean2 = np.empty([13, 1])
+    mean2 = vec2[0:13]
+    #print mean1
+    cov2 = np.empty([13,13])
+    cov2 = vec2[13:].reshape(13, 13)
+    #print cov1
+    mean_m = 0.5 * (mean1 + mean2)
+    cov_m = 0.5 * (cov1 + mean1 * np.transpose(mean1)) + 0.5 * (cov2 + mean2 * np.transpose(mean2)) - (mean_m * np.transpose(mean_m))
+    div = 0.5 * np.log(np.linalg.det(cov_m)) - 0.25 * np.log(np.linalg.det(cov1)) - 0.25 * np.log(np.linalg.det(cov2))
+    #print("JENSEN_SHANNON_DIVERGENCE")    
+    if np.isnan(div):
+        div = np.inf
+        #div = None
+    if div <= 0:
+        div = div * (-1)
+    #print div
+    return div
+
+def is_invertible(a):
+    return a.shape[0] == a.shape[1] and np.linalg.matrix_rank(a) == a.shape[0]
+
+#get 13 mean and 13x13 cov as vectors
+def symmetric_kullback_leibler(vec1, vec2):
+    mean1 = np.empty([13, 1])
+    mean1 = vec1[0:13]
+    #print mean1
+    cov1 = np.empty([13,13])
+    cov1 = vec1[13:].reshape(13, 13)
+    #print cov1
+    mean2 = np.empty([13, 1])
+    mean2 = vec2[0:13]
+    #print mean1
+    cov2 = np.empty([13,13])
+    cov2 = vec2[13:].reshape(13, 13)
+    if (is_invertible(cov1) and is_invertible(cov2)):
+        d = 13
+        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
+    else: 
+        div = np.inf
+        print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
+    #print div
+    return div
 
 def get_neighbors_rp_euclidean_rdd(song):
     #########################################################
-    #   Pre- Process RH for Euclidean
+    #   Pre- Process RP for Euclidean
     #
     rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
-    rp = rp.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+    rp = rp.map(lambda x: x.replace(' ', '').replace(';', ','))
     rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rp = rp.map(lambda x: x.split(';'))
-    rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(",")))
+    rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(",")))
     kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
     rp_vec = kv_rp.map(lambda x: (x[0], Vectors.dense(x[1])))
     #########################################################
     #   Get Neighbors
     #  
-    comparator = rp_vec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+    comparator = rp_vec.lookup(song.replace(' ', '').replace(';', ','))
     comparator_value = comparator[0]
     resultRH = rp_vec.map(lambda x: (x[0], distance.euclidean(np.array(x[1]), np.array(comparator_value))))
     max_val = resultRH.max(lambda x:x[1])[1]
@@ -147,12 +187,12 @@ def get_neighbors_notes_rdd(song):
     #
     notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
     notes = notes.map(lambda x: x.split(';'))
-    notes = notes.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
-    notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[3].replace(',','').replace(' ',''), x[1], x[2]))
+    notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
+    notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
     #########################################################
     #   Get Neighbors
     #  
-    comparator = notes.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+    comparator = notes.lookup(song.replace(' ', '').replace(';', ','))
     comparator_value = comparator[0]
     resultNotes = notes.map(lambda x: (x[0], naive_levenshtein(str(x[1]), str(comparator_value)), x[1], x[2]))
     max_val = resultNotes.max(lambda x:x[1])[1]
@@ -165,22 +205,21 @@ def get_neighbors_mfcc_euclidean_rdd(song):
     #   Pre- Process MFCC for Euclidean
     #
     mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
-    mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+    mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace(';', ','))
     mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
-    mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
+    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
+    mfcceucVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
     #########################################################
     #   Get Neighbors
     #
-    comparator = mfccVec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(']', '').replace(';', ','))
+    comparator = mfcceucVec.lookup(song.replace(' ', '').replace(';', ','))
     comparator_value = Vectors.dense(comparator[0])
-    resultMfcc = mfccVec.map(lambda x: (x[0], distance.euclidean(np.array(x[1]), np.array(comparator_value))))
+    resultMfcc = mfcceucVec.map(lambda x: (x[0], distance.euclidean(np.array(x[1]), np.array(comparator_value))))
     max_val = resultMfcc.max(lambda x:x[1])[1]
     min_val = resultMfcc.min(lambda x:x[1])[1]  
     resultMfcc = resultMfcc.map(lambda x: (x[0], (x[1]-min_val)/(max_val-min_val)))
     return resultMfcc
-
 
 def get_neighbors_rp_euclidean_dataframe(song):
     #########################################################
@@ -497,6 +536,7 @@ def get_nearest_neighbors_dataframe(song, outname):
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
     mergedSim.limit(20).show()    
     #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    return mergedSim
 
 def get_nearest_neighbors_rdd(song, outname):
     neighbors_rp_euclidean = get_neighbors_rp_euclidean_rdd(song)
@@ -507,38 +547,45 @@ def get_nearest_neighbors_rdd(song, outname):
     mergedSim = mergedSim.map(lambda x: (x[0], ((x[1][0][1] + x[1][1] + x[1][0][0]) / 3))).sortBy(lambda x: x[1], ascending = True)
     print(mergedSim.sortBy(lambda x: x[1], ascending = True).take(20))    
     #mergedSim.sortBy(lambda x: x[1], ascending = True).toDF().toPandas().to_csv(outname, encoding='utf-8')
+    return mergedSim
 
+song = "music/Let_It_Be/beatles+Let_It_Be+06-Let_It_Be.mp3"
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 time_dict = {}
 
-tic1 = int(round(time.time() * 1000))
-get_nearest_neighbors_pregroup(song, "perf_premerged_old.csv")
-tac1 = int(round(time.time() * 1000))
-time_dict['premerged_old']= tac1 - tic1
+tic5 = int(round(time.time() * 1000))
+res = get_nearest_neighbors_rdd(song, "perf_rdd.csv")
+tac5 = int(round(time.time() * 1000))
+time_dict['rdd']= tac5 - tic5
 
-tic2 = int(round(time.time() * 1000))
-get_nearest_neighbors_speed(song, "perf_premerged_speed.csv")
-tac2 = int(round(time.time() * 1000))
-time_dict['premerged_speed']= tac2 - tic2
+res.map(lambda x: (x[0], float(x[1]))).toDF().toPandas().to_csv("perf_rdd.csv", encoding='utf-8')
 
-tic3 = int(round(time.time() * 1000))
-get_nearest_neighbors_dataframe_old(song, "perf_dataframe_old.csv")
-tac3 = int(round(time.time() * 1000))
-time_dict['dataframe_old']= tac3 - tic3
+#tic1 = int(round(time.time() * 1000))
+#get_nearest_neighbors_pregroup(song, "perf_premerged_old.csv")
+#tac1 = int(round(time.time() * 1000))
+#time_dict['premerged_old']= tac1 - tic1
+
+#tic2 = int(round(time.time() * 1000))
+#get_nearest_neighbors_speed(song, "perf_premerged_speed.csv")
+#tac2 = int(round(time.time() * 1000))
+#time_dict['premerged_speed']= tac2 - tic2
+
+#tic3 = int(round(time.time() * 1000))
+#get_nearest_neighbors_dataframe_old(song, "perf_dataframe_old.csv")
+#tac3 = int(round(time.time() * 1000))
+#time_dict['dataframe_old']= tac3 - tic3
 
 tic4 = int(round(time.time() * 1000))
-get_nearest_neighbors_dataframe(song, "perf_dataframe_speed.csv")
+res = get_nearest_neighbors_dataframe(song, "perf_dataframe_speed.csv")
 tac4 = int(round(time.time() * 1000))
 time_dict['dataframe_speed']= tac4 - tic4
 
-#tic5 = int(round(time.time() * 1000))
-#get_nearest_neighbors_rdd(song, "perf_rdd.csv")
-#tac5 = int(round(time.time() * 1000))
-#time_dict['rdd']= tac5 - tic5
+res.toPandas().to_csv("NOTES.csv", encoding='utf-8')
 
 print time_dict
 

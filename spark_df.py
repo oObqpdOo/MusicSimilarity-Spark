@@ -365,7 +365,7 @@ def get_nearest_neighbors(song, outname, origFeatureDF):
     fullFeatureDF.toPandas().to_csv(outname, encoding='utf-8')
     fullFeatureDF.unpersist()
 
-if len (sys.argv) < 1 :
+if len (sys.argv) < 2 :
     song = "music/Electronic/The XX - Intro.mp3"    #100 testset
     #song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
 else: 

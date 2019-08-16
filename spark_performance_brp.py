@@ -31,11 +31,24 @@ from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
 from pyspark.sql import SparkSession
 confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
-confLocal = SparkConf().setMaster("local").setAppName("MusicSimilarity Local")
+confCluster.set("spark.driver.memory", "1g")
+confCluster.set("spark.executor.memory", "1g")
+confCluster.set("spark.driver.memoryOverhead", "500m")
+confCluster.set("spark.executor.memoryOverhead", "500m")
+#Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
+confCluster.set("spark.yarn.executor.memoryOverhead", "512")
+#set cores of each executor and the driver -> less than avail -> more executors spawn
+confCluster.set("spark.driver.cores", "1")
+confCluster.set("spark.executor.cores", "1")
+confCluster.set("spark.dynamicAllocation.enabled", "True")
+confCluster.set("spark.dynamicAllocation.minExecutors", "4")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "4")
+confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
 spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrCreate()
-
 
 def get_neighbors_rp_euclidean_dataframe(song):
     #########################################################
@@ -95,7 +108,7 @@ def get_neighbors_rp_euclidean_dataframe_brp(song):
     df = spark.createDataFrame(kv_rp, ["id", "features"])
     df_vec = df.select(df["id"],list_to_vector_udf(df["features"]).alias("features"))
     comparator_value = Vectors.dense(comparator[0])
-    brp = BucketedRandomProjectionLSH(inputCol="features", outputCol="hashes", seed=12345, bucketLength=1.0)
+    brp = BucketedRandomProjectionLSH(inputCol="features", outputCol="hashes", seed=12345, bucketLength=100.0)
     model = brp.fit(df_vec)
     result = model.approxNearestNeighbors(df_vec, comparator_value, df_vec.count()).collect()
     #model.approxSimilarityJoin(df_vec, comparator_value, 3.0, distCol="EuclideanDistance")
@@ -125,7 +138,7 @@ def get_neighbors_mfcc_euclidean_dataframe_brp(song):
     df_vec = mfccEucDfMerged
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
-    brp = BucketedRandomProjectionLSH(inputCol="features", outputCol="hashes", seed=12345, bucketLength=1.0)
+    brp = BucketedRandomProjectionLSH(inputCol="features", outputCol="hashes", seed=12345, bucketLength=100.0)
     model = brp.fit(df_vec)
     result = model.approxNearestNeighbors(df_vec, comparator_value, df_vec.count()).collect()
     rf = spark.createDataFrame(result)
@@ -165,7 +178,8 @@ def get_nearest_neighbors_dataframe(song, outname):
     mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc) / 3)
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
     mergedSim.limit(20).show()    
-    mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    return mergedSim
 
 def get_nearest_neighbors_brp_df(song, outname):
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean_dataframe_brp(song)
@@ -176,24 +190,30 @@ def get_nearest_neighbors_brp_df(song, outname):
     mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc) / 3)
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
     mergedSim.limit(20).show()    
-    mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    return mergedSim
 
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
-song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+#song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 time_dict = {}
 
 tic1 = int(round(time.time() * 1000))
-get_nearest_neighbors_brp_df(song, "perf_dataframe_brp.csv")
+ret = get_nearest_neighbors_brp_df(song, "perf_dataframe_brp.csv")
 tac1 = int(round(time.time() * 1000))
 time_dict['dataframe_brp']= tac1 - tic1
 
+ret.toPandas().to_csv("brp.csv", encoding='utf-8')
+
 tic2 = int(round(time.time() * 1000))
-get_nearest_neighbors_dataframe(song, "perf_dataframe_speed.csv")
+ret = get_nearest_neighbors_dataframe(song, "perf_dataframe_speed.csv")
 tac2 = int(round(time.time() * 1000))
 time_dict['dataframe_speed']= tac2 - tic2
+
+ret.toPandas().to_csv("euc.csv", encoding='utf-8')
 
 print time_dict
 

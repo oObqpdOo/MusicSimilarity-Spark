@@ -31,6 +31,8 @@ from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
 import sys
 
+total1 = int(round(time.time() * 1000))
+
 confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
 confCluster.set("spark.driver.memory", "64g")
 confCluster.set("spark.executor.memory", "64g")
@@ -51,6 +53,7 @@ repartition_count = 32
 
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
+time_dict = {}
 
 def chroma_cross_correlate(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
@@ -170,9 +173,6 @@ def symmetric_kullback_leibler(vec1, vec2):
         print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
     #print div
     return div
-
-
-time_dict = {}
 
 tic1 = int(round(time.time() * 1000))
 list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
@@ -466,7 +466,7 @@ def get_nearest_neighbors(song, outname):
     time_dict['AGG: ']= tac1 - tic1
     return scaledSim
 
-if len (sys.argv) < 1 :
+if len(sys.argv) < 2:
     #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
     song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
 else: 
@@ -475,13 +475,15 @@ else:
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 tic1 = int(round(time.time() * 1000))
-res = get_nearest_neighbors(song, "result_group_full.csv").persist()
+res = get_nearest_neighbors(song, "MERGED_FULL.csv").persist()
 tac1 = int(round(time.time() * 1000))
-time_dict['TIME: ']= tac1 - tic1
+time_dict['MERGED_FULL: ']= tac1 - tic1
 
+total2 = int(round(time.time() * 1000))
+time_dict['MERGED_TOTAL: ']= total2 - total1
 
 tic2 = int(round(time.time() * 1000))
-res.toPandas().to_csv("result_group_full.csv", encoding='utf-8')
+res.toPandas().to_csv("MERGED_FULL.csv", encoding='utf-8')
 tac2 = int(round(time.time() * 1000))
 time_dict['CSV: ']= tac2 - tic2
 
