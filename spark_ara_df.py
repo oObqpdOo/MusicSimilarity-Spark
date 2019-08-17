@@ -27,6 +27,7 @@ from pyspark.sql.functions import asc
 import scipy as sp
 from scipy.signal import butter, lfilter, freqz, correlate2d, sosfilt
 import time
+import sys
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
 
@@ -410,16 +411,7 @@ def get_nearest_neighbors_full(song, outname):
     mergedSim = mergedSim.join(neighbors_mfcc_eucl, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner').dropDuplicates()
-
-    neighbors_rp_euclidean.unpersist()
-    neighbors_rh_euclidean.unpersist()    
-    neighbors_notes.unpersist()
-    neighbors_mfcc_eucl.unpersist()
-    neighbors_bh_euclidean.unpersist()
-    neighbors_mfcc_skl.unpersist()
-    neighbors_mfcc_js.unpersist()
-    neighbors_chroma.unpersist()
+    mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner').dropDuplicates().persist()
 
     mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_bh + mergedSim.scaled_mfcc + mergedSim.scaled_corr + mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_skl + mergedSim.scaled_js + mergedSim.scaled_rh) / 8)
     print(mergedSim.count())
@@ -429,6 +421,16 @@ def get_nearest_neighbors_full(song, outname):
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
     #mergedSim.show()
     #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    mergedSim.unpersist()
+    neighbors_rp_euclidean.unpersist()
+    neighbors_rh_euclidean.unpersist()    
+    neighbors_notes.unpersist()
+    neighbors_mfcc_eucl.unpersist()
+    neighbors_bh_euclidean.unpersist()
+    neighbors_mfcc_skl.unpersist()
+    neighbors_mfcc_js.unpersist()
+    neighbors_chroma.unpersist()
+
     return mergedSim
 
 def get_nearest_neighbors_fast(song, outname):
@@ -454,6 +456,11 @@ def get_nearest_neighbors_precise(song, outname):
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
 
+if len (sys.argv) < 2:
+    #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+    song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
+else: 
+    song = sys.argv[1]
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 tic1 = int(round(time.time() * 1000))
@@ -468,10 +475,13 @@ res.toPandas().to_csv("DF_FULL.csv", encoding='utf-8')
 
 print time_dict
 
-
-
-
-
+kv_rp.unpersist()
+kv_rh.unpersist()
+kv_bh.unpersist()
+notes.unpersist()
+mfccEucDfMerged.unpersist()
+mfccDfMerged.unpersist()
+chromaDf.unpersist()
 
 
 

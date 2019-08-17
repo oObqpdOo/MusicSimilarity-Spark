@@ -120,7 +120,7 @@ chroma = chroma.map(lambda x: x.split(';'))
 chroma = chroma.filter(lambda x: (not x[1] == '[]') and (x[1].startswith("[[0.") or x[1].startswith("[[1.")))
 chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
-chromaDf = spark.createDataFrame(chromaVec, ["id", "chroma"])
+chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"])
 
 def get_neighbors_chroma_corr_numpy(song):
     df_vec = chromaDf
@@ -158,8 +158,8 @@ def get_nearest_neighbors_scipy(song, outname):
     mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
-#song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
-song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
+#song = "music/Electronic/The XX - Intro.mp3"    #100 testset
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 time_dict = {}

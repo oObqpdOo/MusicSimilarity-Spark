@@ -25,6 +25,7 @@ from pyspark.sql.functions import desc
 from pyspark.sql.functions import asc
 import scipy as sp
 import time
+import sys
 from scipy.signal import butter, lfilter, freqz, correlate2d, sosfilt
 
 from pyspark import SparkContext, SparkConf
@@ -178,8 +179,9 @@ def get_neighbors_rp_euclidean_rdd(song):
     comparator = rp_vec.lookup(song.replace(' ', '').replace(';', ','))
     comparator_value = comparator[0]
     resultRP = rp_vec.map(lambda x: (x[0], distance.euclidean(np.array(x[1]), np.array(comparator_value))))
-    max_val = resultRP.max(lambda x:x[1])[1]
-    min_val = resultRP.min(lambda x:x[1])[1]  
+    stat = resultRP.map(lambda x: x[1]).stats()
+    max_val = stat.max()
+    min_val = stat.min() 
     resultRP = resultRP.map(lambda x: (x[0], (x[1]-min_val)/(max_val-min_val)))
     return resultRP 
 
@@ -201,8 +203,9 @@ def get_neighbors_mfcc_js_rdd(song):
     resultMfcc = mfccVec.map(lambda x: (x[0], jensen_shannon(np.array(x[1]), np.array(comparator_value))))
     #drop non valid rows    
     resultMfcc = resultMfcc.filter(lambda x: x[1] != np.inf)    
-    max_val = resultMfcc.max(lambda x:x[1])[1]
-    min_val = resultMfcc.min(lambda x:x[1])[1]  
+    stat = resultMfcc.map(lambda x: x[1]).stats()
+    max_val = stat.max()
+    min_val = stat.min() 
     resultMfcc = resultMfcc.map(lambda x: (x[0], (x[1]-min_val)/(max_val-min_val)))
     resultMfcc.sortBy(lambda x: x[1]).take(100)
     return resultMfcc
@@ -225,8 +228,9 @@ def get_neighbors_chroma_corr_valid_rdd(song):
     #print(np.array(comparator_value))
     resultChroma = chromaVec.map(lambda x: (x[0], chroma_cross_correlate_valid(np.array(x[1]), np.array(comparator_value))))
     #drop non valid rows    
-    max_val = resultChroma.max(lambda x:x[1])[1]
-    min_val = resultChroma.min(lambda x:x[1])[1]  
+    stat = resultChroma.map(lambda x: x[1]).stats()
+    max_val = stat.max()
+    min_val = stat.min() 
     resultChroma = resultChroma.map(lambda x: (x[0], (1 - (x[1]-min_val)/(max_val-min_val))))
     resultChroma.sortBy(lambda x: x[1]).take(100)
     return resultChroma
@@ -321,43 +325,56 @@ def get_nearest_neighbors_speed(song, outname):
     neighbors_chroma = get_neighbors_chroma_corr_valid_merge(song, fullFeatureDF).persist()
     mergedSim = neighbors_mfcc_js.join(neighbors_rp_euclidean, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner').dropDuplicates().persist()
-    neighbors_rp_euclidean.unpersist()
-    neighbors_mfcc_js.unpersist()
-    neighbors_chroma.unpersist()
     scaledSim = perform_scaling(mergedSim).persist()
-    mergedSim.unpersist()
     scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_chroma + scaledSim.scaled_rp + scaledSim.scaled_js) / 3)
     scaledSim = scaledSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
     scaledSim.show()
     #scaledSim.toPandas().to_csv(outname, encoding='utf-8')
     scaledSim.unpersist()
+    mergedSim.unpersist()
+    neighbors_rp_euclidean.unpersist()
+    neighbors_mfcc_js.unpersist()
+    neighbors_chroma.unpersist()
     return scaledSim
 
 def get_nearest_neighbors_dataframe(song, outname):
-    neighbors_mfcc_js = get_neighbors_mfcc_js_df(song)
-    neighbors_rp_euclidean = get_neighbors_rp_euclidean_df(song)
-    neighbors_chroma = get_neighbors_chroma_corr_valid_df(song)
+    neighbors_mfcc_js = get_neighbors_mfcc_js_df(song).persist()
+    neighbors_rp_euclidean = get_neighbors_rp_euclidean_df(song).persist()
+    neighbors_chroma = get_neighbors_chroma_corr_valid_df(song).persist()
     mergedSim = neighbors_mfcc_js.join(neighbors_rp_euclidean, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner').dropDuplicates()
+    mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner').dropDuplicates().persist()
     mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_corr + mergedSim.scaled_rp + mergedSim.scaled_js) / 3)
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
     #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    mergedSim.unpersist()
+    neighbors_rp_euclidean.unpersist()
+    neighbors_mfcc_js.unpersist()
+    neighbors_chroma.unpersist()
     return mergedSim
 
 def get_nearest_neighbors_rdd(song, outname):
-    neighbors_rp_euclidean = get_neighbors_rp_euclidean_rdd(song)
-    neighbors_chroma = get_neighbors_chroma_corr_valid_rdd(song)
-    neighbors_mfcc_js = get_neighbors_mfcc_js_rdd(song)
+    neighbors_rp_euclidean = get_neighbors_rp_euclidean_rdd(song).persist()
+    neighbors_chroma = get_neighbors_chroma_corr_valid_rdd(song).persist()
+    neighbors_mfcc_js = get_neighbors_mfcc_js_rdd(song).persist()
     mergedSim = neighbors_mfcc_js.join(neighbors_rp_euclidean)
-    mergedSim = mergedSim.join(neighbors_chroma)
+    mergedSim = mergedSim.join(neighbors_chroma).persist()
     mergedSim = mergedSim.map(lambda x: (x[0], ((x[1][0][1] + x[1][1] + x[1][0][0]) / 3))).sortBy(lambda x: x[1], ascending = True)
     #mergedSim.toDF().toPandas().to_csv(outname, encoding='utf-8')
+    mergedSim.unpersist()
+    neighbors_rp_euclidean.unpersist()
+    neighbors_mfcc_js.unpersist()
+    neighbors_chroma.unpersist()
     return mergedSim
 
 song = "music/Let_It_Be/beatles+Let_It_Be+06-Let_It_Be.mp3"
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
+if len(sys.argv) < 2:
+    #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
+    song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
+else: 
+    song = sys.argv[1]
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 tic2 = int(round(time.time() * 1000))

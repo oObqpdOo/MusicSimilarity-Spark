@@ -1,0 +1,16 @@
+3000 SONGS; FULL FEATURESET
+
+--> MAX AND MIN:
+
+{'RH: ': 523, 'PREPROCESS: ': 7554, 'JOIN AND AGG: ': 3771, 'RDD_TOTAL: ': 42019, 'JS: ': 8527, 'BH: ': 419, 'CHROMA: ': 7389, 'SKL: ': 10231, 'NOTE: ': 555, 'RP: ': 950, 'MFCC: ': 492}
+
+--> STAT:
+
+{'RH: ': 396, 'PREPROCESS: ': 7720, 'JOIN AND AGG: ': 3843, 'RDD_TOTAL: ': 40064, 'JS: ': 8127, 'BH: ': 434, 'CHROMA: ': 6457, 'SKL: ': 6932, 'NOTE: ': 436, 'RP: ': 888, 'MFCC: ': 417}
+
+--> STAT with config:
+
+{'RH: ': 406, 'PREPROCESS: ': 7512, 'JOIN AND AGG: ': 4292, 'RDD_TOTAL: ': 38525, 'JS: ': 6633, 'BH: ': 398, 'CHROMA: ': 6573, 'SKL: ': 6985, 'NOTE: ': 418, 'RP: ': 776, 'MFCC: ': 411}
+
+
+

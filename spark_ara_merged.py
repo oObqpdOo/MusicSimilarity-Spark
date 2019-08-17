@@ -246,14 +246,6 @@ mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").
 mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
 mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccSkl"])
 
-#print(rh_df.count())
-#print(rp_df.count())
-#print(bh_df.count())
-#print(notesDf.count())
-#print(chromaDf.count())
-#print(mfccDfMerged.count())
-#print(mfccEucDfMerged.count())
-
 #########################################################
 #   Gather all features in one dataframe
 #
@@ -267,7 +259,6 @@ featureDF = featureDF.join(bh_df, on=['id'], how='inner').dropDuplicates().persi
 #Force lazy evaluation to evaluate with an action
 trans = featureDF.count()
 print(featureDF.count())
-
 
 #########################################################
 #  16 Nodes, 192GB RAM each, 36 cores each (+ hyperthreading = 72)
@@ -427,7 +418,6 @@ def get_nearest_neighbors(song, outname):
     tac1 = int(round(time.time() * 1000))
     time_dict['CHROMA: ']= tac1 - tic1
 
-
     tic1 = int(round(time.time() * 1000))
     mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner')
@@ -440,18 +430,8 @@ def get_nearest_neighbors(song, outname):
     tac1 = int(round(time.time() * 1000))
     time_dict['JOIN: ']= tac1 - tic1
 
-    neighbors_rp_euclidean.unpersist()
-    neighbors_rh_euclidean.unpersist()    
-    neighbors_notes.unpersist()
-    neighbors_mfcc_eucl.unpersist()
-    neighbors_bh_euclidean.unpersist()
-    neighbors_mfcc_skl.unpersist()
-    neighbors_mfcc_js.unpersist()
-    neighbors_chroma.unpersist()
-
     tic1 = int(round(time.time() * 1000))
     scaledSim = perform_scaling(mergedSim).persist()
-    mergedSim.unpersist()
     tac1 = int(round(time.time() * 1000))
     time_dict['SCALE: ']= tac1 - tic1
 
@@ -461,7 +441,18 @@ def get_nearest_neighbors(song, outname):
     scaledSim = scaledSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
     scaledSim.show()
     #scaledSim.toPandas().to_csv(outname, encoding='utf-8')
+
+    neighbors_rp_euclidean.unpersist()
+    neighbors_rh_euclidean.unpersist()    
+    neighbors_notes.unpersist()
+    neighbors_mfcc_eucl.unpersist()
+    neighbors_bh_euclidean.unpersist()
+    neighbors_mfcc_skl.unpersist()
+    neighbors_mfcc_js.unpersist()
+    neighbors_chroma.unpersist()
+    mergedSim.unpersist()
     scaledSim.unpersist()
+
     tac1 = int(round(time.time() * 1000))
     time_dict['AGG: ']= tac1 - tic1
     return scaledSim
@@ -471,7 +462,6 @@ if len(sys.argv) < 2:
     song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
 else: 
     song = sys.argv[1]
-
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 tic1 = int(round(time.time() * 1000))

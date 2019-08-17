@@ -69,21 +69,29 @@ ARA CLUSTER: MFCC RP NOTES
 ARA cluster, 114210 songs
 
 {'dataframe_speed': 105789, 'premerged_speed': 99899} {'rdd': 856945, 'dataframe_speed': 112031}
+
+adaption to rdd {'rdd': 547559, 'premerged_speed': 47128, 'dataframe_speed': 102840}
 ________________________________________________________________________________________________________________
 
 ARA cluster, 11564 songs
 
 {'dataframe_speed': 27547, 'premerged_speed': 51863}
+
+adaption to rdd 
 ________________________________________________________________________________________________________________
 
 ARA cluster, 3344 songs
 
 {'dataframe_speed': 9661, 'premerged_speed': 38451}
+
+adaption to rdd 
 ________________________________________________________________________________________________________________
 
 ARA cluster, 164 songs
 
 {'dataframe_speed': 4693, 'premerged_speed': 21884}
+
+adaption to rdd 
 
 ========================================================================================================================
 ARA CLUSTER: ALL BUT NOTES
