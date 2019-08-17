@@ -272,10 +272,13 @@ mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
 #   Pre- Process Chroma for cross-correlation
 #
 chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
+chroma = chroma.map(lambda x: x.replace(' ', '').replace(';', ','))
+chroma = chroma.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 chroma = chroma.map(lambda x: x.split(';'))
-chromaRdd = chroma.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', ''),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-chromaVec = chromaRdd.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), Vectors.dense(x[1]))).persist()
-
+#try to filter out empty elements
+chroma = chroma.filter(lambda x: (not x[1] == '[]') and (x[1].startswith("[[0.") or x[1].startswith("[[1.")))
+chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ","").replace(' ', '').replace('[', '').replace(']', ''),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
+chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
 
 #Force Transformation
 rp_vec.count()
