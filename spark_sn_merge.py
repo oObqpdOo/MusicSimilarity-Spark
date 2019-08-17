@@ -257,11 +257,11 @@ featureDF = featureDF.join(rh_df, on=['id'], how='inner')
 featureDF = featureDF.join(bh_df, on=['id'], how='inner').dropDuplicates().persist()
 
 #Force lazy evaluation to evaluate with an action
-trans = featureDF.count()
-print(featureDF.count())
+#trans = featureDF.count()
+#print(featureDF.count())
 
 fullFeatureDF = featureDF.repartition(repartition_count)
-print(fullFeatureDF.count())
+#print(fullFeatureDF.count())
 #fullFeatureDF.toPandas().to_csv("featureDF.csv", encoding='utf-8')
 tac1 = int(round(time.time() * 1000))
 time_dict['PREPROCESS: ']= tac1 - tic1
@@ -375,42 +375,42 @@ def get_nearest_neighbors(song, outname):
 
     tic1 = int(round(time.time() * 1000))
     neighbors_rp_euclidean = get_neighbors_rp_euclidean(song, fullFeatureDF).persist()
-    print(neighbors_rp_euclidean.count())
+    #print(neighbors_rp_euclidean.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['RP: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_rh_euclidean = get_neighbors_rh_euclidean(song, fullFeatureDF).persist()   
-    print(neighbors_rh_euclidean.count()) 
+    #print(neighbors_rh_euclidean.count()) 
     tac1 = int(round(time.time() * 1000))
     time_dict['RH: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_notes = get_neighbors_notes(song, fullFeatureDF).persist()
-    print(neighbors_notes.count())
+    #print(neighbors_notes.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['NOTE: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song, fullFeatureDF).persist()
-    print(neighbors_mfcc_eucl.count())
+    #print(neighbors_mfcc_eucl.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['MFCC: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_bh_euclidean = get_neighbors_bh_euclidean(song, fullFeatureDF).persist()
-    print(neighbors_bh_euclidean.count())
+    #print(neighbors_bh_euclidean.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['BH: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_mfcc_skl = get_neighbors_mfcc_skl(song, fullFeatureDF).persist()
-    print(neighbors_mfcc_skl.count())
+    #print(neighbors_mfcc_skl.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['SKL: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_mfcc_js = get_neighbors_mfcc_js(song, fullFeatureDF).persist()
-    print(neighbors_mfcc_js.count())
+    #print(neighbors_mfcc_js.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['JS: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_chroma = get_neighbors_chroma_corr_valid(song, fullFeatureDF).persist()
-    print(neighbors_chroma.count())
+    #print(neighbors_chroma.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['CHROMA: ']= tac1 - tic1
 
@@ -423,7 +423,7 @@ def get_nearest_neighbors(song, outname):
     mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_mfcc_skl, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner').dropDuplicates().persist()
-    print(mergedSim.count())
+    #print(mergedSim.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['JOIN: ']= tac1 - tic1
 

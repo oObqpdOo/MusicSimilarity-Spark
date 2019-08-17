@@ -245,13 +245,13 @@ mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "features"]).persist()
 
 
 #Force Transformation
-kv_rp.count()
-kv_rh.count()
-kv_bh.count()
-notes.count()
-mfccEucDfMerged.count()
-mfccDfMerged.count()
-chromaDf.count()
+#kv_rp.count()
+#kv_rh.count()
+#kv_bh.count()
+#notes.count()
+#mfccEucDfMerged.count()
+#mfccDfMerged.count()
+#chromaDf.count()
 
 tac1 = int(round(time.time() * 1000))
 time_dict['PREPROCESS: ']= tac1 - tic1
@@ -361,42 +361,42 @@ def get_neighbors_bh_euclidean(song):
 def get_nearest_neighbors_full(song, outname):
     tic1 = int(round(time.time() * 1000))
     neighbors_rp_euclidean = get_neighbors_rp_euclidean(song).persist()
-    print(neighbors_rp_euclidean.count())
+    #print(neighbors_rp_euclidean.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['RP: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_rh_euclidean = get_neighbors_rh_euclidean(song).persist()   
-    print(neighbors_rh_euclidean.count()) 
+    #print(neighbors_rh_euclidean.count()) 
     tac1 = int(round(time.time() * 1000))
     time_dict['RH: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_notes = get_neighbors_notes(song).persist()
-    print(neighbors_notes.count())
+    #print(neighbors_notes.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['NOTE: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song).persist()
-    print(neighbors_mfcc_eucl.count())
+    #print(neighbors_mfcc_eucl.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['MFCC: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_bh_euclidean = get_neighbors_bh_euclidean(song).persist()
-    print(neighbors_bh_euclidean.count())
+    #print(neighbors_bh_euclidean.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['BH: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_mfcc_skl = get_neighbors_mfcc_skl(song).persist()
-    print(neighbors_mfcc_skl.count())
+    #print(neighbors_mfcc_skl.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['SKL: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_mfcc_js = get_neighbors_mfcc_js(song).persist()
-    print(neighbors_mfcc_js.count())
+    #print(neighbors_mfcc_js.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['JS: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_chroma = get_neighbors_chroma_corr_valid(song).persist()
-    print(neighbors_chroma.count())
+    #print(neighbors_chroma.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['CHROMA: ']= tac1 - tic1
 
@@ -414,7 +414,7 @@ def get_nearest_neighbors_full(song, outname):
     mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner').dropDuplicates().persist()
 
     mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_bh + mergedSim.scaled_mfcc + mergedSim.scaled_corr + mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_skl + mergedSim.scaled_js + mergedSim.scaled_rh) / 8)
-    print(mergedSim.count())
+    #print(mergedSim.count())
     tac1 = int(round(time.time() * 1000))
     time_dict['JOIN AND AGG: ']= tac1 - tic1
 

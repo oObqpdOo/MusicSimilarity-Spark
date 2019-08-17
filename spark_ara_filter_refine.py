@@ -186,8 +186,8 @@ featureDF = chromaDf.join(mfccDfMerged, on=["id"], how='inner')
 featureDF = featureDF.join(rp_df, on=['id'], how='inner').dropDuplicates().persist()
 
 #Force lazy evaluation to evaluate with an action
-trans = featureDF.count()
-print(featureDF.count())
+#trans = featureDF.count()
+#print(featureDF.count())
 
 
 #########################################################
@@ -195,7 +195,7 @@ print(featureDF.count())
 #   -> max 1152 executors
 
 fullFeatureDF = featureDF.repartition(repartition_count).persist()
-print(fullFeatureDF.count())
+#print(fullFeatureDF.count())
 #fullFeatureDF.toPandas().to_csv("featureDF.csv", encoding='utf-8')
 tac1 = int(round(time.time() * 1000))
 time_dict['PREPROCESS: ']= tac1 - tic1
