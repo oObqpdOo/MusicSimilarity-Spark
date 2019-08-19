@@ -99,7 +99,7 @@ def get_neighbors_chroma_corr_valid_df(song):
     #########################################################
     #   Pre- Process Chroma for cross-correlation
     #
-    chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
+    chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma", minPartitions=repartition_count)
     chroma = chroma.map(lambda x: x.replace(' ', '').replace(';', ','))
     chroma = chroma.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     chroma = chroma.map(lambda x: x.split(';'))
@@ -108,8 +108,8 @@ def get_neighbors_chroma_corr_valid_df(song):
     chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
     chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
     chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"])
-    df_vec = chromaDf
-    filterDF = df_vec.filter(df_vec.id == song)
+    df_vec = chromaDf.persist()
+    filterDF = df_vec.filter(df_vec.id == song).persist()
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     distance_udf = F.udf(lambda x: float(chroma_cross_correlate_valid(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr")
@@ -122,14 +122,14 @@ def get_neighbors_mfcc_js_df(song):
     #########################################################
     #   Pre- Process MFCC for SKL and JS
     #
-    mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
+    mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl", minPartitions=repartition_count)            
     mfcc = mfcc.map(lambda x: x.replace(' ', '').replace(';', ','))
     mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcc = mfcc.map(lambda x: x.split(';'))
     mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
     mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
     mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "features"])
-    df_vec = mfccDfMerged
+    df_vec = mfccDfMerged.persist()
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     #print comparator_value
@@ -147,13 +147,13 @@ def get_neighbors_rp_euclidean_df(song):
     #########################################################
     #   Pre- Process RH and RP for Euclidean
     #
-    rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
+    rp = sc.textFile("features[0-9]*/out[0-9]*.rp", minPartitions=repartition_count)
     rp = rp.map(lambda x: x.split(","))
     kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
     comparator = kv_rp.lookup(song)
     comparator_value = comparator[0]
     df = sqlContext.createDataFrame(kv_rp, ["id", "features"])
-    df_vec = df.select(df["id"],list_to_vector_udf(df["features"]).alias("features"))
+    df_vec = df.select(df["id"],list_to_vector_udf(df["features"]).alias("features")).persist()
     comparator_value = Vectors.dense(comparator[0])
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_rp', distance_udf(F.col('features'))).select("id", "distances_rp")
@@ -166,13 +166,13 @@ def get_neighbors_rp_euclidean_rdd(song):
     #########################################################
     #   Pre- Process RP for Euclidean
     #
-    rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
+    rp = sc.textFile("features[0-9]*/out[0-9]*.rp", minPartitions=repartition_count)
     rp = rp.map(lambda x: x.replace(' ', '').replace(';', ','))
     rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rp = rp.map(lambda x: x.split(';'))
     rp = rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(",")))
     kv_rp= rp.map(lambda x: (x[0], list(x[1:])))
-    rp_vec = kv_rp.map(lambda x: (x[0], Vectors.dense(x[1])))
+    rp_vec = kv_rp.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
     #########################################################
     #   Get Neighbors
     #  
@@ -189,12 +189,12 @@ def get_neighbors_mfcc_js_rdd(song):
     #########################################################
     #   Pre- Process MFCC for SKL and JS
     #
-    mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
+    mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl", minPartitions=repartition_count)            
     mfcc = mfcc.map(lambda x: x.replace(' ', '').replace(';', ','))
     mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcc = mfcc.map(lambda x: x.split(';'))
     mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
-    mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
+    mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
     #########################################################
     #   Get Neighbors
     #
@@ -214,14 +214,14 @@ def get_neighbors_chroma_corr_valid_rdd(song):
     #########################################################
     #   Pre- Process Chroma for cross-correlation
     #
-    chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
+    chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma", minPartitions=repartition_count)
     chroma = chroma.map(lambda x: x.replace(' ', '').replace(';', ','))
     chroma = chroma.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     chroma = chroma.map(lambda x: x.split(';'))
     #try to filter out empty elements
     chroma = chroma.filter(lambda x: (not x[1] == '[]') and (x[1].startswith("[[0.") or x[1].startswith("[[1.")))
     chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-    chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
+    chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
     comparator = chromaVec.lookup(song.replace(' ', '').replace(';', ','))
     comparator_value = Vectors.dense(comparator[0])
     #print(np.array(chromaVec.first()[1]))
@@ -259,7 +259,7 @@ def perform_scaling(unscaled_df):
     aggregated = unscaled_df.agg(
         F.min(unscaled_df.distances_rp),F.max(unscaled_df.distances_rp),F.mean(unscaled_df.distances_rp),F.stddev(unscaled_df.distances_rp),
         F.min(unscaled_df.distances_corr),F.max(unscaled_df.distances_corr),F.mean(unscaled_df.distances_corr),F.stddev(unscaled_df.distances_corr),
-        F.min(unscaled_df.distances_js),F.max(unscaled_df.distances_js),F.mean(unscaled_df.distances_js),F.stddev(unscaled_df.distances_js))
+        F.min(unscaled_df.distances_js),F.max(unscaled_df.distances_js),F.mean(unscaled_df.distances_js),F.stddev(unscaled_df.distances_js)).persist()
     ##############################
     #var_val = aggregated.collect()[0]["stddev_samp(distances_bh)"]
     #mean_val = aggregated.collect()[0]["avg(distances_bh)"]
@@ -286,7 +286,7 @@ def get_nearest_neighbors_speed(song, outname):
     rp = rp.map(lambda x: x.split(","))
     kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
     rp_df = sqlContext.createDataFrame(kv_rp, ["id", "rp"])
-    rp_df = rp_df.select(rp_df["id"],list_to_vector_udf(rp_df["rp"]).alias("rp"))
+    rp_df = rp_df.select(rp_df["id"],list_to_vector_udf(rp_df["rp"]).alias("rp")).persist()
     #########################################################
     #   Pre- Process Chroma for cross-correlation
     #
@@ -298,7 +298,7 @@ def get_nearest_neighbors_speed(song, outname):
     chroma = chroma.filter(lambda x: (not x[1] == '[]') and (x[1].startswith("[[0.") or x[1].startswith("[[1.")))
     chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
     chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
-    chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"])
+    chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"]).persist()
     #########################################################
     #   Pre- Process MFCC for SKL and JS
     #
@@ -308,7 +308,7 @@ def get_nearest_neighbors_speed(song, outname):
     mfcc = mfcc.map(lambda x: x.split(';'))
     mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
     mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
-    mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccSkl"])
+    mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccSkl"]).persist()
     #########################################################
     #   Gather all features in one dataframe
     #
@@ -317,7 +317,7 @@ def get_nearest_neighbors_speed(song, outname):
     #########################################################
     #  16 Nodes, 192GB RAM each, 36 cores each (+ hyperthreading = 72)
     #   -> max 1152 executors
-    fullFeatureDF = featureDF.repartition(repartition_count)
+    fullFeatureDF = featureDF.repartition(repartition_count).persist()
     #fullFeatureDF.toPandas().to_csv("featureDF.csv", encoding='utf-8')
     song = fullFeatureDF.filter(featureDF.id == song).collect()
     neighbors_rp_euclidean = get_neighbors_rp_euclidean_merge(song, fullFeatureDF).persist()
@@ -326,10 +326,15 @@ def get_nearest_neighbors_speed(song, outname):
     mergedSim = neighbors_mfcc_js.join(neighbors_rp_euclidean, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner').dropDuplicates().persist()
     scaledSim = perform_scaling(mergedSim).persist()
-    scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_chroma + scaledSim.scaled_rp + scaledSim.scaled_js) / 3)
-    scaledSim = scaledSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
+    scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_chroma + scaledSim.scaled_rp + scaledSim.scaled_js) / 3).persist()
+    scaledSim = scaledSim.orderBy('aggregated', ascending=True).persist()#.rdd.flatMap(list).collect()
     scaledSim.show()
     #scaledSim.toPandas().to_csv(outname, encoding='utf-8')
+    mfccDfMerged.unpersist()
+    chromaDf.unpersist()
+    rp_df.unpersist()
+    featureDF.unpersist()
+    fullFeatureDF.unpersist()
     scaledSim.unpersist()
     mergedSim.unpersist()
     neighbors_rp_euclidean.unpersist()
@@ -341,10 +346,11 @@ def get_nearest_neighbors_dataframe(song, outname):
     neighbors_mfcc_js = get_neighbors_mfcc_js_df(song).persist()
     neighbors_rp_euclidean = get_neighbors_rp_euclidean_df(song).persist()
     neighbors_chroma = get_neighbors_chroma_corr_valid_df(song).persist()
-    mergedSim = neighbors_mfcc_js.join(neighbors_rp_euclidean, on=['id'], how='inner')
+    mergedSim = neighbors_mfcc_js.join(neighbors_rp_euclidean, on=['id'], how='inner').persist()
     mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner').dropDuplicates().persist()
-    mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_corr + mergedSim.scaled_rp + mergedSim.scaled_js) / 3)
-    mergedSim = mergedSim.orderBy('aggregated', ascending=True)
+    mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_corr + mergedSim.scaled_rp + mergedSim.scaled_js) / 3).persist()
+    mergedSim = mergedSim.orderBy('aggregated', ascending=True).persist()
+    mergedSim.show()
     #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
     mergedSim.unpersist()
     neighbors_rp_euclidean.unpersist()
@@ -356,10 +362,11 @@ def get_nearest_neighbors_rdd(song, outname):
     neighbors_rp_euclidean = get_neighbors_rp_euclidean_rdd(song).persist()
     neighbors_chroma = get_neighbors_chroma_corr_valid_rdd(song).persist()
     neighbors_mfcc_js = get_neighbors_mfcc_js_rdd(song).persist()
-    mergedSim = neighbors_mfcc_js.join(neighbors_rp_euclidean)
+    mergedSim = neighbors_mfcc_js.join(neighbors_rp_euclidean).persist()
     mergedSim = mergedSim.join(neighbors_chroma).persist()
-    mergedSim = mergedSim.map(lambda x: (x[0], ((x[1][0][1] + x[1][1] + x[1][0][0]) / 3))).sortBy(lambda x: x[1], ascending = True)
+    mergedSim = mergedSim.map(lambda x: (x[0], ((x[1][0][1] + x[1][1] + x[1][0][0]) / 3))).sortBy(lambda x: x[1], ascending = True).persist()
     #mergedSim.toDF().toPandas().to_csv(outname, encoding='utf-8')
+    print(mergedSim.take(20))    
     mergedSim.unpersist()
     neighbors_rp_euclidean.unpersist()
     neighbors_mfcc_js.unpersist()
@@ -377,23 +384,23 @@ else:
     song = sys.argv[1]
 song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
+tic5 = int(round(time.time() * 1000))
+res = get_nearest_neighbors_rdd(song, "P_P_RDD.csv")
+tac5 = int(round(time.time() * 1000))
+time_dict['TOTAL RDD']= tac5 - tic5
+res.map(lambda x: (x[0], float(x[1]))).toDF().toPandas().to_csv("P_P_RDD.csv", encoding='utf-8') 
+
 tic2 = int(round(time.time() * 1000))
 res = get_nearest_neighbors_speed(song, "MERGED.csv")
 tac2 = int(round(time.time() * 1000))
 time_dict['TOTAL MERGED']= tac2 - tic2
-res.toPandas().to_csv("MERGED.csv", encoding='utf-8') 
+res.toPandas().to_csv("P_P_MERGED.csv", encoding='utf-8') 
 
 tic4 = int(round(time.time() * 1000))
 res =get_nearest_neighbors_dataframe(song, "DF.csv")
 tac4 = int(round(time.time() * 1000))
 time_dict['TOTAL DF']= tac4 - tic4
-res.toPandas().to_csv("DF.csv", encoding='utf-8') 
-
-tic5 = int(round(time.time() * 1000))
-res = get_nearest_neighbors_rdd(song, "RDD.csv")
-tac5 = int(round(time.time() * 1000))
-time_dict['TOTAL RDD']= tac5 - tic5
-res.map(lambda x: (x[0], float(x[1]))).toDF().toPandas().to_csv("RDD.csv", encoding='utf-8') 
+res.toPandas().to_csv("P_P_DF.csv", encoding='utf-8') 
 
 print time_dict
 

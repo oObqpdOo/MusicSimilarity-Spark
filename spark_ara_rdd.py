@@ -15,6 +15,7 @@ from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
 import time
 import sys
+import edlib
 
 total1 = int(round(time.time() * 1000))
 
@@ -41,9 +42,9 @@ sqlContext = SQLContext(sc)
 time_dict = {}
 
 #https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python
-def naive_levenshtein(source, target):
+def naive_levenshtein_1(source, target):
     if len(source) < len(target):
-        return naive_levenshtein(target, source)
+        return naive_levenshtein_1(target, source)
     # So now we have len(source) >= len(target).
     if len(target) == 0:
         return len(source)
@@ -147,12 +148,17 @@ def symmetric_kullback_leibler(vec1, vec2):
     #print div
     return div
 
+#even faster than numpy version
+def naive_levenshtein(seq1, seq2):
+    result = edlib.align(seq1, seq2)
+    return(result["editDistance"])
+
 tic1 = int(round(time.time() * 1000))
 
 #########################################################
 #   Pre- Process RP for Euclidean
 #
-rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
+rp = sc.textFile("features[0-9]*/out[0-9]*.rp", minPartitions=repartition_count)
 rp = rp.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
 rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 rp = rp.map(lambda x: x.split(';'))
@@ -162,7 +168,7 @@ rp_vec = kv_rp.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
 #########################################################
 #   Pre- Process RH for Euclidean
 #
-rh = sc.textFile("features[0-9]*/out[0-9]*.rh")
+rh = sc.textFile("features[0-9]*/out[0-9]*.rh", minPartitions=repartition_count)
 rh = rh.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
 rh = rh.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 rh = rh.map(lambda x: x.split(';'))
@@ -172,21 +178,21 @@ rh_vec = kv_rh.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
 #########################################################
 #   Pre- Process BH for Euclidean
 #
-bh = sc.textFile("features[0-9]*/out[0-9]*.bh")
+bh = sc.textFile("features[0-9]*/out[0-9]*.bh", minPartitions=repartition_count)
 bh = bh.map(lambda x: x.split(";"))
 kv_bh = bh.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(';', ','), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 bh_vec = kv_bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), Vectors.dense(x[2]), x[1])).persist()
 #########################################################
 #   Pre- Process Notes for Levenshtein
 #
-notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
+notes = sc.textFile("features[0-9]*/out[0-9]*.notes", minPartitions=repartition_count)
 notes = notes.map(lambda x: x.split(';'))
 notes = notes.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(';', ','), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
 notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[3].replace(',','').replace(' ',''), x[1], x[2])).persist()
 #########################################################
 #   Pre- Process MFCC for Euclidean
 #
-mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc", minPartitions=repartition_count)
 mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
 mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcceuc = mfcceuc.map(lambda x: x.split(';'))
@@ -195,7 +201,7 @@ mfcceucVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
 #########################################################
 #   Pre- Process MFCC for SKL and JS
 #
-mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
+mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl", minPartitions=repartition_count)            
 mfcc = mfcc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
 mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcc = mfcc.map(lambda x: x.split(';'))
@@ -204,7 +210,7 @@ mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
 #########################################################
 #   Pre- Process Chroma for cross-correlation
 #
-chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
+chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma", minPartitions=repartition_count)
 chroma = chroma.map(lambda x: x.replace(' ', '').replace(';', ','))
 chroma = chroma.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 chroma = chroma.map(lambda x: x.split(';'))
@@ -358,13 +364,11 @@ def get_nearest_neighbors(song, outname):
     #print(neighbors_rh_euclidean.count()) 
     tac1 = int(round(time.time() * 1000))
     time_dict['RH: ']= tac1 - tic1
-    
-    #tic1 = int(round(time.time() * 1000))
-    #neighbors_notes = get_neighbors_notes(song).persist()
+    tic1 = int(round(time.time() * 1000))
+    neighbors_notes = get_neighbors_notes(song).persist()
     #print(neighbors_notes.count())
-    #tac1 = int(round(time.time() * 1000))
-    #time_dict['NOTE: ']= tac1 - tic1
-
+    tac1 = int(round(time.time() * 1000))
+    time_dict['NOTE: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song).persist()
     #print(neighbors_mfcc_eucl.count())
@@ -391,20 +395,20 @@ def get_nearest_neighbors(song, outname):
     tac1 = int(round(time.time() * 1000))
     time_dict['CHROMA: ']= tac1 - tic1
     tic1 = int(round(time.time() * 1000))
-    mergedSim = neighbors_rp_euclidean.join(neighbors_rh_euclidean)
-    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1])))
-    mergedSim = mergedSim.join(neighbors_bh_euclidean)
-    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])]))
-    mergedSim = mergedSim.join(neighbors_chroma)
-    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])]))
-    #mergedSim = mergedSim.join(neighbors_notes)
-    #mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])]))
-    mergedSim = mergedSim.join(neighbors_mfcc_eucl)
-    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])]))
-    mergedSim = mergedSim.join(neighbors_mfcc_skl)
-    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])]))
-    mergedSim = mergedSim.join(neighbors_mfcc_js)
-    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])]))
+    mergedSim = neighbors_rp_euclidean.join(neighbors_rh_euclidean).persist()
+    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1]))).persist()
+    mergedSim = mergedSim.join(neighbors_bh_euclidean).persist()
+    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])])).persist()
+    mergedSim = mergedSim.join(neighbors_chroma).persist()
+    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])])).persist()
+    mergedSim = mergedSim.join(neighbors_notes).persist()
+    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])])).persist()
+    mergedSim = mergedSim.join(neighbors_mfcc_eucl).persist()
+    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])])).persist()
+    mergedSim = mergedSim.join(neighbors_mfcc_skl).persist()
+    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])])).persist()
+    mergedSim = mergedSim.join(neighbors_mfcc_js).persist()
+    mergedSim = mergedSim.map(lambda x: (x[0], list(x[1][0]) + [float(x[1][1])])).persist()
     mergedSim = mergedSim.map(lambda x: (x[0], x[1], float(np.mean(np.array(x[1]))))).sortBy(lambda x: x[2], ascending = True).persist()
     #print mergedSim.first()
     tac1 = int(round(time.time() * 1000))
@@ -414,7 +418,7 @@ def get_nearest_neighbors(song, outname):
     mergedSim.unpersist()
     neighbors_rp_euclidean.unpersist()
     neighbors_rh_euclidean.unpersist()    
-    #neighbors_notes.unpersist()
+    neighbors_notes.unpersist()
     neighbors_mfcc_eucl.unpersist()
     neighbors_bh_euclidean.unpersist()
     neighbors_mfcc_skl.unpersist()
@@ -437,26 +441,46 @@ def get_nearest_neighbors_fast(song, outname):
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
 #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
-song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
+song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
 
 if len (sys.argv) < 2:
-    #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
-    song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
+    song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3" #1517 artists
+    song2 = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3" #1517 artists
 else: 
-    song = sys.argv[1]
-song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
+    song1 = sys.argv[1]
+    song2 = sys.argv[1]
+
+song1 = song1.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
+song2 = song2.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 tic1 = int(round(time.time() * 1000))
-result = get_nearest_neighbors(song, "RDD_FULL.csv")
-result.sortBy(lambda x: x[1], ascending = True).take(10)
+result1 = get_nearest_neighbors(song1, "RDD_FULL_SONG1.csv").persist()
+result1.sortBy(lambda x: x[1], ascending = True).take(10)
 tac1 = int(round(time.time() * 1000))
-time_dict['RDD_FULL: ']= tac1 - tic1
+time_dict['RDD_FULL_SONG1: ']= tac1 - tic1
+
+tic2 = int(round(time.time() * 1000))
+result2 = get_nearest_neighbors(song2, "RDD_FULL_SONG2.csv").persist()
+result2.sortBy(lambda x: x[1], ascending = True).take(10)
+tac2 = int(round(time.time() * 1000))
+time_dict['RDD_FULL_SONG2: ']= tac2 - tic2
 
 total2 = int(round(time.time() * 1000))
 time_dict['RDD_TOTAL: ']= total2 - total1
 
-result.map(lambda x: (x[0], float(x[2]))).toDF().toPandas().to_csv("RDD_FULL.csv", encoding='utf-8')
-#result.toDF().toPandas().to_csv("RDD_FULL.csv", encoding='utf-8')
+tic1 = int(round(time.time() * 1000))
+result1.map(lambda x: (x[0], float(x[2]))).toDF().toPandas().to_csv("RDD_FULL_SONG1.csv", encoding='utf-8')
+#result1.toDF().toPandas().to_csv("RDD_FULL_SONG1.csv", encoding='utf-8')
+result1.unpersist()
+tac1 = int(round(time.time() * 1000))
+time_dict['CSV1: ']= tac1 - tic1
+
+tic2 = int(round(time.time() * 1000))
+result2.map(lambda x: (x[0], float(x[2]))).toDF().toPandas().to_csv("RDD_FULL_SONG2.csv", encoding='utf-8')
+#result2.toDF().toPandas().to_csv("RDD_FULL_SONG2.csv", encoding='utf-8')
+result2.unpersist()
+tac2 = int(round(time.time() * 1000))
+time_dict['CSV2: ']= tac2 - tic2
 
 print time_dict
 

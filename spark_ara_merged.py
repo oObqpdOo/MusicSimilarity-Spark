@@ -30,6 +30,7 @@ import time
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
 import sys
+import edlib
 
 total1 = int(round(time.time() * 1000))
 
@@ -174,6 +175,11 @@ def symmetric_kullback_leibler(vec1, vec2):
     #print div
     return div
 
+#even faster than numpy version
+def naive_levenshtein(seq1, seq2):
+    result = edlib.align(seq1, seq2)
+    return(result["editDistance"])
+
 tic1 = int(round(time.time() * 1000))
 list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 
@@ -257,14 +263,14 @@ featureDF = featureDF.join(rh_df, on=['id'], how='inner')
 featureDF = featureDF.join(bh_df, on=['id'], how='inner').dropDuplicates().persist()
 
 #Force lazy evaluation to evaluate with an action
-#trans = featureDF.count()
+trans = featureDF.count()
 #print(featureDF.count())
 
 #########################################################
 #  16 Nodes, 192GB RAM each, 36 cores each (+ hyperthreading = 72)
 #   -> max 1152 executors
 
-fullFeatureDF = featureDF.repartition(repartition_count)
+fullFeatureDF = featureDF.repartition(repartition_count).persist()
 #print(fullFeatureDF.count())
 #fullFeatureDF.toPandas().to_csv("featureDF.csv", encoding='utf-8')
 tac1 = int(round(time.time() * 1000))
@@ -332,7 +338,7 @@ def perform_scaling(unscaled_df):
         F.min(unscaled_df.distances_levenshtein),F.max(unscaled_df.distances_levenshtein),F.mean(unscaled_df.distances_levenshtein),F.stddev(unscaled_df.distances_levenshtein),
         F.min(unscaled_df.distances_mfcc),F.max(unscaled_df.distances_mfcc),F.mean(unscaled_df.distances_mfcc),F.stddev(unscaled_df.distances_mfcc),
         F.min(unscaled_df.distances_js),F.max(unscaled_df.distances_js),F.mean(unscaled_df.distances_js),F.stddev(unscaled_df.distances_js),
-        F.min(unscaled_df.distances_skl),F.max(unscaled_df.distances_skl),F.mean(unscaled_df.distances_skl),F.stddev(unscaled_df.distances_skl))
+        F.min(unscaled_df.distances_skl),F.max(unscaled_df.distances_skl),F.mean(unscaled_df.distances_skl),F.stddev(unscaled_df.distances_skl)).persist()
     ##############################
     #var_val = aggregated.collect()[0]["stddev_samp(distances_bh)"]
     #mean_val = aggregated.collect()[0]["avg(distances_bh)"]
@@ -419,12 +425,12 @@ def get_nearest_neighbors(song, outname):
     time_dict['CHROMA: ']= tac1 - tic1
 
     tic1 = int(round(time.time() * 1000))
-    mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_rh_euclidean, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_mfcc_skl, on=['id'], how='inner')
+    mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_rh_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_mfcc_skl, on=['id'], how='inner').persist()
     mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner').dropDuplicates().persist()
     #print(mergedSim.count())
     tac1 = int(round(time.time() * 1000))
@@ -457,25 +463,40 @@ def get_nearest_neighbors(song, outname):
     time_dict['AGG: ']= tac1 - tic1
     return scaledSim
 
-if len(sys.argv) < 2:
-    #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
-    song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
+if len (sys.argv) < 2:
+    song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3" #1517 artists
+    song2 = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3" #1517 artists
 else: 
-    song = sys.argv[1]
-song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
+    song1 = sys.argv[1]
+    song2 = sys.argv[1]
+
+song1 = song1.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
+song2 = song2.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 tic1 = int(round(time.time() * 1000))
-res = get_nearest_neighbors(song, "MERGED_FULL.csv").persist()
+res1 = get_nearest_neighbors(song1, "MERGED_FULL_SONG1.csv").persist()
 tac1 = int(round(time.time() * 1000))
-time_dict['MERGED_FULL: ']= tac1 - tic1
+time_dict['MERGED_FULL_SONG1: ']= tac1 - tic1
+
+tic2 = int(round(time.time() * 1000))
+res2 = get_nearest_neighbors(song2, "MERGED_FULL_SONG2.csv").persist()
+tac2 = int(round(time.time() * 1000))
+time_dict['MERGED_FULL_SONG2: ']= tac2 - tic2
 
 total2 = int(round(time.time() * 1000))
 time_dict['MERGED_TOTAL: ']= total2 - total1
 
+tic1 = int(round(time.time() * 1000))
+res1.toPandas().to_csv("MERGED_FULL_SONG1.csv", encoding='utf-8')
+res1.unpersist()
+tac1 = int(round(time.time() * 1000))
+time_dict['CSV1: ']= tac1 - tic1
+
 tic2 = int(round(time.time() * 1000))
-res.toPandas().to_csv("MERGED_FULL.csv", encoding='utf-8')
+res2.toPandas().to_csv("MERGED_FULL_SONG2.csv", encoding='utf-8')
+res2.unpersist()
 tac2 = int(round(time.time() * 1000))
-time_dict['CSV: ']= tac2 - tic2
+time_dict['CSV2: ']= tac2 - tic2
 
 print time_dict
 

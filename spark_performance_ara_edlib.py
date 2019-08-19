@@ -26,6 +26,7 @@ from pyspark.sql.functions import asc
 import scipy as sp
 import time
 import sys
+import edlib
 from scipy.signal import butter, lfilter, freqz, correlate2d
 
 from pyspark import SparkContext, SparkConf
@@ -51,12 +52,15 @@ confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
 repartition_count = 32
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
+
+
+
 #spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrCreate()
 
 #https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python
-def naive_levenshtein(source, target):
+def naive_levenshtein_1(source, target):
     if len(source) < len(target):
-        return naive_levenshtein(target, source)
+        return naive_levenshtein_1(target, source)
     # So now we have len(source) >= len(target).
     if len(target) == 0:
         return len(source)
@@ -83,6 +87,11 @@ def naive_levenshtein(source, target):
                 current_row[0:-1] + 1)
         previous_row = current_row
     return previous_row[-1]
+
+#even faster than numpy version
+def naive_levenshtein(seq1, seq2):
+    result = edlib.align(seq1, seq2)
+    return(result["editDistance"])
 
 def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
     length1 = chroma1_par.size/12
@@ -164,7 +173,7 @@ def get_neighbors_rp_euclidean_rdd(song):
     #########################################################
     #   Pre- Process RP for Euclidean
     #
-    rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
+    rp = sc.textFile("features[0-9]*/out[0-9]*.rp", minPartitions=repartition_count)
     rp = rp.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
     rp = rp.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     rp = rp.map(lambda x: x.split(';'))
@@ -191,7 +200,7 @@ def get_neighbors_notes_rdd(song):
     #########################################################
     #   Pre- Process Notes for Levenshtein
     #
-    notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
+    notes = sc.textFile("features[0-9]*/out[0-9]*.notes", minPartitions=repartition_count)
     notes = notes.map(lambda x: x.split(';'))
     notes = notes.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(';', ','), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
     notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[3].replace(',','').replace(' ',''), x[1], x[2])).persist()
@@ -211,7 +220,7 @@ def get_neighbors_mfcc_euclidean_rdd(song):
     #########################################################
     #   Pre- Process MFCC for Euclidean
     #
-    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc", minPartitions=repartition_count)
     mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
     mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
@@ -233,9 +242,9 @@ def get_neighbors_rp_euclidean_dataframe(song):
     #########################################################
     #   List to Vector UDF
     list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
-    rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
+    rp = sc.textFile("features[0-9]*/out[0-9]*.rp", minPartitions=repartition_count)
     rp = rp.map(lambda x: x.split(","))
-    kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
+    kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:]))).persist()
     comparator = kv_rp.lookup(song)
     comparator_value = comparator[0]
     df = sqlContext.createDataFrame(kv_rp, ["id", "features"])
@@ -256,14 +265,14 @@ def get_neighbors_mfcc_euclidean_dataframe(song):
     #########################################################
     #   Pre- Process MFCC for Euclidean
     #
-    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc", minPartitions=repartition_count)
     mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace(';', ','))
     mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
     mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
     mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
     mfccEucDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "features"])
-    df_vec = mfccEucDfMerged
+    df_vec = mfccEucDfMerged.persist()
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
@@ -277,15 +286,16 @@ def get_neighbors_notes_dataframe(song):
     #########################################################
     #   Pre- Process Notes for Levenshtein
     #
-    notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
+    notes = sc.textFile("features[0-9]*/out[0-9]*.notes", minPartitions=repartition_count)
     notes = notes.map(lambda x: x.split(';'))
     notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
     notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
     df = sqlContext.createDataFrame(notes, ["id", "key", "scale", "notes"])
     filterDF = df.filter(df.id == song)
     comparator_value = filterDF.collect()[0][3] 
-    df_merged = df.withColumn("compare", lit(comparator_value))
-    df_levenshtein = df_merged.withColumn("distances_levenshtein", levenshtein(col("notes"), col("compare")))
+    df_merged = df.withColumn("compare", lit(comparator_value)).persist()
+    distance_udf = F.udf(lambda x: float(naive_levenshtein(x, comparator_value)), FloatType())
+    df_levenshtein = df_merged.withColumn('distances_levenshtein', distance_udf(F.col('notes')))
     #df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()    
     result = df_levenshtein.select("id", "key", "scale", "distances_levenshtein")
     aggregated = result.agg(F.min(result.distances_levenshtein),F.max(result.distances_levenshtein))
@@ -308,15 +318,17 @@ def get_neighbors_rp_euclidean_speed(song, featureDF):
 def get_neighbors_notes_speed(song, featureDF):
     comparator_value = song[0]["notes"]
     df_merged = featureDF.withColumn("compare", lit(comparator_value))
-    df_levenshtein = df_merged.withColumn("distances_levenshtein", levenshtein(col("notes"), col("compare")))
+    distance_udf = F.udf(lambda x: float(naive_levenshtein(x, comparator_value)), FloatType())
+    df_levenshtein = df_merged.withColumn('distances_levenshtein', distance_udf(F.col('notes')))
     #df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()    
     result = df_levenshtein.select("id", "key", "scale", "distances_levenshtein")
     return result
 
+
 def perform_scaling(unscaled_df):
     aggregated = unscaled_df.agg(F.min(unscaled_df.distances_rp),F.max(unscaled_df.distances_rp),
         F.min(unscaled_df.distances_levenshtein),F.max(unscaled_df.distances_levenshtein),
-        F.min(unscaled_df.distances_mfcc),F.max(unscaled_df.distances_mfcc))
+        F.min(unscaled_df.distances_mfcc),F.max(unscaled_df.distances_mfcc)).persist()
     ##############################
     max_val = aggregated.collect()[0]["max(distances_rp)"]
     min_val = aggregated.collect()[0]["min(distances_rp)"]
@@ -344,7 +356,7 @@ def get_nearest_neighbors_speed(song, outname):
     rp = rp.map(lambda x: x.split(","))
     kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
     rp_df = sqlContext.createDataFrame(kv_rp, ["id", "rp"])
-    rp_df = rp_df.select(rp_df["id"],list_to_vector_udf(rp_df["rp"]).alias("rp"))
+    rp_df = rp_df.select(rp_df["id"],list_to_vector_udf(rp_df["rp"]).alias("rp")).persist()
     #########################################################
     #   Pre- Process Notes for Levenshtein
     #
@@ -352,7 +364,7 @@ def get_nearest_neighbors_speed(song, outname):
     notes = notes.map(lambda x: x.split(';'))
     notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
     notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
-    notesDf = sqlContext.createDataFrame(notes, ["id", "key", "scale", "notes"])
+    notesDf = sqlContext.createDataFrame(notes, ["id", "key", "scale", "notes"]).persist()
     #########################################################
     #   Pre- Process MFCC for Euclidean
     #
@@ -362,26 +374,30 @@ def get_nearest_neighbors_speed(song, outname):
     mfcceuc = mfcceuc.map(lambda x: x.split(';'))
     mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
     mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
-    mfccEucDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccEuc"])
+    mfccEucDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccEuc"]).persist()
     #########################################################
     #   Gather all features in one dataframe
     #
     featureDF = mfccEucDfMerged.join(notesDf, on=["id"], how='inner')
     featureDF = featureDF.join(rp_df, on=['id'], how='inner').dropDuplicates()
-    fullFeatureDF = featureDF
+    fullFeatureDF = featureDF.repartition(repartition_count).persist()
     song = fullFeatureDF.filter(featureDF.id == song).collect()
     neighbors_rp_euclidean = get_neighbors_rp_euclidean_speed(song, fullFeatureDF).persist()
     neighbors_notes = get_neighbors_notes_speed(song, fullFeatureDF).persist()
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean_speed(song, fullFeatureDF).persist()
     mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean, on=['id'], how='inner')
     mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner').dropDuplicates().persist()
-    scaledSim = perform_scaling(mergedSim)
+    scaledSim = perform_scaling(mergedSim).persist()
     #scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_notes + scaledSim.scaled_rp + scaledSim.scaled_mfcc) / 3)
-    scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_notes + scaledSim.scaled_mfcc + scaledSim.scaled_rp) / 3)
-    scaledSim = scaledSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
+    scaledSim = scaledSim.withColumn('aggregated', (scaledSim.scaled_notes + scaledSim.scaled_mfcc + scaledSim.scaled_rp) / 3).persist()
+    scaledSim = scaledSim.orderBy('aggregated', ascending=True).persist()#.rdd.flatMap(list).collect()
     scaledSim.limit(20).show()    
     #scaledSim.toPandas().to_csv(outname, encoding='utf-8')
-    mergedSim.unpersist()
+    mergedSim.unpersist() 
+    mfccEucDfMerged.unpersist()
+    notesDf.unpersist()
+    rp_df.unpersist() 
+    fullFeatureDF.persist()
     neighbors_rp_euclidean.unpersist()
     neighbors_notes.unpersist()
     neighbors_mfcc_eucl.unpersist()
@@ -391,10 +407,10 @@ def get_nearest_neighbors_dataframe(song, outname):
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean_dataframe(song).persist()
     neighbors_rp_euclidean = get_neighbors_rp_euclidean_dataframe(song).persist()
     neighbors_notes = get_neighbors_notes_dataframe(song).persist()
-    mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean, on=['id'], how='inner')
+    mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean, on=['id'], how='inner').persist()
     mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner').dropDuplicates().persist()
-    mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc) / 3)
-    mergedSim = mergedSim.orderBy('aggregated', ascending=True)
+    mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_mfcc) / 3).persist()
+    mergedSim = mergedSim.orderBy('aggregated', ascending=True).persist()
     mergedSim.limit(20).show()    
     #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
     mergedSim.unpersist()
@@ -407,9 +423,9 @@ def get_nearest_neighbors_rdd(song, outname):
     neighbors_rp_euclidean = get_neighbors_rp_euclidean_rdd(song).persist()
     neighbors_notes = get_neighbors_notes_rdd(song).persist()
     neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean_rdd(song).persist()
-    mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean)
+    mergedSim = neighbors_mfcc_eucl.join(neighbors_rp_euclidean).persist()
     mergedSim = mergedSim.join(neighbors_notes).persist()
-    mergedSim = mergedSim.map(lambda x: (x[0], ((x[1][0][1] + x[1][1] + x[1][0][0]) / 3))).sortBy(lambda x: x[1], ascending = True)
+    mergedSim = mergedSim.map(lambda x: (x[0], ((x[1][0][1] + x[1][1] + x[1][0][0]) / 3))).sortBy(lambda x: x[1], ascending = True).persist()
     print(mergedSim.take(20))    
     #mergedSim.sortBy(lambda x: x[1], ascending = True).toDF().toPandas().to_csv(outname, encoding='utf-8')
     mergedSim.unpersist()
@@ -435,18 +451,18 @@ time_dict = {}
 tic5 = int(round(time.time() * 1000))
 rddr = get_nearest_neighbors_rdd(song, "P_RDD.csv")
 tac5 = int(round(time.time() * 1000))
-time_dict['rdd']= tac5 - tic5
+time_dict['TOTAL RDD']= tac5 - tic5
 rddr.map(lambda x: (x[0], float(x[1]))).toDF().toPandas().to_csv("P_RDD.csv", encoding='utf-8')
 
 tic2 = int(round(time.time() * 1000))
 get_nearest_neighbors_speed(song, "P_MERGE.csv")
 tac2 = int(round(time.time() * 1000))
-time_dict['premerged_speed']= tac2 - tic2
+time_dict['TOTAL MERGED']= tac2 - tic2
 
 tic4 = int(round(time.time() * 1000))
 res = get_nearest_neighbors_dataframe(song, "P_DF.csv")
 tac4 = int(round(time.time() * 1000))
-time_dict['dataframe_speed']= tac4 - tic4
+time_dict['TOTAL DF']= tac4 - tic4
 res.toPandas().to_csv("P_DF.csv", encoding='utf-8')
 
 print time_dict

@@ -180,11 +180,11 @@ list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 #   Pre- Process RH and RP for Euclidean
 #
 
-rh = sc.textFile("features[0-9]*/out[0-9]*.rh")
+rh = sc.textFile("features[0-9]*/out[0-9]*.rh", minPartitions=repartition_count)
 rh = rh.map(lambda x: x.split(","))
 kv_rh= rh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:]))).persist()
 
-rp = sc.textFile("features[0-9]*/out[0-9]*.rp")
+rp = sc.textFile("features[0-9]*/out[0-9]*.rp", minPartitions=repartition_count)
 rp = rp.map(lambda x: x.split(","))
 kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:]))).persist()
 
@@ -192,7 +192,7 @@ kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").re
 #   Pre- Process BH for Euclidean
 #
 
-bh = sc.textFile("features[0-9]*/out[0-9]*.bh")
+bh = sc.textFile("features[0-9]*/out[0-9]*.bh", minPartitions=repartition_count)
 bh = bh.map(lambda x: x.split(";"))
 kv_bh = bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(',')))).persist()
 
@@ -200,7 +200,7 @@ kv_bh = bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").r
 #   Pre- Process Notes for Levenshtein
 #
 
-notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
+notes = sc.textFile("features[0-9]*/out[0-9]*.notes", minPartitions=repartition_count)
 notes = notes.map(lambda x: x.split(';'))
 notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
 notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ',''))).persist()
@@ -209,7 +209,7 @@ notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ',
 #   Pre- Process Chroma for cross-correlation
 #
 
-chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
+chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma", minPartitions=repartition_count)
 chroma = chroma.map(lambda x: x.replace(' ', '').replace(';', ','))
 chroma = chroma.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 chroma = chroma.map(lambda x: x.split(';'))
@@ -223,7 +223,7 @@ chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"]).persist()
 #   Pre- Process MFCC for Euclidean
 #
 
-mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc", minPartitions=repartition_count)
 mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace(';', ','))
 mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcceuc = mfcceuc.map(lambda x: x.split(';'))
@@ -235,14 +235,13 @@ mfccEucDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "features"]).persis
 #   Pre- Process MFCC for SKL and JS
 #
 
-mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
+mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl", minPartitions=repartition_count)            
 mfcc = mfcc.map(lambda x: x.replace(' ', '').replace(';', ','))
 mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcc = mfcc.map(lambda x: x.split(';'))
 mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
 mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
 mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "features"]).persist()
-
 
 #Force Transformation
 #kv_rp.count()
@@ -405,12 +404,12 @@ def get_nearest_neighbors_full(song, outname):
     #neighbors_notes.show()
     #JOIN could also left_inner and handle 'nones'
     tic1 = int(round(time.time() * 1000))
-    mergedSim = neighbors_mfcc_skl.join(neighbors_rp_euclidean, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_rh_euclidean, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_mfcc_eucl, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner')
-    mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner')
+    mergedSim = neighbors_mfcc_skl.join(neighbors_rp_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_rh_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_mfcc_eucl, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_chroma, on=['id'], how='inner').persist()
     mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner').dropDuplicates().persist()
 
     mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_bh + mergedSim.scaled_mfcc + mergedSim.scaled_corr + mergedSim.scaled_levenshtein + mergedSim.scaled_rp + mergedSim.scaled_skl + mergedSim.scaled_js + mergedSim.scaled_rh) / 8)
@@ -419,7 +418,8 @@ def get_nearest_neighbors_full(song, outname):
     time_dict['JOIN AND AGG: ']= tac1 - tic1
 
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
-    #mergedSim.show()
+    mergedSim.show()
+    
     #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
     mergedSim.unpersist()
     neighbors_rp_euclidean.unpersist()
@@ -453,25 +453,44 @@ def get_nearest_neighbors_precise(song, outname):
     mergedSim = mergedSim.orderBy('aggregated', ascending=True)
     #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
+#song = "music/Electronic/The XX - Intro.mp3"    #100 testset
 #song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
-song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
+song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
 
 if len (sys.argv) < 2:
-    #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
-    song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
+    song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3" #1517 artists
+    song2 = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3" #1517 artists
 else: 
-    song = sys.argv[1]
-song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
+    song1 = sys.argv[1]
+    song2 = sys.argv[1]
+
+song1 = song1.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
+song2 = song2.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 tic1 = int(round(time.time() * 1000))
-res = get_nearest_neighbors_full(song, "DF_FULL.csv")
+res1 = get_nearest_neighbors_full(song1, "DF_FULL_SONG1.csv").persist()
 tac1 = int(round(time.time() * 1000))
-time_dict['DF: ']= tac1 - tic1
+time_dict['DF_SONG1: ']= tac1 - tic1
+
+tic2 = int(round(time.time() * 1000))
+res2 = get_nearest_neighbors_full(song2, "DF_FULL_SONG2.csv").persist()
+tac2 = int(round(time.time() * 1000))
+time_dict['DF_SONG2: ']= tac2 - tic2
 
 total2 = int(round(time.time() * 1000))
 time_dict['DF_TOTAL: ']= total2 - total1
 
-res.toPandas().to_csv("DF_FULL.csv", encoding='utf-8')
+tic1 = int(round(time.time() * 1000))
+res1.toPandas().to_csv("DF_FULL_SONG1.csv", encoding='utf-8')
+res1.unpersist()
+tac1 = int(round(time.time() * 1000))
+time_dict['CSV1: ']= tac1 - tic1
+
+tic2 = int(round(time.time() * 1000))
+res2.toPandas().to_csv("DF_FULL_SONG2.csv", encoding='utf-8')
+res2.unpersist()
+tac2 = int(round(time.time() * 1000))
+time_dict['CSV2: ']= tac2 - tic2
 
 print time_dict
 

@@ -143,7 +143,28 @@ rp = rp.map(lambda x: x.split(","))
 kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
 rp_df = sqlContext.createDataFrame(kv_rp, ["id", "rp"])
 rp_df = rp_df.select(rp_df["id"],list_to_vector_udf(rp_df["rp"]).alias("rp"))
+rh = sc.textFile("features[0-9]*/out[0-9]*.rh")
+rh = rh.map(lambda x: x.split(","))
+kv_rh= rh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
+rh_df = sqlContext.createDataFrame(kv_rh, ["id", "rh"])
+rh_df = rh_df.select(rh_df["id"],list_to_vector_udf(rh_df["rh"]).alias("rh"))
 
+#########################################################
+#   Pre- Process BH for Euclidean
+#
+bh = sc.textFile("features[0-9]*/out[0-9]*.bh")
+bh = bh.map(lambda x: x.split(";"))
+kv_bh = bh.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
+bh_df = sqlContext.createDataFrame(kv_bh, ["id", "bpm", "bh"])
+
+#########################################################
+#   Pre- Process Notes for Levenshtein
+#
+notes = sc.textFile("features[0-9]*/out[0-9]*.notes")
+notes = notes.map(lambda x: x.split(';'))
+notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
+notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
+notesDf = sqlContext.createDataFrame(notes, ["id", "key", "scale", "notes"])
 
 #########################################################
 #   Pre- Process Chroma for cross-correlation
@@ -160,6 +181,18 @@ chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
 chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"])
 
 #########################################################
+#   Pre- Process MFCC for Euclidean
+#
+
+mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
+mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace(';', ','))
+mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+mfcceuc = mfcceuc.map(lambda x: x.split(';'))
+mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
+mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
+mfccEucDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccEuc"])
+
+#########################################################
 #   Pre- Process MFCC for SKL and JS
 #
 
@@ -171,31 +204,26 @@ mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").
 mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
 mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccSkl"])
 
-#print(rh_df.count())
-#print(rp_df.count())
-#print(bh_df.count())
-#print(notesDf.count())
-#print(chromaDf.count())
-#print(mfccDfMerged.count())
-#print(mfccEucDfMerged.count())
-
 #########################################################
 #   Gather all features in one dataframe
 #
-featureDF = chromaDf.join(mfccDfMerged, on=["id"], how='inner')
-featureDF = featureDF.join(rp_df, on=['id'], how='inner').dropDuplicates().persist()
+featureDF = mfccEucDfMerged.join(mfccDfMerged, on=["id"], how='inner')
+featureDF = featureDF.join(chromaDf, on=['id'], how='inner')
+featureDF = featureDF.join(notesDf, on=['id'], how='inner')
+featureDF = featureDF.join(rp_df, on=['id'], how='inner')
+featureDF = featureDF.join(rh_df, on=['id'], how='inner')
+featureDF = featureDF.join(bh_df, on=['id'], how='inner').dropDuplicates().persist()
 
 #Force lazy evaluation to evaluate with an action
-#trans = featureDF.count()
-#print(featureDF.count())
-
+trans = featureDF.count()
+print(trans)
 
 #########################################################
 #  16 Nodes, 192GB RAM each, 36 cores each (+ hyperthreading = 72)
 #   -> max 1152 executors
 
 fullFeatureDF = featureDF.repartition(repartition_count).persist()
-#print(fullFeatureDF.count())
+print(fullFeatureDF.count())
 #fullFeatureDF.toPandas().to_csv("featureDF.csv", encoding='utf-8')
 tac1 = int(round(time.time() * 1000))
 time_dict['PREPROCESS: ']= tac1 - tic1
@@ -204,7 +232,7 @@ def get_neighbors_mfcc_js(song, featureDF):
     comparator_value = song[0]["mfccSkl"]
     distance_udf = F.udf(lambda x: float(jensen_shannon(x, comparator_value)), DoubleType())
     result = featureDF.withColumn('distances_js', distance_udf(F.col('mfccSkl'))).select("id", "distances_js")
-    unscaled_df = result.filter(result.distances_js != np.inf)   
+    unscaled_df = result.filter(result.distances_js != np.inf).persist()  
     ##############################
     aggregated = unscaled_df.agg(F.min(unscaled_df.distances_js),F.max(unscaled_df.distances_js),F.mean(unscaled_df.distances_js))
     mean_val = aggregated.collect()[0]["avg(distances_js)"]
@@ -217,7 +245,7 @@ def get_neighbors_mfcc_js(song, featureDF):
 def get_neighbors_rp_euclidean(song, featureDF):
     comparator_value = song[0]["rp"]
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
-    unscaled_df = featureDF.withColumn('distances_rp', distance_udf(F.col('rp'))).select("id", "distances_rp")
+    unscaled_df = featureDF.withColumn('distances_rp', distance_udf(F.col('rp'))).select("id", "distances_rp").persist()
     ##############################
     aggregated = unscaled_df.agg(F.min(unscaled_df.distances_rp),F.max(unscaled_df.distances_rp),F.mean(unscaled_df.distances_rp))
     mean_val = aggregated.collect()[0]["avg(distances_rp)"]
@@ -230,7 +258,7 @@ def get_neighbors_rp_euclidean(song, featureDF):
 def get_neighbors_chroma_corr_valid(song, featureDF):
     comparator_value = song[0]["chroma"]
     distance_udf = F.udf(lambda x: float(chroma_cross_correlate_valid(x, comparator_value)), DoubleType())
-    unscaled_df = featureDF.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr")
+    unscaled_df = featureDF.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr").persist()
     ##############################
     aggregated = unscaled_df.agg(F.min(unscaled_df.distances_corr),F.max(unscaled_df.distances_corr),F.mean(unscaled_df.distances_corr))
     mean_val = aggregated.collect()[0]["avg(distances_corr)"]
@@ -241,7 +269,75 @@ def get_neighbors_chroma_corr_valid(song, featureDF):
     result = result.withColumn('scaled_chroma', (1 - (unscaled_df.distances_corr-min_val)/(max_val-min_val))).select("id","scaled_chroma")
     return result
 
-def get_nearest_neighbors_filter(song, outname, fullFeatureDF):
+def get_neighbors_rh_euclidean(song, featureDF):
+    comparator_value = song[0]["rh"]
+    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
+    unscaled_df = featureDF.withColumn('distances_rh', distance_udf(F.col('rh'))).select("id", "distances_rh").persist()
+    ##############################
+    aggregated = unscaled_df.agg(F.min(unscaled_df.distances_rh),F.max(unscaled_df.distances_rh),F.mean(unscaled_df.distances_rh))
+    mean_val = aggregated.collect()[0]["avg(distances_rh)"]
+    max_val = aggregated.collect()[0]["max(distances_rh)"]
+    min_val = aggregated.collect()[0]["min(distances_rh)"]
+    result = unscaled_df.filter(unscaled_df.distances_rh < mean_val) 
+    result = result.withColumn('scaled_rh', (unscaled_df.distances_rh-min_val)/(max_val-min_val)).select("id","scaled_rh") 
+    return result
+
+def get_neighbors_bh_euclidean(song, featureDF):
+    comparator_value = song[0]["bh"]
+    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
+    unscaled_df = featureDF.withColumn('distances_bh', distance_udf(F.col('bh'))).select("id", "bpm", "distances_bh").persist()
+    ##############################
+    aggregated = unscaled_df.agg(F.min(unscaled_df.distances_bh),F.max(unscaled_df.distances_bh),F.mean(unscaled_df.distances_bh))
+    mean_val = aggregated.collect()[0]["avg(distances_bh)"]
+    max_val = aggregated.collect()[0]["max(distances_bh)"]
+    min_val = aggregated.collect()[0]["min(distances_bh)"]
+    result = unscaled_df.filter(unscaled_df.distances_bh < mean_val) 
+    result = result.withColumn('scaled_bh', (unscaled_df.distances_bh-min_val)/(max_val-min_val)).select("id","scaled_bh") 
+    return result
+
+def get_neighbors_mfcc_euclidean(song, featureDF):
+    comparator_value = song[0]["mfccEuc"]
+    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
+    unscaled_df = featureDF.withColumn('distances_mfcc', distance_udf(F.col('mfccEuc'))).select("id", "distances_mfcc").persist()
+    ##############################
+    aggregated = unscaled_df.agg(F.min(unscaled_df.distances_mfcc),F.max(unscaled_df.distances_mfcc),F.mean(unscaled_df.distances_mfcc))
+    mean_val = aggregated.collect()[0]["avg(distances_mfcc)"]
+    max_val = aggregated.collect()[0]["max(distances_mfcc)"]
+    min_val = aggregated.collect()[0]["min(distances_mfcc)"]
+    result = unscaled_df.filter(unscaled_df.distances_mfcc < mean_val) 
+    result = result.withColumn('scaled_mfcc', (unscaled_df.distances_mfcc-min_val)/(max_val-min_val)).select("id","scaled_mfcc") 
+    return result
+
+def get_neighbors_notes(song, featureDF):
+    comparator_value = song[0]["notes"]
+    df_merged = featureDF.withColumn("compare", lit(comparator_value))
+    df_levenshtein = df_merged.withColumn("distances_levenshtein", levenshtein(col("notes"), col("compare")))
+    unscaled_df = df_levenshtein.select("id", "key", "scale", "distances_levenshtein").persist()
+    ##############################
+    aggregated = unscaled_df.agg(F.min(unscaled_df.distances_levenshtein),F.max(unscaled_df.distances_levenshtein),F.mean(unscaled_df.distances_levenshtein))
+    mean_val = aggregated.collect()[0]["avg(distances_levenshtein)"]
+    max_val = aggregated.collect()[0]["max(distances_levenshtein)"]
+    min_val = aggregated.collect()[0]["min(distances_levenshtein)"]
+    result = unscaled_df.filter(unscaled_df.distances_levenshtein < mean_val) 
+    result = result.withColumn('scaled_notes', (unscaled_df.distances_levenshtein-min_val)/(max_val-min_val)).select("id","scaled_notes") 
+    return result
+
+def get_neighbors_mfcc_skl(song, featureDF):
+    comparator_value = song[0]["mfccSkl"]
+    distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
+    unscaled_df = featureDF.withColumn('distances_skl', distance_udf(F.col('mfccSkl'))).select("id", "distances_skl")
+    #thresholding 
+    unscaled_df = unscaled_df.filter(unscaled_df.distances_skl != np.inf).persist()       
+    ##############################
+    aggregated = unscaled_df.agg(F.min(unscaled_df.distances_skl),F.max(unscaled_df.distances_skl),F.mean(unscaled_df.distances_skl))
+    mean_val = aggregated.collect()[0]["avg(distances_skl)"]
+    max_val = aggregated.collect()[0]["max(distances_skl)"]
+    min_val = aggregated.collect()[0]["min(distances_skl)"]
+    result = unscaled_df.filter(unscaled_df.distances_skl < mean_val) 
+    result = result.withColumn('scaled_skl', (unscaled_df.distances_skl-min_val)/(max_val-min_val)).select("id","scaled_skl") 
+    return result
+
+def get_nearest_neighbors_filter_chroma_first(song, outname, fullFeatureDF):
     tic1 = int(round(time.time() * 1000))
     song = fullFeatureDF.filter(featureDF.id == song).collect()#
     tac1 = int(round(time.time() * 1000))
@@ -249,31 +345,66 @@ def get_nearest_neighbors_filter(song, outname, fullFeatureDF):
 
     tic1 = int(round(time.time() * 1000))
     neighbors_chroma = get_neighbors_chroma_corr_valid(song, fullFeatureDF).persist()
-    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_chroma.id)
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_chroma.id).persist()
     tac1 = int(round(time.time() * 1000))
     time_dict['CHROMA: ']= tac1 - tic1
 
     tic1 = int(round(time.time() * 1000))
     neighbors_mfcc_js = get_neighbors_mfcc_js(song, fullFeatureDF).persist()
-    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_mfcc_js.id)
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_mfcc_js.id).persist()
     tac1 = int(round(time.time() * 1000))
     time_dict['JS: ']= tac1 - tic1
 
     tic1 = int(round(time.time() * 1000))
     neighbors_rp_euclidean = get_neighbors_rp_euclidean(song, fullFeatureDF).persist()
-    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_rp_euclidean.id)
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_rp_euclidean.id).persist()
     tac1 = int(round(time.time() * 1000))
     time_dict['RP: ']= tac1 - tic1
 
     tic1 = int(round(time.time() * 1000))
-    mergedSim = neighbors_chroma.join(neighbors_rp_euclidean, on=['id'], how='inner')
+    neighbors_rh_euclidean = get_neighbors_rh_euclidean(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_rh_euclidean.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['RH: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_bh_euclidean = get_neighbors_bh_euclidean(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_bh_euclidean.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['BH: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_mfcc_skl = get_neighbors_mfcc_skl(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_mfcc_skl.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['SKL: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_notes = get_neighbors_notes(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_notes.id).persist() 
+    tac1 = int(round(time.time() * 1000))
+    time_dict['NOTES: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_mfcc_eucl.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['MFCC: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    mergedSim = neighbors_chroma.join(neighbors_rp_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_rh_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_mfcc_eucl, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_mfcc_skl, on=['id'], how='inner').persist()
     mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner').dropDuplicates().persist()
     tac1 = int(round(time.time() * 1000))
     time_dict['JOIN: ']= tac1 - tic1
 
     tic1 = int(round(time.time() * 1000))
-    mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_chroma + mergedSim.scaled_rp + mergedSim.scaled_js) / 3)
-    mergedSim = mergedSim.orderBy('aggregated', ascending=True)#.rdd.flatMap(list).collect()
+    mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_notes + mergedSim.scaled_mfcc + mergedSim.scaled_chroma + mergedSim.scaled_bh + mergedSim.scaled_rp + mergedSim.scaled_skl + mergedSim.scaled_js + mergedSim.scaled_rh) / 8).persist()
+    mergedSim = mergedSim.orderBy('aggregated', ascending=True).persist()#.rdd.flatMap(list).collect()
     mergedSim.show()
     #scaledSim.toPandas().to_csv(outname, encoding='utf-8')
 
@@ -281,33 +412,148 @@ def get_nearest_neighbors_filter(song, outname, fullFeatureDF):
     neighbors_rp_euclidean.unpersist()
     neighbors_mfcc_js.unpersist()
     neighbors_chroma.unpersist()
+    neighbors_rh_euclidean.unpersist()    
+    neighbors_bh_euclidean.unpersist()
+    neighbors_mfcc_skl.unpersist()
+    neighbors_notes.unpersist()
 
     tac1 = int(round(time.time() * 1000))
     time_dict['AGG_F: ']= tac1 - tic1
     return mergedSim
 
+
+def get_nearest_neighbors_filter_rp_first (song, outname, fullFeatureDF):
+    tic1 = int(round(time.time() * 1000))
+    song = fullFeatureDF.filter(featureDF.id == song).collect()#
+    tac1 = int(round(time.time() * 1000))
+    time_dict['COMP: ']= tac1 - tic1 
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_bh_euclidean = get_neighbors_bh_euclidean(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_bh_euclidean.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['BH: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_rh_euclidean = get_neighbors_rh_euclidean(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_rh_euclidean.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['RH: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_mfcc_eucl = get_neighbors_mfcc_euclidean(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_mfcc_eucl.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['MFCC: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_notes = get_neighbors_notes(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_notes.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['NOTES: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_rp_euclidean = get_neighbors_rp_euclidean(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_rp_euclidean.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['RP: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_mfcc_skl = get_neighbors_mfcc_skl(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_mfcc_skl.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['SKL: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_mfcc_js = get_neighbors_mfcc_js(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_mfcc_js.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['JS: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    neighbors_chroma = get_neighbors_chroma_corr_valid(song, fullFeatureDF).persist()
+    fullFeatureDF = fullFeatureDF.filter(fullFeatureDF.id == neighbors_chroma.id).persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['CHROMA: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    mergedSim = neighbors_chroma.join(neighbors_rp_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_bh_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_rh_euclidean, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_notes, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_mfcc_eucl, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_mfcc_skl, on=['id'], how='inner').persist()
+    mergedSim = mergedSim.join(neighbors_mfcc_js, on=['id'], how='inner').dropDuplicates().persist()
+    tac1 = int(round(time.time() * 1000))
+    time_dict['JOIN: ']= tac1 - tic1
+
+    tic1 = int(round(time.time() * 1000))
+    mergedSim = mergedSim.withColumn('aggregated', (mergedSim.scaled_notes + mergedSim.scaled_mfcc + mergedSim.scaled_chroma + mergedSim.scaled_bh + mergedSim.scaled_rp + mergedSim.scaled_skl + mergedSim.scaled_js + mergedSim.scaled_rh) / 8).persist()
+    mergedSim = mergedSim.orderBy('aggregated', ascending=True).persist()#.rdd.flatMap(list).collect()
+    mergedSim.show()
+    #scaledSim.toPandas().to_csv(outname, encoding='utf-8')
+
+    mergedSim.unpersist()
+    neighbors_rp_euclidean.unpersist()
+    neighbors_mfcc_js.unpersist()
+    neighbors_chroma.unpersist()
+    neighbors_rh_euclidean.unpersist()    
+    neighbors_bh_euclidean.unpersist()
+    neighbors_mfcc_skl.unpersist()
+    neighbors_notes.unpersist()
+
+    tac1 = int(round(time.time() * 1000))
+    time_dict['AGG_F: ']= tac1 - tic1
+    return mergedSim
+
+
+song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
+
 if len (sys.argv) < 2:
-    #song = "music/Electronic/The XX - Intro.mp3"    #100 testset
-    song = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
+    song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3" #1517 artists
+    song2 = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3" #1517 artists
 else: 
-    song = sys.argv[1]
-song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
+    song1 = sys.argv[1]
+    song2 = sys.argv[1]
+
+song1 = song1.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
+song2 = song2.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
+
+fullFeatureDF = featureDF.repartition(repartition_count).persist()
+print(fullFeatureDF.count())
 
 tic1 = int(round(time.time() * 1000))
-res = get_nearest_neighbors_filter(song, "FILTER_REFINE.csv", fullFeatureDF).persist()
+res1 = get_nearest_neighbors_filter_chroma_first(song1, "FILTER_REFINE_SONG1_CHROMA_FIRST.csv", fullFeatureDF).persist()
 tac1 = int(round(time.time() * 1000))
-time_dict['FILTER_FULL: ']= tac1 - tic1
+time_dict['FILTER_FULL_SONG1_CHROMA_FIRST: ']= tac1 - tic1
+
+#reset fullFeatureDF to full size
+fullFeatureDF = featureDF.repartition(repartition_count).persist()
+print(fullFeatureDF.count())
+
+tic2 = int(round(time.time() * 1000))
+res2 = get_nearest_neighbors_filter_rp_first(song2, "FILTER_REFINE_SONG2_RP_FIRST.csv", fullFeatureDF).persist()
+tac2 = int(round(time.time() * 1000))
+time_dict['FILTER_FULL_SONG2_RP_FIRST: ']= tac2 - tic2
 
 total2 = int(round(time.time() * 1000))
 time_dict['FILTER_TOTAL: ']= total2 - total1
 
+tic1 = int(round(time.time() * 1000))
+res1.toPandas().to_csv("FILTER_REFINE_SONG1_CHROMA_FIRST.csv", encoding='utf-8')
+res1.unpersist()
+tac1 = int(round(time.time() * 1000))
+time_dict['CSV1_CHROMA_FIRST: ']= tac1 - tic1
+
 tic2 = int(round(time.time() * 1000))
-res.toPandas().to_csv("FILTER_REFINE.csv", encoding='utf-8')
+res2.toPandas().to_csv("FILTER_REFINE_SONG2_RP_FIRST.csv", encoding='utf-8')
+res2.unpersist()
 tac2 = int(round(time.time() * 1000))
-time_dict['CSV_F: ']= tac2 - tic2
+time_dict['CSV2_RP_FIRST: ']= tac2 - tic2
 
 print time_dict
 
 featureDF.unpersist()
+fullFeatureDF.unpersist()
 
 
