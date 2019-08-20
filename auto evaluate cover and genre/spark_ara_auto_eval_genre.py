@@ -285,7 +285,7 @@ def get_neighbors_mfcc_skl(song, featureDF):
     distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
     result = featureDF.withColumn('distances_skl', distance_udf(F.col('mfccSkl'))).select("id", "distances_skl")
     #thresholding 
-    #result = result.filter(result.distances_skl <= 100)  
+    result = result.filter(result.distances_skl <= 100)  
     result = result.filter(result.distances_skl != np.inf)        
     return result
 
