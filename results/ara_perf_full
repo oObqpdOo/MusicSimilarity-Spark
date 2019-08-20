@@ -5,18 +5,17 @@ ARA CLUSTER: ALL , subsequent requests, merge forced transformation, feature tim
 ARA cluster, 114210 songs
 
 DF (no repartition):        {'CSV1: ': 8577, 'RH: ': 5533, 'PREPROCESS: ': 7441, 'DF_SONG2: ': 147537, 'JOIN AND AGG: ': 267, 'DF_TOTAL: ': 362102, 'JS: ': 6432, 'BH: ': 10132, 'CHROMA: ': 4436, 'SKL: ': 15804, 'NOTE: ': 44031, 'CSV2: ': 7998, 'DF_SONG1: ': 190570, 'RP: ': 8846, 'MFCC: ': 5090}
-
 DF (repartition 32):        {'CSV1: ': 8249, 'RH: ': 1396, 'PREPROCESS: ': 7341, 'DF_SONG2: ': 36409, 'JOIN AND AGG: ': 252, 'DF_TOTAL: ': 144630, 'JS: ': 1052, 'BH: ': 1461, 'CHROMA: ': 4063, 'SKL: ': 3867, 'NOTE: ': 4752, 'CSV2: ': 6305, 'DF_SONG1: ': 83697, 'RP: ': 6108, 'MFCC: ': 989}
-DF (proper caching):        same
+DF (proper caching):        {'CSV1: ': 7373, 'RH: ': 1305, 'PREPROCESS: ': 4445, 'DF_SONG2: ': 42180, 'JOIN AND AGG: ': 361, 'DF_TOTAL: ': 135500, 'JS: ': 909, 'BH: ': 1613, 'CHROMA: ': 4304, 'SKL: ': 4044, 'NOTE: ': 5076, 'CSV2: ': 14288, 'DF_SONG1: ': 77788, 'RP: ': 6197, 'MFCC: ': 896}
 
 --------------------
 
 MERGED (repartition 32):    {'CSV1: ': 9949, 'AGG: ': 976, 'RH: ': 52, 'MERGED_FULL_SONG2: ': 138362, 'PREPROCESS: ': 43073, 'MERGED_TOTAL: ': 339405, 'JOIN: ': 468, 'JS: ': 45, 'NOTE: ': 48, 'CHROMA: ': 49, 'COMPARATOR: ': 14069, 'SKL: ': 45, 'MERGED_FULL_SONG1: ': 140496, 'BH: ': 42, 'CSV2: ': 7171, 'SCALE: ': 122179, 'RP: ': 66, 'MFCC: ': 39}
-MERGED (proper caching):    {'CSV1: ': 9063, 'AGG: ': 1047, 'RH: ': 49, 'MERGED_FULL_SONG2: ': 14183, 'PREPROCESS: ': 42713, 'MERGED_TOTAL: ': 104114, 'JOIN: ': 732, 'JS: ': 53, 'NOTE: ': 39, 'CHROMA: ': 52, 'COMPARATOR: ': 390, 'SKL: ': 52, 'MERGED_FULL_SONG1: ': 32419, 'BH: ': 48, 'CSV2: ': 5720, 'SCALE: ': 11335, 'RP: ': 46, 'MFCC: ': 43}
+MERGED (proper caching):    {'CSV1: ': 6347, 'AGG: ': 1084, 'RH: ': 49, 'MERGED_FULL_SONG2: ': 15086, 'PREPROCESS: ': 39866, 'MERGED_TOTAL: ': 99181, 'JOIN: ': 814, 'JS: ': 52, 'NOTE: ': 43, 'CHROMA: ': 50, 'COMPARATOR: ': 441, 'SKL: ': 67, 'MERGED_FULL_SONG1: ': 32773, 'BH: ': 59, 'CSV2: ': 6711, 'SCALE: ': 11960, 'RP: ': 63, 'MFCC: ': 74}
 
 --------------------
 
-RDD (proper caching):       {'CSV1: ': 5202, 'RH: ': 304, 'PREPROCESS: ': 1110, 'RDD_FULL_SONG1: ': 64108, 'JOIN AND AGG: ': 18823, 'RDD_TOTAL: ': 114041, 'JS: ': 1461, 'BH: ': 415, 'CHROMA: ': 8869, 'SKL: ': 2753, 'NOTE: ': 351, 'CSV2: ': 2260, 'RP: ': 387, 'RDD_FULL_SONG2: ': 36897, 'MFCC: ': 346}
+RDD (proper caching):       {'CSV1: ': 4326, 'RH: ': 311, 'PREPROCESS: ': 1005, 'RDD_FULL_SONG1: ': 66164, 'JOIN AND AGG: ': 18475, 'RDD_TOTAL: ': 116840, 'JS: ': 1813, 'BH: ': 394, 'CHROMA: ': 8794, 'SKL: ': 2681, 'NOTE: ': 429, 'CSV2: ': 2306, 'RP: ': 534, 'RDD_FULL_SONG2: ': 37661, 'MFCC: ': 481}
 
 --------------------
 
@@ -24,6 +23,9 @@ FILTER AND REFINE without caching:          {'FILTER_TOTAL: ': 585192, 'NOTES: '
 
 FILTER AND REFINE with caching:             {'FILTER_TOTAL: ': 141019, 'NOTES: ': 3333, 'CHROMA: ': 5856, 'PREPROCESS: ': 57243, 'FILTER_FULL_SONG2_RP_FIRST: ': 29242, 'JOIN: ': 566, 'AGG_F: ': 11263, 'CSV1_CHROMA_FIRST: ': 4284, 'COMP: ': 456, 'JS: ': 1059, 'BH: ': 1056, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 37175, 'SKL: ': 2017, 'RH: ': 957, 'RP: ': 1435, 'CSV2_RP_FIRST: ': 1246, 'MFCC: ': 947}
     
+FILTER AND REFINE SINGLE DF proper cached:  {'FILTER_TOTAL: ': 99034, 'NOTES: ': 1392, 'CHROMA: ': 1045, 'CSV2_BH_FIRST: ': 1221, 'PREPROCESS: ': 57860, 'CSV1_CHROMA_FIRST: ': 698, 'FILTER_FULL_SONG2_BH_FIRST: ': 12536, 'AGG_F: ': 1318, 'JS / SKL: ': 4208, 'COMP: ': 269, 'BH: ': 1975, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 17006, 'RH: ': 1971, 'RP: ': 1169, 'MFCC: ': 3350}
+
+
 ========================================================================================================================
 ARA CLUSTER: ALL, SKL CHROMA RP
 ========================================================================================================================
@@ -31,7 +33,7 @@ ARA CLUSTER: ALL, SKL CHROMA RP
 ARA cluster, 114210 songs
 
 PERF PREC (forgot persist): {'TOTAL DF': 46198, 'TOTAL RDD': 100586, 'TOTAL MERGED': 86044}
-PERF PREC (with persist):   {'TOTAL DF': 45014, 'TOTAL RDD': 36379, 'TOTAL MERGED': 52130}
+PERF PREC (with persist):   {'TOTAL DF': 42832, 'TOTAL RDD': 36582, 'TOTAL MERGED': 52397}
                           
 ========================================================================================================================
 ARA CLUSTER: ALL, MFCC NOTES RP
@@ -40,7 +42,7 @@ ARA CLUSTER: ALL, MFCC NOTES RP
 ARA cluster, 114210 songs
 
 PERF (forgot persist):      {'TOTAL DF': 48636, 'TOTAL RDD': 21217, 'TOTAL MERGED': 60232}
-PERF (with persist):        {'TOTAL DF': 43160, 'TOTAL RDD': 22482, 'TOTAL MERGED': 35307}
+PERF (with persist):        {'TOTAL DF': 50854, 'TOTAL RDD': 22618, 'TOTAL MERGED': 35671}
 
 ========================================================================================================================
 ARA CLUSTER: edlib vs levenshtein

@@ -148,6 +148,21 @@ def symmetric_kullback_leibler(vec1, vec2):
     #print div
     return div
 
+#get 13 mean and 13x13 cov + var as vectors
+def get_euclidean_mfcc(vec1, vec2):
+    mean1 = np.empty([13, 1])
+    mean1 = vec1[0:13]
+    cov1 = np.empty([13,13])
+    cov1 = vec1[13:].reshape(13, 13)        
+    mean2 = np.empty([13, 1])
+    mean2 = vec2[0:13]
+    cov2 = np.empty([13,13])
+    cov2 = vec2[13:].reshape(13, 13)
+    iu1 = np.triu_indices(13)
+    #You need to pass the arrays as an iterable (a tuple or list), thus the correct syntax is np.concatenate((,),axis=None)
+    div = distance.euclidean(np.concatenate((mean1, cov1[iu1]),axis=None), np.concatenate((mean2, cov2[iu1]),axis=None))
+    return div
+
 #even faster than numpy version
 def naive_levenshtein(seq1, seq2):
     result = edlib.align(seq1, seq2)
@@ -190,15 +205,6 @@ notes = notes.map(lambda x: x.split(';'))
 notes = notes.map(lambda x: (x[0].replace(' ', '').replace('[', '').replace(']', '').replace(';', ','), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
 notes = notes.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[3].replace(',','').replace(' ',''), x[1], x[2])).persist()
 #########################################################
-#   Pre- Process MFCC for Euclidean
-#
-mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc", minPartitions=repartition_count)
-mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
-mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
-mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
-mfcceucVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
-#########################################################
 #   Pre- Process MFCC for SKL and JS
 #
 mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl", minPartitions=repartition_count)            
@@ -225,7 +231,6 @@ chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
 #bh_vec.count()
 #notes.count()
 #mfccVec.count()
-#mfcceucVec.count()
 #chromaVec.count()
 
 tac1 = int(round(time.time() * 1000))
@@ -295,9 +300,9 @@ def get_neighbors_mfcc_euclidean(song):
     #########################################################
     #   Get Neighbors
     #
-    comparator = mfcceucVec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
+    comparator = mfccVec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
     comparator_value = Vectors.dense(comparator[0])
-    resultMfcc = mfcceucVec.map(lambda x: (x[0], distance.euclidean(np.array(x[1]), np.array(comparator_value)))).cache()
+    resultMfcc = mfccVec.map(lambda x: (x[0], get_euclidean_mfcc(np.array(x[1]), np.array(comparator_value)))).cache()
     stat = resultMfcc.map(lambda x: x[1]).stats()
     max_val = stat.max()
     min_val = stat.min() 
@@ -489,5 +494,4 @@ rh_vec.unpersist()
 bh_vec.unpersist()
 notes.unpersist()
 mfccVec.unpersist()
-mfcceucVec.unpersist()
 chromaVec.unpersist()

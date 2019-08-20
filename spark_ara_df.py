@@ -173,6 +173,22 @@ def symmetric_kullback_leibler(vec1, vec2):
     #print div
     return div
 
+#get 13 mean and 13x13 cov + var as vectors
+def get_euclidean_mfcc(vec1, vec2):
+    mean1 = np.empty([13, 1])
+    mean1 = vec1[0:13]
+    cov1 = np.empty([13,13])
+    cov1 = vec1[13:].reshape(13, 13)        
+    mean2 = np.empty([13, 1])
+    mean2 = vec2[0:13]
+    cov2 = np.empty([13,13])
+    cov2 = vec2[13:].reshape(13, 13)
+    iu1 = np.triu_indices(13)
+    #You need to pass the arrays as an iterable (a tuple or list), thus the correct syntax is np.concatenate((,),axis=None)
+    div = distance.euclidean(np.concatenate((mean1, cov1[iu1]),axis=None), np.concatenate((mean2, cov2[iu1]),axis=None))
+    return div
+
+
 tic1 = int(round(time.time() * 1000))
 list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 
@@ -220,19 +236,7 @@ chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
 chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"]).persist()
 
 #########################################################
-#   Pre- Process MFCC for Euclidean
-#
-
-mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc", minPartitions=repartition_count)
-mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace(';', ','))
-mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
-mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
-mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
-mfccEucDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "features"]).persist()
-
-#########################################################
-#   Pre- Process MFCC for SKL and JS
+#   Pre- Process MFCC for SKL and JS and Euc
 #
 
 mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl", minPartitions=repartition_count)            
@@ -248,7 +252,6 @@ mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "features"]).persist()
 #kv_rh.count()
 #kv_bh.count()
 #notes.count()
-#mfccEucDfMerged.count()
 #mfccDfMerged.count()
 #chromaDf.count()
 
@@ -267,10 +270,10 @@ def get_neighbors_chroma_corr_valid(song):
     return result.withColumn('scaled_corr', 1 - (result.distances_corr-min_val)/(max_val-min_val)).select("id", "scaled_corr")
 
 def get_neighbors_mfcc_euclidean(song):
-    df_vec = mfccEucDfMerged
+    df_vec = mfccDfMerged
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
-    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
+    distance_udf = F.udf(lambda x: float(get_euclidean_mfcc(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_mfcc', distance_udf(F.col('features'))).select("id", "distances_mfcc")
     aggregated = result.agg(F.min(result.distances_mfcc),F.max(result.distances_mfcc))
     max_val = aggregated.collect()[0]["max(distances_mfcc)"]
@@ -498,7 +501,6 @@ kv_rp.unpersist()
 kv_rh.unpersist()
 kv_bh.unpersist()
 notes.unpersist()
-mfccEucDfMerged.unpersist()
 mfccDfMerged.unpersist()
 chromaDf.unpersist()
 

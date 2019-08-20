@@ -175,6 +175,21 @@ def symmetric_kullback_leibler(vec1, vec2):
     #print div
     return div
 
+#get 13 mean and 13x13 cov + var as vectors
+def get_euclidean_mfcc(vec1, vec2):
+    mean1 = np.empty([13, 1])
+    mean1 = vec1[0:13]
+    cov1 = np.empty([13,13])
+    cov1 = vec1[13:].reshape(13, 13)        
+    mean2 = np.empty([13, 1])
+    mean2 = vec2[0:13]
+    cov2 = np.empty([13,13])
+    cov2 = vec2[13:].reshape(13, 13)
+    iu1 = np.triu_indices(13)
+    #You need to pass the arrays as an iterable (a tuple or list), thus the correct syntax is np.concatenate((,),axis=None)
+    div = distance.euclidean(np.concatenate((mean1, cov1[iu1]),axis=None), np.concatenate((mean2, cov2[iu1]),axis=None))
+    return div
+
 #even faster than numpy version
 def naive_levenshtein(seq1, seq2):
     result = edlib.align(seq1, seq2)
@@ -229,19 +244,7 @@ chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
 chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"])
 
 #########################################################
-#   Pre- Process MFCC for Euclidean
-#
-
-mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
-mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace(';', ','))
-mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
-mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
-mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
-mfccEucDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccEuc"])
-
-#########################################################
-#   Pre- Process MFCC for SKL and JS
+#   Pre- Process MFCC for SKL and JS and EUC
 #
 
 mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
@@ -255,8 +258,7 @@ mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccSkl"])
 #########################################################
 #   Gather all features in one dataframe
 #
-featureDF = mfccEucDfMerged.join(mfccDfMerged, on=["id"], how='inner')
-featureDF = featureDF.join(chromaDf, on=['id'], how='inner')
+featureDF = chromaDf.join(mfccDfMerged, on=["id"], how='inner')
 featureDF = featureDF.join(notesDf, on=['id'], how='inner')
 featureDF = featureDF.join(rp_df, on=['id'], how='inner')
 featureDF = featureDF.join(rh_df, on=['id'], how='inner')
@@ -311,9 +313,9 @@ def get_neighbors_bh_euclidean(song, featureDF):
     return result
 
 def get_neighbors_mfcc_euclidean(song, featureDF):
-    comparator_value = song[0]["mfccEuc"]
-    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
-    result = featureDF.withColumn('distances_mfcc', distance_udf(F.col('mfccEuc'))).select("id", "distances_mfcc")
+    comparator_value = song[0]["mfccSkl"]
+    distance_udf = F.udf(lambda x: float(get_euclidean_mfcc(x, comparator_value)), FloatType())
+    result = featureDF.withColumn('distances_mfcc', distance_udf(F.col('mfccSkl'))).select("id", "distances_mfcc")
     return result
 
 def get_neighbors_notes(song, featureDF):
@@ -375,6 +377,7 @@ def perform_scaling(unscaled_df):
     min_val = aggregated.collect()[0]["min(distances_mfcc)"]
     result = result.withColumn('scaled_mfcc', (unscaled_df.distances_mfcc-min_val)/(max_val-min_val)).select("id", "key", "scale", "bpm", "scaled_rp", "scaled_rh", "scaled_bh", "scaled_notes", "scaled_chroma", "scaled_skl", "scaled_js", "scaled_mfcc")
     ##############################
+    aggregated.unpersist()
     return result
 
 def get_nearest_neighbors(song, outname):

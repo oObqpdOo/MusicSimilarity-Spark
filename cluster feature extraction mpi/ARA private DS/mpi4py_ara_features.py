@@ -188,7 +188,7 @@ def compute_features(path, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
         cov = np.cov(mfccs.T)
         cov_kl = cov#.flatten()
         #get only upper triangular matrix values to shorten length
-        iu1 = np.triu_indices(12)
+        iu1 = np.triu_indices(13)
         cov = cov[iu1]
 
         #plt.imshow(mfccs.T, origin='lower', aspect='auto', interpolation='nearest')

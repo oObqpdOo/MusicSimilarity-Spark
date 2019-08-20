@@ -169,6 +169,21 @@ def symmetric_kullback_leibler(vec1, vec2):
     #print div
     return div
 
+#get 13 mean and 13x13 cov + var as vectors
+def get_euclidean_mfcc(vec1, vec2):
+    mean1 = np.empty([13, 1])
+    mean1 = vec1[0:13]
+    cov1 = np.empty([13,13])
+    cov1 = vec1[13:].reshape(13, 13)        
+    mean2 = np.empty([13, 1])
+    mean2 = vec2[0:13]
+    cov2 = np.empty([13,13])
+    cov2 = vec2[13:].reshape(13, 13)
+    iu1 = np.triu_indices(13)
+    #You need to pass the arrays as an iterable (a tuple or list), thus the correct syntax is np.concatenate((,),axis=None)
+    div = distance.euclidean(np.concatenate((mean1, cov1[iu1]),axis=None), np.concatenate((mean2, cov2[iu1]),axis=None))
+    return div
+
 def get_neighbors_rp_euclidean_rdd(song):
     #########################################################
     #   Pre- Process RP for Euclidean
@@ -218,20 +233,20 @@ def get_neighbors_notes_rdd(song):
 
 def get_neighbors_mfcc_euclidean_rdd(song):
     #########################################################
-    #   Pre- Process MFCC for Euclidean
+    #   Pre- Process MFCC for SKL and JS
     #
-    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc", minPartitions=repartition_count)
-    mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
-    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
-    mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
-    mfcceucVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
+    mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl", minPartitions=repartition_count)            
+    mfcc = mfcc.map(lambda x: x.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
+    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcc = mfcc.map(lambda x: x.split(';'))
+    mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].split(',')))
+    mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1]))).persist()
     #########################################################
     #   Get Neighbors
     #
-    comparator = mfcceucVec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
+    comparator = mfccVec.lookup(song.replace(' ', '').replace('[', '').replace(']', '').replace(';', ','))
     comparator_value = Vectors.dense(comparator[0])
-    resultMfcc = mfcceucVec.map(lambda x: (x[0], distance.euclidean(np.array(x[1]), np.array(comparator_value)))).cache()
+    resultMfcc = mfccVec.map(lambda x: (x[0], get_euclidean_mfcc(np.array(x[1]), np.array(comparator_value)))).cache()
     stat = resultMfcc.map(lambda x: x[1]).stats()
     max_val = stat.max()
     min_val = stat.min() 
@@ -263,19 +278,19 @@ def get_neighbors_mfcc_euclidean_dataframe(song):
     #   List to Vector UDF
     list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
     #########################################################
-    #   Pre- Process MFCC for Euclidean
+    #   Pre- Process MFCC for SKL and JS and Euc
     #
-    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc", minPartitions=repartition_count)
-    mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace(';', ','))
-    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
-    mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
-    mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
-    mfccEucDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "features"])
-    df_vec = mfccEucDfMerged.persist()
+    mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl", minPartitions=repartition_count)            
+    mfcc = mfcc.map(lambda x: x.replace(' ', '').replace(';', ','))
+    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcc = mfcc.map(lambda x: x.split(';'))
+    mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
+    mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
+    mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "features"]).persist()
+    df_vec = mfccDfMerged.persist()
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
-    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
+    distance_udf = F.udf(lambda x: float(get_euclidean_mfcc(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_mfcc', distance_udf(F.col('features'))).select("id", "distances_mfcc")
     aggregated = result.agg(F.min(result.distances_mfcc),F.max(result.distances_mfcc))
     max_val = aggregated.collect()[0]["max(distances_mfcc)"]
@@ -304,9 +319,9 @@ def get_neighbors_notes_dataframe(song):
     return result.withColumn('scaled_levenshtein', (result.distances_levenshtein-min_val)/(max_val-min_val)).select("id", "key", "scale", "scaled_levenshtein")
 
 def get_neighbors_mfcc_euclidean_speed(song, featureDF):
-    comparator_value = song[0]["mfccEuc"]
-    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
-    result = featureDF.withColumn('distances_mfcc', distance_udf(F.col('mfccEuc'))).select("id", "distances_mfcc")
+    comparator_value = song[0]["mfccSkl"]
+    distance_udf = F.udf(lambda x: float(get_euclidean_mfcc(x, comparator_value)), FloatType())
+    result = featureDF.withColumn('distances_mfcc', distance_udf(F.col('mfccSkl'))).select("id", "distances_mfcc")
     return result
 
 def get_neighbors_rp_euclidean_speed(song, featureDF):
@@ -323,7 +338,6 @@ def get_neighbors_notes_speed(song, featureDF):
     #df_levenshtein.sort(col("word1_word2_levenshtein").asc()).show()    
     result = df_levenshtein.select("id", "key", "scale", "distances_levenshtein")
     return result
-
 
 def perform_scaling(unscaled_df):
     aggregated = unscaled_df.agg(F.min(unscaled_df.distances_rp),F.max(unscaled_df.distances_rp),
@@ -366,19 +380,19 @@ def get_nearest_neighbors_speed(song, outname):
     notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
     notesDf = sqlContext.createDataFrame(notes, ["id", "key", "scale", "notes"]).persist()
     #########################################################
-    #   Pre- Process MFCC for Euclidean
+    #   Pre- Process MFCC for SKL and JS and EUC
     #
-    mfcceuc = sc.textFile("features[0-9]*/out[0-9]*.mfcc")
-    mfcceuc = mfcceuc.map(lambda x: x.replace(' ', '').replace(';', ','))
-    mfcceuc = mfcceuc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
-    mfcceuc = mfcceuc.map(lambda x: x.split(';'))
-    mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
-    mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
-    mfccEucDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccEuc"]).persist()
+    mfcc = sc.textFile("features[0-9]*/out[0-9]*.mfcckl")            
+    mfcc = mfcc.map(lambda x: x.replace(' ', '').replace(';', ','))
+    mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
+    mfcc = mfcc.map(lambda x: x.split(';'))
+    mfcc = mfcc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
+    mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
+    mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccSkl"]).persist()
     #########################################################
     #   Gather all features in one dataframe
     #
-    featureDF = mfccEucDfMerged.join(notesDf, on=["id"], how='inner')
+    featureDF = mfccDfMerged.join(notesDf, on=["id"], how='inner')
     featureDF = featureDF.join(rp_df, on=['id'], how='inner').dropDuplicates()
     fullFeatureDF = featureDF.repartition(repartition_count).persist()
     song = fullFeatureDF.filter(featureDF.id == song).collect()
@@ -394,7 +408,7 @@ def get_nearest_neighbors_speed(song, outname):
     scaledSim.limit(20).show()    
     #scaledSim.toPandas().to_csv(outname, encoding='utf-8')
     mergedSim.unpersist() 
-    mfccEucDfMerged.unpersist()
+    mfccDfMerged.unpersist()
     notesDf.unpersist()
     rp_df.unpersist() 
     fullFeatureDF.persist()
