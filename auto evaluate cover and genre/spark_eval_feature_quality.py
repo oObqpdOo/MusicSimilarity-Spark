@@ -44,7 +44,7 @@ count = 0
 for i in list1l[4:5]: 
     #outname = "results/testset/" + i.replace('.mp3', '').replace('music/', '').replace('/', '_').replace('mp3', '') + ".csv"
     outname = i    
-    #outname = "results/genre/genre1517all/Rock&Pop_Dead_To_Fall-Eternal_Gates_of_Hell.csv"
+    outname = "results/testsetfull/Soundtrack_FleshAndBone-Dakini_MovementIV.csv"
     #outname = outname.encode('ascii','ignore')    
     print outname 
     rdd = sc.textFile(outname)
@@ -66,6 +66,6 @@ for i in list1l[4:5]:
     count = count + 1
 
 #result.show()
-result.toPandas().to_csv("__feature_eval.csv", encoding='utf-8')
+result.toPandas().to_csv("__feature_eval_elec.csv", encoding='utf-8')
 
 
