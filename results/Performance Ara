@@ -1,0 +1,138 @@
+
+================================================================
+
+FMA Many Small Files (40000 small files, 102000 songs)
+023/023192.mp3
+
+MFCC + NOTES + RP:      {'TOTAL DF': 30517, 'TOTAL RDD': 211591, 'TOTAL MERGED': 39336}  
+                                
+JS + CHROMA + RP:       {'TOTAL DF': 32439, 'TOTAL RDD': 130989, 'TOTAL MERGED': 41490}      
+                                    
+ALL MERGED:             {'CSV1: ': 6964, 'AGG: ': 1024, 'RH: ': 51, 'MERGED_FULL_SONG2: ': 16727, 'PREPROCESS: ': 151204, 'MERGED_TOTAL: ': 203913, 'JOIN: ': 654, 'JS: ': 51, 'NOTE: ': 40, 'CHROMA: ': 45, 'COMPARATOR: ': 556, 'SKL: ': 51, 'MERGED_FULL_SONG1: ': 24832, 'BH: ': 47, 'CSV2: ': 9886, 'SCALE: ': 13621, 'RP: ': 66, 'MFCC: ': 49}
+ 
+                                        
+ALL DF:                 {'CSV1: ': 9259, 'RH: ': 3182, 'PREPROCESS: ': 15355, 'DF_SONG2: ': 77434, 'JOIN AND AGG: ': 384, 'DF_TOTAL: ': 196801, 'JS: ': 4099, 'BH: ': 2792, 'CHROMA: ': 2841, 'SKL: ': 5319, 'NOTE: ': 2951, 'CSV2: ': 10533, 'DF_SONG1: ': 92860, 'RP: ': 5531, 'MFCC: ': 3051} 
+
+ALL RDD (no repartition :)):    eeeeeeeeewig
+                                               
+================================================================
+
+FMA ONE large file / feat (8 larger files, 102000 songs)
+023/023192.mp3
+
+MFCC + NOTES + RP:      {'TOTAL DF': 33677, 'TOTAL RDD': 21933, 'TOTAL MERGED': 31963}
+                                
+JS + CHROMA + RP:       {'TOTAL DF': 41477, 'TOTAL RDD': 35856, 'TOTAL MERGED': 51286}    
+                                    
+ALL MERGED:             {'CSV1: ': 7629, 'AGG: ': 983, 'RH: ': 51, 'MERGED_FULL_SONG2: ': 13284, 'PREPROCESS: ': 38711, 'MERGED_TOTAL: ': 90643, 'JOIN: ': 724, 'JS: ': 50, 'NOTE: ': 38, 'CHROMA: ': 47, 'COMPARATOR: ': 775, 'SKL: ': 64, 'MERGED_FULL_SONG1: ': 27407, 'BH: ': 50, 'CSV2: ': 6040, 'SCALE: ': 9897, 'RP: ': 69, 'MFCC: ': 47}
+                                        
+ALL DF:                 {'CSV1: ': 7482, 'RH: ': 1396, 'PREPROCESS: ': 5374, 'DF_SONG2: ': 47692, 'JOIN AND AGG: ': 392, 'DF_TOTAL: ': 150703, 'JS: ': 861, 'BH: ': 1333, 'CHROMA: ': 4523, 'SKL: ': 2814, 'NOTE: ': 2402, 'CSV2: ': 12340, 'DF_SONG1: ': 86492, 'RP: ': 8976, 'MFCC: ': 876}
+
+ALL RDD:                {'CSV1: ': 3862, 'RH: ': 312, 'PREPROCESS: ': 1047, 'RDD_FULL_SONG1: ': 58990, 'JOIN AND AGG: ': 10839, 'RDD_TOTAL: ': 98518, 'JS: ': 1440, 'BH: ': 320, 'CHROMA: ': 8021, 'SKL: ': 2140, 'NOTE: ': 441, 'CSV2: ': 2079, 'RP: ': 494, 'RDD_FULL_SONG2: ': 26949, 'MFCC: ': 475}
+
+================================================================
+================================================================
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 114000 songs)
+
+MFCC + NOTES + RP:      {'TOTAL DF': 48512, 'TOTAL RDD': 23245, 'TOTAL MERGED': 43296}
+                                
+JS + CHROMA + RP:       {'TOTAL DF': 39894, 'TOTAL RDD': 36334, 'TOTAL MERGED': 51842}
+                                    
+ALL MERGED:             {'CSV1: ': 7361, 'AGG: ': 1054, 'RH: ': 45, 'MERGED_FULL_SONG2: ': 16043, 'PREPROCESS: ': 40050, 'MERGED_TOTAL: ': 102438, 'JOIN: ': 679, 'JS: ': 50, 'NOTE: ': 42, 'CHROMA: ': 45, 'COMPARATOR: ': 482, 'SKL: ': 51, 'MERGED_FULL_SONG1: ': 34781, 'BH: ': 48, 'CSV2: ': 9584, 'SCALE: ': 13090, 'RP: ': 74, 'MFCC: ': 52}
+                                        
+ALL DF:                 {'CSV1: ': 6927, 'RH: ': 1384, 'PREPROCESS: ': 5571, 'DF_SONG2: ': 33872, 'JOIN AND AGG: ': 314, 'DF_TOTAL: ': 123573, 'JS: ': 1043, 'BH: ': 1576, 'CHROMA: ': 4495, 'SKL: ': 2599, 'NOTE: ': 2535, 'CSV2: ': 7989, 'DF_SONG1: ': 72612, 'RP: ': 6277, 'MFCC: ': 1073}
+
+ALL RDD:                {'CSV1: ': 3929, 'RH: ': 388, 'PREPROCESS: ': 949, 'RDD_FULL_SONG1: ': 70488, 'JOIN AND AGG: ': 18048, 'RDD_TOTAL: ': 118939, 'JS: ': 1822, 'BH: ': 386, 'CHROMA: ': 8068, 'SKL: ': 2133, 'NOTE: ': 497, 'CSV2: ': 2389, 'RP: ': 521, 'RDD_FULL_SONG2: ': 35911, 'MFCC: ': 503}
+
+ALL FILTER:             {'FILTER_TOTAL: ': 94464, 'NOTES: ': 1536, 'CHROMA: ': 952, 'CSV2_BH_FIRST: ': 3261, 'PREPROCESS: ': 54697, 'CSV1_CHROMA_FIRST: ': 575, 'FILTER_FULL_SONG2_BH_FIRST: ': 11957, 'AGG_F: ': 1331, 'JS / SKL: ': 4769, 'COMP: ': 243, 'BH: ': 1690, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 16836, 'RH: ': 1937, 'RP: ': 1060, 'MFCC: ': 3162}
+
+
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 12000 songs)
+
+MFCC + NOTES + RP:      {'TOTAL DF': 18052, 'TOTAL RDD': 15180, 'TOTAL MERGED': 18356}
+                                
+JS + CHROMA + RP:       {'TOTAL DF': 20432, 'TOTAL RDD': 19692, 'TOTAL MERGED': 23042}   
+                                    
+ALL MERGED:             {'CSV1: ': 2332, 'AGG: ': 1024, 'RH: ': 50, 'MERGED_FULL_SONG2: ': 7756, 'PREPROCESS: ': 24161, 'MERGED_TOTAL: ': 55227, 'JOIN: ': 663, 'JS: ': 64, 'NOTE: ': 40, 'CHROMA: ': 52, 'COMPARATOR: ': 123, 'SKL: ': 55, 'MERGED_FULL_SONG1: ': 12082, 'BH: ': 44, 'CSV2: ': 1622, 'SCALE: ': 5128, 'RP: ': 67, 'MFCC: ': 49}
+                                        
+ALL DF:                 {'CSV1: ': 2512, 'RH: ': 762, 'PREPROCESS: ': 5338, 'DF_SONG2: ': 14655, 'JOIN AND AGG: ': 383, 'DF_TOTAL: ': 73711, 'JS: ': 537, 'BH: ': 767, 'CHROMA: ': 1703, 'SKL: ': 961, 'NOTE: ': 972, 'CSV2: ': 2467, 'DF_SONG1: ': 42577, 'RP: ': 1407, 'MFCC: ': 622}
+
+ALL RDD:                {'CSV1: ': 2646, 'RH: ': 314, 'PREPROCESS: ': 1003, 'RDD_FULL_SONG1: ': 39238, 'JOIN AND AGG: ': 11545, 'RDD_TOTAL: ': 71648, 'JS: ': 725, 'BH: ': 292, 'CHROMA: ': 2752, 'SKL: ': 665, 'NOTE: ': 222, 'CSV2: ': 1009, 'RP: ': 300, 'RDD_FULL_SONG2: ': 20108, 'MFCC: ': 288}
+
+ALL FILTER:             {'FILTER_TOTAL: ': 65949, 'NOTES: ': 1636, 'CHROMA: ': 990, 'CSV2_BH_FIRST: ': 236, 'PREPROCESS: ': 30982, 'CSV1_CHROMA_FIRST: ': 571, 'FILTER_FULL_SONG2_BH_FIRST: ': 10002, 'AGG_F: ': 930, 'JS / SKL: ': 4233, 'COMP: ': 235, 'BH: ': 1156, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 13335, 'RH: ': 943, 'RP: ': 950, 'MFCC: ': 3115}
+
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 3300 songs)
+
+MFCC + NOTES + RP:      {'TOTAL DF': 10090, 'TOTAL RDD': 11396, 'TOTAL MERGED': 13778}
+                                
+JS + CHROMA + RP:       {'TOTAL DF': 12069, 'TOTAL RDD': 17401, 'TOTAL MERGED': 23327} 
+                                    
+ALL MERGED:             {'CSV1: ': 5164, 'AGG: ': 932, 'RH: ': 51, 'MERGED_FULL_SONG2: ': 7063, 'PREPROCESS: ': 26121, 'MERGED_TOTAL: ': 58852, 'JOIN: ': 689, 'JS: ': 49, 'NOTE: ': 39, 'CHROMA: ': 47, 'COMPARATOR: ': 105, 'SKL: ': 47, 'MERGED_FULL_SONG1: ': 14486, 'BH: ': 43, 'CSV2: ': 2189, 'SCALE: ': 4646, 'RP: ': 43, 'MFCC: ': 47}
+                                        
+ALL DF:                 {'CSV1: ': 2931, 'RH: ': 911, 'PREPROCESS: ': 5295, 'DF_SONG2: ': 14776, 'JOIN AND AGG: ': 348, 'DF_TOTAL: ': 66986, 'JS: ': 392, 'BH: ': 638, 'CHROMA: ': 1040, 'SKL: ': 702, 'NOTE: ': 756, 'CSV2: ': 2059, 'DF_SONG1: ': 36699, 'RP: ': 1173, 'MFCC: ': 497}
+                            
+ALL RDD:                {'CSV1: ': 2103, 'RH: ': 310, 'PREPROCESS: ': 959, 'RDD_FULL_SONG1: ': 34607, 'JOIN AND AGG: ': 5550, 'RDD_TOTAL: ': 59564, 'JS: ': 687, 'BH: ': 193, 'CHROMA: ': 1757, 'SKL: ': 434, 'NOTE: ': 228, 'CSV2: ': 558, 'RP: ': 311, 'RDD_FULL_SONG2: ': 12809, 'MFCC: ': 308}
+                        
+ALL FILTER:             {'FILTER_TOTAL: ': 59691, 'NOTES: ': 1102, 'CHROMA: ': 966, 'CSV2_BH_FIRST: ': 183, 'PREPROCESS: ': 26229, 'CSV1_CHROMA_FIRST: ': 238, 'FILTER_FULL_SONG2_BH_FIRST: ': 9512, 'AGG_F: ': 838, 'JS / SKL: ': 4215, 'COMP: ': 242, 'BH: ': 842, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 12910, 'RH: ': 1102, 'RP: ': 945, 'MFCC: ': 3435}
+
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 163 songs)
+
+MFCC + NOTES + RP:      {'TOTAL DF': 7189, 'TOTAL RDD': 12490, 'TOTAL MERGED': 7800}
+                                
+JS + CHROMA + RP:       {'TOTAL DF': 10506, 'TOTAL RDD': 13580, 'TOTAL MERGED': 10208}   
+                                    
+ALL MERGED:             {'CSV1: ': 1751, 'AGG: ': 956, 'RH: ': 49, 'MERGED_FULL_SONG2: ': 5987, 'PREPROCESS: ': 16947, 'MERGED_TOTAL: ': 43090, 'JOIN: ': 618, 'JS: ': 47, 'NOTE: ': 37, 'CHROMA: ': 46, 'COMPARATOR: ': 85, 'SKL: ': 43, 'MERGED_FULL_SONG1: ': 9043, 'BH: ': 41, 'CSV2: ': 1563, 'SCALE: ': 3593, 'RP: ': 66, 'MFCC: ': 44}
+                                        
+ALL DF:                 {'CSV1: ': 1390, 'RH: ': 909, 'PREPROCESS: ': 5300, 'DF_SONG2: ': 11726, 'JOIN AND AGG: ': 328, 'DF_TOTAL: ': 63796, 'JS: ': 438, 'BH: ': 820, 'CHROMA: ': 752, 'SKL: ': 498, 'NOTE: ': 859, 'CSV2: ': 1576, 'DF_SONG1: ': 35134, 'RP: ': 847, 'MFCC: ': 603}
+
+ALL RDD:                {'CSV1: ': 1917, 'RH: ': 308, 'PREPROCESS: ': 1022, 'RDD_FULL_SONG1: ': 27233, 'JOIN AND AGG: ': 10693, 'RDD_TOTAL: ': 56294, 'JS: ': 932, 'BH: ': 329, 'CHROMA: ': 1336, 'SKL: ': 395, 'NOTE: ': 241, 'CSV2: ': 359, 'RP: ': 298, 'RDD_FULL_SONG2: ': 16337, 'MFCC: ': 430}
+
+ALL FILTER:             {'FILTER_TOTAL: ': 49274, 'NOTES: ': 872, 'CHROMA: ': 1021, 'CSV2_BH_FIRST: ': 203, 'PREPROCESS: ': 17764, 'CSV1_CHROMA_FIRST: ': 156, 'FILTER_FULL_SONG2_BH_FIRST: ': 9658, 'AGG_F: ': 1839, 'JS / SKL: ': 3709, 'COMP: ': 205, 'BH: ': 704, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 10870, 'RH: ': 880, 'RP: ': 1050, 'MFCC: ': 3042}
+
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 163 songs)
+
+MFCC + NOTES + RP:      
+                                
+JS + CHROMA + RP:          
+                                    
+ALL MERGED:             
+                                        
+ALL DF:                 
+
+ALL RDD:      
+
+ALL FILTER:          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
