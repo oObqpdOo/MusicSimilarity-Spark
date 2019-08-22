@@ -34,7 +34,7 @@ ALL RDD:                {'CSV1: ': 3862, 'RH: ': 312, 'PREPROCESS: ': 1047, 'RDD
 ================================================================
 ================================================================
 
-ALL Songs ONE large file / feat (8 larger files, 114000 songs)
+ALL Songs ONE large file / feat (8 larger files, 114210 songs)
 
 MFCC + NOTES + RP:      {'TOTAL DF': 48512, 'TOTAL RDD': 23245, 'TOTAL MERGED': 43296}
                                 
@@ -51,7 +51,7 @@ ALL FILTER:             {'FILTER_TOTAL: ': 94464, 'NOTES: ': 1536, 'CHROMA: ': 9
 
 ================================================================
 
-ALL Songs ONE large file / feat (8 larger files, 12000 songs)
+ALL Songs ONE large file / feat (8 larger files, 11564 songs)
 
 MFCC + NOTES + RP:      {'TOTAL DF': 18052, 'TOTAL RDD': 15180, 'TOTAL MERGED': 18356}
                                 
@@ -67,7 +67,7 @@ ALL FILTER:             {'FILTER_TOTAL: ': 65949, 'NOTES: ': 1636, 'CHROMA: ': 9
 
 ================================================================
 
-ALL Songs ONE large file / feat (8 larger files, 3300 songs)
+ALL Songs ONE large file / feat (8 larger files, 3344 songs)
 
 MFCC + NOTES + RP:      {'TOTAL DF': 10090, 'TOTAL RDD': 11396, 'TOTAL MERGED': 13778}
                                 
@@ -83,7 +83,7 @@ ALL FILTER:             {'FILTER_TOTAL: ': 59691, 'NOTES: ': 1102, 'CHROMA: ': 9
 
 ================================================================
 
-ALL Songs ONE large file / feat (8 larger files, 163 songs)
+ALL Songs ONE large file / feat (8 larger files, 164 songs)
 
 MFCC + NOTES + RP:      {'TOTAL DF': 7189, 'TOTAL RDD': 12490, 'TOTAL MERGED': 7800}
                                 
@@ -99,7 +99,7 @@ ALL FILTER:             {'FILTER_TOTAL: ': 49274, 'NOTES: ': 872, 'CHROMA: ': 10
 
 ================================================================
 
-ALL Songs ONE large file / feat (8 larger files, 163 songs)
+ALL Songs ONE large file / feat (8 larger files, 164 songs)
 
 MFCC + NOTES + RP:      
                                 
@@ -112,6 +112,16 @@ ALL DF:
 ALL RDD:      
 
 ALL FILTER:          
+
+================================================================
+
+Lazy Evaluation, All files, All features, 
+                  
+ALL PRE-MERGED cached:      {'CSV1: ': 11795, 'AGG: ': 5837, 'RH: ': 501, 'MERGED_FULL_SONG2: ': 59057, 'PREPROCESS: ': 46412, 'MERGED_TOTAL: ': 169737, 'JOIN: ': 24245, 'JS: ': 631, 'NOTE: ': 3061, 'CHROMA: ': 5086, 'COMPARATOR: ': 465, 'SKL: ': 1412, 'MERGED_FULL_SONG1: ': 52782, 'BH: ': 567, 'CSV2: ': 11046, 'SCALE: ': 12432, 'RP: ': 1036, 'MFCC: ': 626}
+    
+
+ALL DF with data op:        {'CSV1: ': 5966, 'RH: ': 3506, 'PREPROCESS: ': 826, 'JOIN AND AGG: ': 51569, 'DF_TOTAL: ': 156631, 'JS: ': 6206, 'BH: ': 6792, 'CHROMA: ': 26160, 'SKL: ': 9527, 'NOTE: ': 10846, 'DF_SONG1: ': 145821, 'RP: ': 23378, 'MFCC: ': 6475}
+
 
 
 
