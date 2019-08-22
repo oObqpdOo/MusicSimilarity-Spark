@@ -59,9 +59,9 @@ def get_neighbors_rp_euclidean_dataframe(song):
     kv_rp= rp.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
     comparator = kv_rp.lookup(song)
     comparator_value = comparator[0]
-    df = spark.createDataFrame(kv_rp, ["id", "features"])
-    df_vec = df.select(df["id"],list_to_vector_udf(df["features"]).alias("features"))
     comparator_value = Vectors.dense(comparator[0])
+    df = spark.createDataFrame(kv_rp, ["id", "features"]).persist()
+    df_vec = df.select(df["id"],list_to_vector_udf(df["features"]).alias("features"))
     distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = df_vec.withColumn('distances_rp', distance_udf(F.col('features'))).select("id", "distances_rp")
     aggregated = result.agg(F.min(result.distances_rp),F.max(result.distances_rp))
@@ -135,7 +135,7 @@ def get_neighbors_mfcc_euclidean_dataframe_brp(song):
     mfcceuc = mfcceuc.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""), x[1].replace('[', '').replace(']', '').split(',')))
     mfccVec = mfcceuc.map(lambda x: (x[0], Vectors.dense(x[1])))
     mfccEucDfMerged = spark.createDataFrame(mfccVec, ["id", "features"])
-    df_vec = mfccEucDfMerged
+    df_vec = mfccEucDfMerged.persist()
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     brp = BucketedRandomProjectionLSH(inputCol="features", outputCol="hashes", seed=12345, bucketLength=100.0)

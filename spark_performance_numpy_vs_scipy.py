@@ -24,27 +24,32 @@ from pyspark.sql.functions import levenshtein
 from pyspark.sql.functions import col
 from pyspark.sql.functions import desc
 from pyspark.sql.functions import asc
+import scipy as sp
 from scipy.signal import butter, lfilter, freqz, correlate2d, sosfilt
 import time
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
+import sys
+import edlib
 
 confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
-confCluster.set("spark.driver.memory", "1g")
-confCluster.set("spark.executor.memory", "1g")
-confCluster.set("spark.driver.memoryOverhead", "500m")
-confCluster.set("spark.executor.memoryOverhead", "500m")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
 #Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
 #confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
 #spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
-confCluster.set("spark.yarn.executor.memoryOverhead", "512")
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
 #set cores of each executor and the driver -> less than avail -> more executors spawn
-confCluster.set("spark.driver.cores", "1")
-confCluster.set("spark.executor.cores", "1")
+confCluster.set("spark.driver.cores", "32")
+confCluster.set("spark.executor.cores", "32")
 confCluster.set("spark.dynamicAllocation.enabled", "True")
-confCluster.set("spark.dynamicAllocation.minExecutors", "4")
-confCluster.set("spark.dynamicAllocation.maxExecutors", "4")
+confCluster.set("spark.dynamicAllocation.minExecutors", "16")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "32")
 confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 32
+
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
 
@@ -99,19 +104,8 @@ def chroma_cross_correlate_numpy(chroma1_par, chroma2_par):
 list_to_vector_udf = udf(lambda l: Vectors.dense(l), VectorUDT())
 
 #########################################################
-#   Pre- Process Chroma for cross-correlation OLD
-#
-
-chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
-chroma = chroma.map(lambda x: x.split(';'))
-chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
-chromaDf = sqlContext.createDataFrame(chromaRdd, ["id", "chroma"])
-chromaVec = chromaDf.select(chromaDf["id"],list_to_vector_udf(chromaDf["chroma"]).alias("chroma"))
-
-#########################################################
 #   Pre- Process Chroma for cross-correlation NO UDF
 #
-
 chroma = sc.textFile("features[0-9]*/out[0-9]*.chroma")
 chroma = chroma.map(lambda x: x.replace(' ', '').replace(';', ','))
 chroma = chroma.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
@@ -120,17 +114,21 @@ chroma = chroma.map(lambda x: x.split(';'))
 chroma = chroma.filter(lambda x: (not x[1] == '[]') and (x[1].startswith("[[0.") or x[1].startswith("[[1.")))
 chromaRdd = chroma.map(lambda x: (x[0].replace(";","").replace(".","").replace(",","").replace(" ",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
-chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"])
+chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"]).repartition(repartition_count).persist()
+#force evaluation
+print(chromaDf.first())
 
 def get_neighbors_chroma_corr_numpy(song):
     df_vec = chromaDf
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     distance_udf = F.udf(lambda x: float(chroma_cross_correlate_numpy(x, comparator_value)), DoubleType())
-    result = df_vec.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr")
-    aggregated = result.agg(F.min(result.distances_corr),F.max(result.distances_corr))
+    result = df_vec.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr").persist()
+    aggregated = result.agg(F.min(result.distances_corr),F.max(result.distances_corr)).persist()
     max_val = aggregated.collect()[0]["max(distances_corr)"]
     min_val = aggregated.collect()[0]["min(distances_corr)"]
+    result.unpersist()
+    aggregated.unpersist()
     return result.withColumn('scaled_corr', 1 - (result.distances_corr-min_val)/(max_val-min_val)).select("id", "scaled_corr")
 
 def get_neighbors_chroma_corr_scipy(song):
@@ -138,24 +136,27 @@ def get_neighbors_chroma_corr_scipy(song):
     filterDF = df_vec.filter(df_vec.id == song)
     comparator_value = Vectors.dense(filterDF.collect()[0][1]) 
     distance_udf = F.udf(lambda x: float(chroma_cross_correlate_scipy(x, comparator_value)), DoubleType())
-    result = df_vec.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr")
-    aggregated = result.agg(F.min(result.distances_corr),F.max(result.distances_corr))
+    result = df_vec.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr").persist()
+    aggregated = result.agg(F.min(result.distances_corr),F.max(result.distances_corr)).persist()
     max_val = aggregated.collect()[0]["max(distances_corr)"]
     min_val = aggregated.collect()[0]["min(distances_corr)"]
+    result.unpersist()
+    aggregated.unpersist()
     return result.withColumn('scaled_corr', 1 - (result.distances_corr-min_val)/(max_val-min_val)).select("id", "scaled_corr")
 
 def get_nearest_neighbors_numpy(song, outname):
     neighbors_chroma = get_neighbors_chroma_corr_numpy(song).dropDuplicates()
     mergedSim = neighbors_chroma.orderBy('scaled_corr', ascending=True)
-    #mergedSim.limit(20).show()    
-    mergedSim.toPandas().to_csv(outname, encoding='utf-8')
-
+    mergedSim.limit(20).show()    
+    return mergedSim
+    #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
 def get_nearest_neighbors_scipy(song, outname):
     neighbors_chroma = get_neighbors_chroma_corr_scipy(song).dropDuplicates()
     mergedSim = neighbors_chroma.orderBy('scaled_corr', ascending=True)
-    #mergedSim.limit(20).show()    
-    mergedSim.toPandas().to_csv(outname, encoding='utf-8')
+    mergedSim.limit(20).show()    
+    return mergedSim    
+    #mergedSim.toPandas().to_csv(outname, encoding='utf-8')
 
 #song = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"    #private
 song = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3"           #1517 artists
@@ -165,15 +166,20 @@ song = song.replace(";","").replace(".","").replace(",","").replace(" ","")#.enc
 time_dict = {}
 
 tic1 = int(round(time.time() * 1000))
-get_nearest_neighbors_scipy(song, "corr_scipy.csv")
+res1 = get_nearest_neighbors_scipy(song, "corr_scipy.csv").persist()
 tac1 = int(round(time.time() * 1000))
 time_dict['scipy'] = tac1 - tic1
 
 tic2 = int(round(time.time() * 1000))
-get_nearest_neighbors_numpy(song, "corr_numpy.csv")
+res2 = get_nearest_neighbors_numpy(song, "corr_numpy.csv").persist()
 tac2 = int(round(time.time() * 1000))
 time_dict['numpy'] = tac2 - tic2
 
+res1.toPandas().to_csv("corr_scipy.csv", encoding='utf-8')
+res2.toPandas().to_csv("corr_numpy.csv", encoding='utf-8')
+res1.unpersist()
+res2.unpersist()
+
 print time_dict
 
-
+chromaDf.unpersist()
