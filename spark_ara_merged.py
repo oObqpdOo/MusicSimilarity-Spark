@@ -40,17 +40,18 @@ confCluster.set("spark.executor.memory", "64g")
 confCluster.set("spark.driver.memoryOverhead", "32g")
 confCluster.set("spark.executor.memoryOverhead", "32g")
 #Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
-#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "196608")
 #spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
 confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
 #set cores of each executor and the driver -> less than avail -> more executors spawn
-confCluster.set("spark.driver.cores", "32")
-confCluster.set("spark.executor.cores", "32")
+confCluster.set("spark.driver.cores", "36")
+confCluster.set("spark.executor.cores", "36")
 confCluster.set("spark.dynamicAllocation.enabled", "True")
 confCluster.set("spark.dynamicAllocation.minExecutors", "16")
 confCluster.set("spark.dynamicAllocation.maxExecutors", "32")
 confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
 repartition_count = 32
+
 
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)

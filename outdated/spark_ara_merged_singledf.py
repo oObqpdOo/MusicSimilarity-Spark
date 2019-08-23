@@ -264,14 +264,14 @@ featureDF = featureDF.join(bh_df, on=['id'], how='inner').dropDuplicates().repar
 
 #Force lazy evaluation to evaluate with an action
 trans = featureDF.count()
-#print(featureDF.count())
+print(featureDF.count())
 
 #########################################################
 #  16 Nodes, 192GB RAM each, 36 cores each (+ hyperthreading = 72)
 #   -> max 1152 executors
 
 fullFeatureDF = featureDF.persist()
-#print(fullFeatureDF.count())
+print(fullFeatureDF.count())
 #fullFeatureDF.toPandas().to_csv("featureDF.csv", encoding='utf-8')
 tac1 = int(round(time.time() * 1000))
 time_dict['PREPROCESS: ']= tac1 - tic1
