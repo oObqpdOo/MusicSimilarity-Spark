@@ -37,14 +37,14 @@ sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
 spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrCreate()
 
-list1l = (glob.glob("results/testsetfull/*.csv"))
+list1l = (glob.glob("results/1517/*.csv"))
 count = 0
 
 count = 0
 for i in list1l[4:5]: 
     #outname = "results/testset/" + i.replace('.mp3', '').replace('music/', '').replace('/', '_').replace('mp3', '') + ".csv"
     outname = i    
-    outname = "results/testsetfull/Soundtrack_FleshAndBone-Dakini_MovementIV.csv"
+    outname = "results/1517/Hip-Hop_Beetnik-Crunk_Junk.csv"
     #outname = outname.encode('ascii','ignore')    
     print outname 
     rdd = sc.textFile(outname)
@@ -66,6 +66,6 @@ for i in list1l[4:5]:
     count = count + 1
 
 #result.show()
-result.toPandas().to_csv("__feature_eval_elec.csv", encoding='utf-8')
+result.toPandas().to_csv("__feature_eval_hip.csv", encoding='utf-8')
 
 
