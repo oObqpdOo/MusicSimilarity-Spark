@@ -1,0 +1,74 @@
+,"original vs detected","count",,,,,,
+26,"(WorldMusic, WorldMusic)",8,,,,,,
+71,"(WorldMusic, Soundtrack)",12,,,,,,
+45,"(WorldMusic, Rock)",12,,,,,,
+27,"(WorldMusic, Reggae)",6,,,,,,
+32,"(WorldMusic, Pop)",20,,,,,,
+68,"(WorldMusic, Metal)",2,,,,,,
+21,"(WorldMusic, Klassik)",5,,,,,,
+12,"(WorldMusic, Jazz)",15,,,,,,
+10,"(WorldMusic, HipHop)",11,,,,,,
+50,"(WorldMusic, Electronic)",9,,,,,,
+63,"(Soundtrack, WorldMusic)",15,,,,,,
+15,"(Soundtrack, Soundtrack)",18,,,,,,
+39,"(Soundtrack, Rock)",4,,,,,,
+67,"(Soundtrack, Reggae)",5,,,,,,
+53,"(Soundtrack, Pop)",17,,,,,,
+29,"(Soundtrack, Klassik)",10,,,,,,
+69,"(Soundtrack, Jazz)",17,,,,,,
+36,"(Soundtrack, HipHop)",7,,,,,,
+38,"(Soundtrack, Electronic)",7,,,,,,
+5,"(Rock, WorldMusic)",9,,,,,,
+7,"(Rock, Soundtrack)",1,,,,,,
+17,"(Rock, Rock)",14,,,,,,
+23,"(Rock, Reggae)",7,,,,,,
+70,"(Rock, Pop)",26,,,,,,
+56,"(Rock, Metal)",11,,,,,,
+54,"(Rock, Jazz)",8,,,,,,
+28,"(Rock, HipHop)",15,,,,,,
+55,"(Rock, Electronic)",9,,,,,,
+52,"(Reggae, WorldMusic)",4,,,,,,
+43,"(Reggae, Soundtrack)",1,,,,,"(Metal, Metal)",37
+9,"(Reggae, Rock)",12,,,,,"(Metal, Rock)",23
+35,"(Reggae, Reggae)",20,,,,,"(Metal, Pop)",12
+72,"(Reggae, Pop)",17,,,,,"(Metal, HipHop)",12
+25,"(Reggae, Metal)",2,,,,,"(Metal, WorldMusic)",9
+61,"(Reggae, Klassik)",1,,,,,"(Metal, Reggae)",3
+40,"(Reggae, Jazz)",5,,,,,"(Metal, Jazz)",2
+49,"(Reggae, HipHop)",30,,,,,"(Metal, Electronic)",2
+11,"(Reggae, Electronic)",8,,,,,,
+22,"(Pop, WorldMusic)",6,,,,,,
+4,"(Pop, Soundtrack)",3,,,,,,
+19,"(Pop, Rock)",20,,,,,,
+16,"(Pop, Reggae)",8,,,,,,
+47,"(Pop, Pop)",25,,,,,"(Electronic, Pop)",27
+65,"(Pop, Metal)",1,,,,,"(Electronic, Rock)",20
+18,"(Pop, Klassik)",1,,,,,"(Electronic, HipHop)",14
+48,"(Pop, Jazz)",13,,,,,"(Electronic, Reggae)",11
+41,"(Pop, HipHop)",11,,,,,"(Electronic, Electronic)",11
+66,"(Pop, Electronic)",12,,,,,"(Electronic, Jazz)",9
+34,"(Metal, WorldMusic)",9,,,,,"(Electronic, WorldMusic)",4
+44,"(Metal, Rock)",23,,,,,"(Electronic, Soundtrack)",3
+33,"(Metal, Reggae)",3,,,,,"(Electronic, Metal)",1
+6,"(Metal, Pop)",12,,,,,,
+31,"(Metal, Metal)",37,,,,,,
+24,"(Metal, Jazz)",2,,,,,,
+64,"(Metal, HipHop)",12,,,,,,
+57,"(Metal, Electronic)",2,,,,,,
+0,"(HipHop, WorldMusic)",7,,,,,,
+14,"(HipHop, Rock)",14,,,,,,
+30,"(HipHop, Reggae)",20,,,,,,
+42,"(HipHop, Pop)",12,,,,,,
+46,"(HipHop, Metal)",6,,,,,,
+37,"(HipHop, Jazz)",5,,,,,,
+59,"(HipHop, HipHop)",30,,,,,,
+58,"(HipHop, Electronic)",6,,,,,,
+51,"(Electronic, WorldMusic)",4,,,,,,
+60,"(Electronic, Soundtrack)",3,,,,,,
+20,"(Electronic, Rock)",20,,,,,,
+8,"(Electronic, Reggae)",11,,,,,,
+3,"(Electronic, Pop)",27,,,,,,
+2,"(Electronic, Metal)",1,,,,,,
+62,"(Electronic, Jazz)",9,,,,,,
+13,"(Electronic, HipHop)",14,,,,,,
+1,"(Electronic, Electronic)",11,,,,,,
