@@ -289,7 +289,7 @@ def get_neighbors_mfcc_skl(song):
     distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances_skl', distance_udf(F.col('features'))).select("id", "distances_skl")
     #thresholding 
-    #result = result.filter(result.distances_skl <= 1000)  
+    result = result.filter(result.distances_skl <= 100)  
     result = result.filter(result.distances_skl != np.inf)        
     aggregated = result.agg(F.min(result.distances_skl),F.max(result.distances_skl))
     max_val = aggregated.collect()[0]["max(distances_skl)"]
