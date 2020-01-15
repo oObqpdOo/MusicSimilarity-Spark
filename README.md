@@ -6,7 +6,7 @@ Python Spark Code for estimating the similarity of songs
 Code for Rhythm Histogram and Rhythm Patterns from TU Wien: https://github.com/tuwien-musicir/rp_extract under GNU General Public License v3.0
 (slightly adapted version)
 
-Descritpion and Documentation: https://github.com/oObqpdOo/MusicSimilarity
+Description and Documentation: https://github.com/oObqpdOo/MusicSimilarity
 
 Requirements: 
 pyspark 1.6.0 or newer,
