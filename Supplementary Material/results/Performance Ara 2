@@ -1,0 +1,98 @@
+ALL Songs ONE large file / feat (8 larger files, 114000 songs)
+                
+ALL MERGED:             'MERGED_FULL_SONG2: ': 16043,  'MERGED_TOTAL: ': 102438, 'MERGED_FULL_SONG1: ': 34781
+                                        
+ALL DF:                 'DF_SONG2: ': 33872, 'DF_TOTAL: ': 123573, 'DF_SONG1: ': 72612
+
+ALL RDD:                'RDD_FULL_SONG1: ': 70488, 'RDD_TOTAL: ': 118939, 'RDD_FULL_SONG2: ': 35911
+
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 12000 songs)
+                                    
+ALL MERGED:             'MERGED_FULL_SONG2: ': 7756, 'MERGED_TOTAL: ': 55227, 'MERGED_FULL_SONG1: ': 12082
+                                        
+ALL DF:                 'DF_SONG2: ': 14655, 'DF_TOTAL: ': 73711, 'DF_SONG1: ': 42577
+
+ALL RDD:                'RDD_FULL_SONG1: ': 39238, 'RDD_TOTAL: ': 71648, 'RDD_FULL_SONG2: ': 20108
+
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 3300 songs)
+                 
+ALL MERGED:             'MERGED_FULL_SONG2: ': 7063, 'MERGED_TOTAL: ': 58852, 'MERGED_FULL_SONG1: ': 14486
+                                        
+ALL DF:                 'DF_SONG2: ': 14776, 'DF_TOTAL: ': 66986,  'DF_SONG1: ': 36699
+                            
+ALL RDD:                'RDD_FULL_SONG1: ': 34607, 'RDD_TOTAL: ': 59564, 'RDD_FULL_SONG2: ': 12809
+                        
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 163 songs)
+                        
+ALL MERGED:             'MERGED_FULL_SONG2: ': 5987, 'MERGED_TOTAL: ': 43090, 'MERGED_FULL_SONG1: ': 9043
+                                        
+ALL DF:                 'DF_SONG2: ': 11726, 'DF_TOTAL: ': 63796, 'DF_SONG1: ': 35134
+
+ALL RDD:                'RDD_FULL_SONG1: ': 27233, 'RDD_TOTAL: ': 56294, 'RDD_FULL_SONG2: ': 16337
+
+
+
+
+ALL FILTER:             'FILTER_TOTAL: ': 94464, 'FILTER_FULL_SONG2_BH_FIRST: ': 11957, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 16836
+ALL FILTER:             'FILTER_TOTAL: ': 65949, 'FILTER_FULL_SONG2_BH_FIRST: ': 10002, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 13335
+ALL FILTER:             'FILTER_TOTAL: ': 59691, 'FILTER_FULL_SONG2_BH_FIRST: ': 9512, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 12910
+ALL FILTER:             'FILTER_TOTAL: ': 49274, 'FILTER_FULL_SONG2_BH_FIRST: ': 9658, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 10870
+
+
+
+
+
+
+
+
+ALL Songs ONE large file / feat (8 larger files, 114000 songs)
+                
+ALL MERGED:             'MERGED_FULL_SONG2: ': 16043,  'MERGED_TOTAL: ': 102438, 'MERGED_FULL_SONG1: ': 34781
+                                        
+ALL DF:                 'DF_SONG2: ': 33872, 'DF_TOTAL: ': 123573, 'DF_SONG1: ': 72612
+
+ALL RDD:                'RDD_FULL_SONG1: ': 70488, 'RDD_TOTAL: ': 118939, 'RDD_FULL_SONG2: ': 35911
+
+ALL FILTER:             'FILTER_TOTAL: ': 94464, 'FILTER_FULL_SONG2_BH_FIRST: ': 11957, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 16836
+
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 12000 songs)
+                                    
+ALL MERGED:             'MERGED_FULL_SONG2: ': 7756, 'MERGED_TOTAL: ': 55227, 'MERGED_FULL_SONG1: ': 12082
+                                        
+ALL DF:                 'DF_SONG2: ': 14655, 'DF_TOTAL: ': 73711, 'DF_SONG1: ': 42577
+
+ALL RDD:                'RDD_FULL_SONG1: ': 39238, 'RDD_TOTAL: ': 71648, 'RDD_FULL_SONG2: ': 20108
+
+ALL FILTER:             'FILTER_TOTAL: ': 65949, 'FILTER_FULL_SONG2_BH_FIRST: ': 10002, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 13335
+
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 3300 songs)
+                 
+ALL MERGED:             'MERGED_FULL_SONG2: ': 7063, 'MERGED_TOTAL: ': 58852, 'MERGED_FULL_SONG1: ': 14486
+                                        
+ALL DF:                 'DF_SONG2: ': 14776, 'DF_TOTAL: ': 66986,  'DF_SONG1: ': 36699
+                            
+ALL RDD:                'RDD_FULL_SONG1: ': 34607, 'RDD_TOTAL: ': 59564, 'RDD_FULL_SONG2: ': 12809
+                        
+ALL FILTER:             'FILTER_TOTAL: ': 59691, 'FILTER_FULL_SONG2_BH_FIRST: ': 9512, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 12910
+
+================================================================
+
+ALL Songs ONE large file / feat (8 larger files, 163 songs)
+                        
+ALL MERGED:             'MERGED_FULL_SONG2: ': 5987, 'MERGED_TOTAL: ': 43090, 'MERGED_FULL_SONG1: ': 9043
+                                        
+ALL DF:                 'DF_SONG2: ': 11726, 'DF_TOTAL: ': 63796, 'DF_SONG1: ': 35134
+
+ALL RDD:                'RDD_FULL_SONG1: ': 27233, 'RDD_TOTAL: ': 56294, 'RDD_FULL_SONG2: ': 16337
+
+ALL FILTER:             'FILTER_TOTAL: ': 49274, 'FILTER_FULL_SONG2_BH_FIRST: ': 9658, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 10870

@@ -1,8 +1,0 @@
-calling process  251 index 251 size 648 starti 6275 endi 6300
-calling process  251 index 899 size 648 starti 22475 endi 22500
-calling process  251 index 1547 size 648 starti 38675 endi 38700
-calling process  251 index 2195 size 648 starti 54875 endi 54900
-calling process  251 index 2843 size 648 starti 71075 endi 71100
-calling process  251 index 3491 size 648 starti 87275 endi 87300
-
-Process 15 time: {'MPI TIME FEATURE': 1950763}

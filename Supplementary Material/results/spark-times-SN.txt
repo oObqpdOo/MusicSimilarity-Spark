@@ -1,0 +1,46 @@
+#######################################################################################################
+
+Features: MFCC Eucl, Notes, RP
+Dataset covers80 = 164 songs
+
+cluster:________________________
+RDD (OHNE csv out):     51,736s
+
+
+{'m4': 30770, 'm1': 33351, 'm3': 32087, 'm2': 13874}
+
+single node:____________________
+RDD (mit csv out):      30,770s
+PREMERGED DF:           32,087s
+PREMERGED SPEED DF:     33,351s
+UNIQUE DFs:             13,874s
+
+#######################################################################################################
+
+Features: MFCC Eucl, Notes, RP
+Dataset 1517 Artists = 3180 songs
+
+cluster:________________________
+RDD (OHNE csv out):     129,940s
+
+single node:____________________
+RDD (mit csv out):      465,445s
+PREMERGED DF:           91,477s
+PREMERGED SPEED DF:     57,230s
+UNIQUE DFs:             34,232s
+
+#######################################################################################################
+
+Features: MFCC Eucl, Notes, RP
+Dataset 1517 Artists + private + covers80 = 11560 songs
+
+cluster:________________________
+RDD (OHNE csv out):     182,035s
+
+single node:____________________
+RDD (mit csv out):      698,657s 
+PREMERGED DF:           250,854s
+PREMERGED SPEED DF:     100,884s
+UNIQUE DFs:             78,566s
+
+#######################################################################################################
