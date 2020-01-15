@@ -18,20 +18,18 @@ import essentia.streaming as ess
 from essentia.standard import *
 import time as time
 import datetime
-from kivy.app import App
-from kivy.uix.button import Button
 import sys
 # insert at 1, 0 is the script path (or '' in REPL)
-sys.path.insert(1, '/home/bqpd/Desktop/MusicSimilarity/rp_extract')
+#sys.path.insert(1, '/home/bqpd/Desktop/MusicSimilarity-UI/rp_extract')
 from audiofile_read import * # reading wav and mp3 files
 from rp_feature_io import CSVFeatureWriter, HDF5FeatureWriter, read_csv_features, load_multiple_hdf5_feature_files
 import rp_extract as rp # Rhythm Pattern extractor
+from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog
+from PyQt5 import uic
+import sys
 
 fs = 44100
 octave = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
-class TestApp(App):
-    def build(self):
-        return Button(text='Hello World')
 
 np.set_printoptions(threshold=np.inf)
 
@@ -64,6 +62,53 @@ try:
     unicode('')
 except NameError:
     unicode = str
+
+form_class = uic.loadUiType("ms.ui")[0]  # Load the UI
+
+class MyWindowClass(QMainWindow, form_class):
+    def __init__(self, parent=None):
+        QMainWindow.__init__(self, parent)
+        self.setupUi(self)
+
+    def extrbutton_clicked(self):
+        options = QFileDialog.Options()
+        fileName = QFileDialog.getExistingDirectory(self,"Select folder containing music", "", options=options)
+        if fileName:
+            print("Selected Folder" + fileName)
+
+            filelist = []
+            for filename in Path(str(fileName)).glob('**/*.mp3'):
+                filelist.append(filename)
+            for filename in Path(str(fileName)).glob('**/*.wav'):
+                filelist.append(filename)  
+
+            print("length of filelist" + str(len(filelist)))
+
+            extract_all_rhythm_feats(fileName)
+            print("Extracting Rhythm Features") 
+            extract_all_rhythm_feats(fileName)
+
+            print("Extracting Melodic Features") 
+            time_dict = {}
+            tic1 = int(round(time.time() * 1000))
+            # BATCH FEATURE EXTRACTION:
+            process_stuff(startbatch, endbatch, batchsize, do_mfcc_kl, do_mfcc_euclid, do_notes, do_chroma, do_bh)
+            tac1 = int(round(time.time() * 1000))
+            time_dict['MPI TIME FEATURE']= tac1 - tic1
+            #if rank == 0:
+            print("Process " + str(rank) + " time: " + str(time_dict)) 
+
+    def loadbutton_clicked(self):
+        options = QFileDialog.Options()
+        fileName = QFileDialog.getExistingDirectory(self,"Select folder containing feature files", "","All Files (*)", options=options)
+        if fileName:
+            print(fileName)
+
+    def selectbutton_clicked(self):
+        options = QFileDialog.Options()
+        fileName, _ = QFileDialog.getOpenFileName(self,"Select a song", "","All Files (*)", options=options)
+        if fileName:
+            print(fileName)
 
 def parallel_python_process(process_id, cpu_filelist, f_mfcc_kl, f_mfcc_euclid, f_notes, f_chroma, f_bh):
     #return (end_time - start_time)
@@ -916,13 +961,13 @@ def extract_all_files(filelist,
     if out_file is None:
         return filelist_extracted, feat_array
 
-def extract_all_rhythm_feats():
+def extract_all_rhythm_feats(param_folder):
     feature_types = []
     feature_types.append('rp')
     feature_types.append('rh')
     audiofile_types = get_supported_audio_formats()
     output_filename = "features1/out"
-    input_path = "music/"
+    input_path = str(param_folder)
     print("Extracting features:", feature_types)
     print("From files in:", input_path)
     print("File types:",)
@@ -938,15 +983,9 @@ def extract_all_rhythm_feats():
     print("Process " + str(rank) + " time: " + str(time_dict)) 
     return 0
 
-print("Extracting Rhythm Features") 
-extract_all_rhythm_feats()
+app = QApplication(sys.argv)
+myWindow = MyWindowClass(None)
+myWindow.show()
+app.exec_()
 
-print("Extracting Melodic Features") 
-time_dict = {}
-tic1 = int(round(time.time() * 1000))
-# BATCH FEATURE EXTRACTION:
-process_stuff(startbatch, endbatch, batchsize, do_mfcc_kl, do_mfcc_euclid, do_notes, do_chroma, do_bh)
-tac1 = int(round(time.time() * 1000))
-time_dict['MPI TIME FEATURE']= tac1 - tic1
-#if rank == 0:
-print("Process " + str(rank) + " time: " + str(time_dict)) 
+
