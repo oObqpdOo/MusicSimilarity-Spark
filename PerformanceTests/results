@@ -1,0 +1,76 @@
+covers80: 
+
+ara_df: 
+
+{'CSV1: ': 881, 'RH: ': 733, 'PREPROCESS: ': 7637, 'DF_SONG2: ': 10536, 'JOIN AND AGG: ': 449,  'DF_TOTAL: ': 58004, 'JS: ': 697, 'BH: ': 1084, 'CHROMA: ': 801, 'SKL: ': 902, 'NOTE: ': 910, 'CSV2: ': 727, 'DF_SONG1: ': 29430, 'RP: ': 988, 'MFCC: ': 967}
+{'CSV1: ': 798, 'RH: ': 712, 'PREPROCESS: ': 7562, 'DF_SONG2: ': 8897, 'JOIN AND AGG: ': 367, 'DF_TOTAL: ': 54603, 'JS: ': 652, 'BH: ': 827, 'CHROMA: ': 766, 'SKL: ': 880, 'NOTE: ': 872, 'CSV2: ': 739, 'DF_SONG1: ': 28409, 'RP: ': 1201, 'MFCC: ': 763}
+{'CSV1: ': 764, 'RH: ': 782, 'PREPROCESS: ': 7555, 'DF_SONG2: ': 8877, 'JOIN AND AGG: ': 380, 'DF_TOTAL: ': 55926, 'JS: ': 785, 'BH: ': 783, 'CHROMA: ': 810, 'SKL: ': 1058, 'NOTE: ': 733, 'CSV2: ': 1096, 'DF_SONG1: ': 30428, 'RP: ': 809, 'MFCC: ': 693}
+{'CSV1: ': 834, 'RH: ': 723, 'PREPROCESS: ': 7536, 'DF_SONG2: ': 9350, 'JOIN AND AGG: ': 311, 'DF_TOTAL: ': 56697, 'JS: ': 1167, 'BH: ': 891, 'CHROMA: ': 840, 'SKL: ': 804, 'NOTE: ': 741, 'CSV2: ': 748, 'DF_SONG1: ': 29219, 'RP: ': 887, 'MFCC: ': 1261}
+{'CSV1: ': 840, 'RH: ': 933, 'PREPROCESS: ': 7676, 'DF_SONG2: ': 8813, 'JOIN AND AGG: ': 271, 'DF_TOTAL: ': 56652, 'JS: ': 697, 'BH: ': 956, 'CHROMA: ': 752, 'SKL: ': 1116, 'NOTE: ': 905, 'CSV2: ': 666, 'DF_SONG1: ': 29795, 'RP: ': 814, 'MFCC: ': 621}
+
+ara_filter_refine:
+
+{'FILTER_TOTAL: ': 60577, 'NOTES: ': 1253, 'CHROMA: ': 1284, 'CSV2_BH_FIRST: ': 241, 'PREPROCESS: ': 19999, 'CSV1_CHROMA_FIRST: ': 280, 'FILTER_FULL_SONG2_BH_FIRST: ': 13291, 'AGG_F: ': 1006, 'JS / SKL: ': 7455, 'COMP: ': 341, 'BH: ': 1087, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 17407, 'RH: ': 2510, 'RP: ': 999, 'MFCC: ': 4796}
+{'FILTER_TOTAL: ': 55763, 'NOTES: ': 1246, 'CHROMA: ': 1258, 'CSV2_BH_FIRST: ': 237, 'PREPROCESS: ': 18497, 'CSV1_CHROMA_FIRST: ': 244, 'FILTER_FULL_SONG2_BH_FIRST: ': 11628, 'AGG_F: ': 1260, 'JS / SKL: ': 6096, 'COMP: ': 364, 'BH: ': 1001, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 15284, 'RH: ': 1245, 'RP: ': 1254, 'MFCC: ': 3983}
+{'FILTER_TOTAL: ': 55336, 'NOTES: ': 883, 'CHROMA: ': 1375, 'CSV2_BH_FIRST: ': 266, 'PREPROCESS: ': 21135, 'CSV1_CHROMA_FIRST: ': 261, 'FILTER_FULL_SONG2_BH_FIRST: ': 10811, 'AGG_F: ': 1203, 'JS / SKL: ': 4895, 'COMP: ': 399, 'BH: ': 906, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 13860, 'RH: ': 1057, 'RP: ': 1218, 'MFCC: ': 3755}
+{'FILTER_TOTAL: ': 59199, 'NOTES: ': 1112, 'CHROMA: ': 1595, 'CSV2_BH_FIRST: ': 206, 'PREPROCESS: ': 20027, 'CSV1_CHROMA_FIRST: ': 251, 'FILTER_FULL_SONG2_BH_FIRST: ': 13708, 'AGG_F: ': 1088, 'JS / SKL: ': 5181, 'COMP: ': 349, 'BH: ': 885, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 14856, 'RH: ': 3468, 'RP: ': 1291, 'MFCC: ': 3905}
+{'FILTER_TOTAL: ': 56526, 'NOTES: ': 985, 'CHROMA: ': 1280, 'CSV2_BH_FIRST: ': 181, 'PREPROCESS: ': 21446, 'CSV1_CHROMA_FIRST: ': 268, 'FILTER_FULL_SONG2_BH_FIRST: ': 10781, 'AGG_F: ': 1120, 'JS / SKL: ': 4889, 'COMP: ': 382, 'BH: ': 952, 'FILTER_FULL_SONG1_CHROMA_FIRST: ': 14142, 'RH: ': 1132, 'RP: ': 912, 'MFCC: ': 4001}
+
+merged:
+
+{'CSV1: ': 1096, 'AGG: ': 695, 'RH: ': 60, 'MERGED_FULL_SONG2: ': 6902, 'PREPROCESS: ': 19494, 'MERGED_TOTAL: ': 46457, 'JOIN: ': 352, 'JS: ': 53, 'NOTE: ': 100, 'CHROMA: ': 52, 'COMPARATOR: ': 202, 'SKL: ': 67, 'MERGED_FULL_SONG1: ': 10312, 'BH: ': 42, 'CSV2: ': 985, 'SCALE: ': 5115, 'RP: ': 82, 'MFCC: ': 39}
+{'CSV1: ': 1063, 'AGG: ': 593, 'RH: ': 56, 'MERGED_FULL_SONG2: ': 8473, 'PREPROCESS: ': 20065, 'MERGED_TOTAL: ': 51372, 'JOIN: ': 337, 'JS: ': 50, 'NOTE: ': 98, 'CHROMA: ': 50, 'COMPARATOR: ': 185, 'SKL: ': 65, 'MERGED_FULL_SONG1: ': 13110, 'BH: ': 43, 'CSV2: ': 1125, 'SCALE: ': 6851, 'RP: ': 68, 'MFCC: ': 41}
+{'CSV1: ': 1074, 'AGG: ': 632, 'RH: ': 61, 'MERGED_FULL_SONG2: ': 8275, 'PREPROCESS: ': 20651, 'MERGED_TOTAL: ': 51244, 'JOIN: ': 311, 'JS: ': 50, 'NOTE: ': 105, 'CHROMA: ': 48, 'COMPARATOR: ': 192, 'SKL: ': 62, 'MERGED_FULL_SONG1: ': 11832, 'BH: ': 41, 'CSV2: ': 1019, 'SCALE: ': 6648, 'RP: ': 49, 'MFCC: ': 39}
+{'CSV1: ': 1062, 'AGG: ': 702, 'RH: ': 45, 'MERGED_FULL_SONG2: ': 9721, 'PREPROCESS: ': 20364, 'MERGED_TOTAL: ': 56387, 'JOIN: ': 371, 'JS: ': 51, 'NOTE: ': 95, 'CHROMA: ': 51, 'COMPARATOR: ': 242, 'SKL: ': 68, 'MERGED_FULL_SONG1: ': 15798, 'BH: ': 43, 'CSV2: ': 862, 'SCALE: ': 7902, 'RP: ': 81, 'MFCC: ': 39}
+{'CSV1: ': 1080, 'AGG: ': 631, 'RH: ': 58, 'MERGED_FULL_SONG2: ': 7116, 'PREPROCESS: ': 19903, 'MERGED_TOTAL: ': 49628, 'JOIN: ': 333, 'JS: ': 51, 'NOTE: ': 102, 'CHROMA: ': 54, 'COMPARATOR: ': 201, 'SKL: ': 64, 'MERGED_FULL_SONG1: ': 12823, 'BH: ': 41, 'CSV2: ': 938, 'SCALE: ': 5452, 'RP: ': 62, 'MFCC: ': 42}
+
+rdd:
+{'CSV1: ': 3488, 'RH: ': 609, 'PREPROCESS: ': 1022, 'RDD_FULL_SONG1: ': 18492, 'JOIN AND AGG: ': 3479, 'RDD_TOTAL: ': 41688, 'JS: ': 2069, 'BH: ': 611, 'CHROMA: ': 2322, 'SKL: ': 558, 'NOTE: ': 295, 'CSV2: ': 399, 'RP: ': 552, 'RDD_FULL_SONG2: ': 12536, 'MFCC: ': 867}
+{'CSV1: ': 3508, 'RH: ': 620, 'PREPROCESS: ': 983, 'RDD_FULL_SONG1: ': 16951, 'JOIN AND AGG: ': 3660, 'RDD_TOTAL: ': 40678, 'JS: ': 1779, 'BH: ': 683, 'CHROMA: ': 2162, 'SKL: ': 598, 'NOTE: ': 294, 'CSV2: ': 432, 'RP: ': 562, 'RDD_FULL_SONG2: ': 12254, 'MFCC: ': 670}
+{'CSV1: ': 3356, 'RH: ': 605, 'PREPROCESS: ': 939, 'RDD_FULL_SONG1: ': 18824, 'JOIN AND AGG: ': 3559, 'RDD_TOTAL: ': 41154, 'JS: ': 1865, 'BH: ': 607, 'CHROMA: ': 2073, 'SKL: ': 659, 'NOTE: ': 298, 'CSV2: ': 367, 'RP: ': 586, 'RDD_FULL_SONG2: ': 12092, 'MFCC: ': 658}
+{'CSV1: ': 3825, 'RH: ': 616, 'PREPROCESS: ': 1004, 'RDD_FULL_SONG1: ': 17237, 'JOIN AND AGG: ': 3259, 'RDD_TOTAL: ': 41573, 'JS: ': 1897, 'BH: ': 623, 'CHROMA: ': 3531, 'SKL: ': 597, 'NOTE: ': 290, 'CSV2: ': 409, 'RP: ': 779, 'RDD_FULL_SONG2: ': 13523, 'MFCC: ': 734}
+{'CSV1: ': 3216, 'RH: ': 633, 'PREPROCESS: ': 982, 'RDD_FULL_SONG1: ': 17222, 'JOIN AND AGG: ': 3532, 'RDD_TOTAL: ': 40482, 'JS: ': 1884, 'BH: ': 597, 'CHROMA: ': 2368, 'SKL: ': 566, 'NOTE: ': 294, 'CSV2: ': 392, 'RP: ': 583, 'RDD_FULL_SONG2: ': 12430, 'MFCC: ': 858}
+
+
+====================================================================================================================================================================================================
+====================================================================================================================================================================================================
+====================================================================================================================================================================================================
+
+covers80 + 1517 Artists: 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

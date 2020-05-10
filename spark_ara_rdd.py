@@ -20,6 +20,7 @@ import edlib
 total1 = int(round(time.time() * 1000))
 
 confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
+confCluster.set("spark.pyspark.python","/cluster/miniconda3/bin/python3.7")
 confCluster.set("spark.driver.memory", "64g")
 confCluster.set("spark.executor.memory", "64g")
 confCluster.set("spark.driver.memoryOverhead", "32g")
@@ -29,11 +30,11 @@ confCluster.set("spark.executor.memoryOverhead", "32g")
 #spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
 confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
 #set cores of each executor and the driver -> less than avail -> more executors spawn
-confCluster.set("spark.driver.cores", "32")
-confCluster.set("spark.executor.cores", "32")
+confCluster.set("spark.driver.cores", "36")
+confCluster.set("spark.executor.cores", "36")
 confCluster.set("spark.dynamicAllocation.enabled", "True")
-confCluster.set("spark.dynamicAllocation.minExecutors", "16")
-confCluster.set("spark.dynamicAllocation.maxExecutors", "32")
+confCluster.set("spark.dynamicAllocation.minExecutors", "15")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "15")
 confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
 repartition_count = 32
 
@@ -142,7 +143,7 @@ def symmetric_kullback_leibler(vec1, vec2):
     cov2 = vec2[13:].reshape(13, 13)
     if (is_invertible(cov1) and is_invertible(cov2)):
         d = 13
-        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
+        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace((np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2) * np.transpose(mean1 - mean2)) - 2*d)
     else: 
         div = np.inf
         print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
@@ -451,7 +452,9 @@ song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
 
 if len (sys.argv) < 2:
     song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3" #1517 artists
+    song1 = "music/Ooby_Dooby/roy_orbison+Black_and_White_Night+05-Ooby_Dooby.mp3"
     song2 = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3" #1517 artists
+    song2 = "music/Let_It_Be/beatles+Let_It_Be+06-Let_It_Be.mp3"
 else: 
     song1 = sys.argv[1]
     song2 = sys.argv[1]
@@ -488,7 +491,7 @@ result2.unpersist()
 tac2 = int(round(time.time() * 1000))
 time_dict['CSV2: ']= tac2 - tic2
 
-print time_dict
+print(time_dict)
 
 rp_vec.unpersist()
 rh_vec.unpersist()

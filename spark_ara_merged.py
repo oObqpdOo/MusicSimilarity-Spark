@@ -50,8 +50,8 @@ confCluster.set("spark.executor.cores", "36")
 confCluster.set("spark.dynamicAllocation.enabled", "True")
 #confCluster.set("spark.dynamicAllocation.initialExecutors", "16")
 #confCluster.set("spark.dynamicAllocation.executorIdleTimeout", "30s")	
-confCluster.set("spark.dynamicAllocation.minExecutors", "16")
-confCluster.set("spark.dynamicAllocation.maxExecutors", "32")
+confCluster.set("spark.dynamicAllocation.minExecutors", "15")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "15")
 confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
 repartition_count = 32
 
@@ -172,7 +172,7 @@ def symmetric_kullback_leibler(vec1, vec2):
     cov2 = vec2[13:].reshape(13, 13)
     if (is_invertible(cov1) and is_invertible(cov2)):
         d = 13
-        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
+        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2) * np.transpose(mean1 - mean2)) - 2*d)
     else: 
         div = np.inf
         print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
@@ -472,7 +472,9 @@ def get_nearest_neighbors(song, outname):
 
 if len (sys.argv) < 2:
     song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3" #1517 artists
+    song1 = "music/Ooby_Dooby/roy_orbison+Black_and_White_Night+05-Ooby_Dooby.mp3"
     song2 = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3" #1517 artists
+    song2 = "music/Let_It_Be/beatles+Let_It_Be+06-Let_It_Be.mp3"
 else: 
     song1 = sys.argv[1]
     song2 = sys.argv[1]

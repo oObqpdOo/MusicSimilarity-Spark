@@ -168,7 +168,8 @@ def symmetric_kullback_leibler(vec1, vec2):
     cov2 = vec2[13:].reshape(13, 13)
     if (is_invertible(cov1) and is_invertible(cov2)):
         d = 13
-        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
+        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2) * np.transpose(mean1 - mean2)) - 2*d)
+        #div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
     else: 
         div = np.inf
         print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
@@ -465,8 +466,12 @@ def get_nearest_neighbors(song, outname):
     time_dict['AGG: ']= tac1 - tic1
     return scaledSim
 
-songs = sc.textFile("features/list1.list")
-list1 = songs.map(lambda x: "music/" + str(x) + ".mp3").map(lambda x: x.replace(";","").replace(".","").replace(",","").replace(" ",""))
+#songs = sc.textFile("features/list1.list")
+#list1 = songs.map(lambda x: "music/" + str(x) + ".mp3").map(lambda x: x.replace(";","").replace(".","").replace(",","").replace(" ",""))
+#list1l = list1.collect()
+
+songs = sc.textFile("list.txt")
+list1 = songs.map(lambda x: x.replace(";","").replace(".","").replace(",","").replace(" ",""))
 list1l = list1.collect()
 
 for i in list1l: 
