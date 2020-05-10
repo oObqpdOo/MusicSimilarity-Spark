@@ -1,0 +1,5 @@
+"OpenMARS" is a scalable and parameterizable Music Analysis and Recommendation System for massive datasets, that recommends music based on timbral, rhythmic and melodic properties of the songs."
+
+"OpenMARS" extracts timbral, rhythmic and melodic features of music in massive datasets to recommend similar songs."
+
+"We propose a parameterizable recommendation system for large music datasets that is purely based on audio features."
