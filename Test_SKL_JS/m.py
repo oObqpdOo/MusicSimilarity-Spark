@@ -7,8 +7,7 @@ import pyspark.mllib.linalg
 import pyspark.ml.param
 import pyspark.sql.functions
 from pyspark.sql import functions as F
-from pyspark.sql.types import FloatType
-from pyspark.sql.types import DoubleType
+from pyspark.sql.types import *
 from pyspark.sql.functions import udf
 from scipy.spatial import distance
 #only version 2.1 upwards
@@ -61,7 +60,7 @@ sqlContext = SQLContext(sc)
 time_dict = {}
 debug_dict = {}
 
-sc.setLogLevel("ERROR")
+#sc.setLogLevel("ERROR")
 
 negjs = sc.accumulator(0)
 nanjs = sc.accumulator(0)
@@ -104,7 +103,7 @@ def is_invertible(a):
     return a.shape[0] == a.shape[1] and np.linalg.matrix_rank(a) == a.shape[0]
 
 #get 13 mean and 13x13 cov as vectors
-def symmetric_kullback_leibler(vec1, vec2):
+def symmetric_kullback_leibler(vec1, vec2, songname):
     d = 13
     mean1 = np.empty([d, 1])
     mean1 = vec1[0:d]
@@ -118,8 +117,6 @@ def symmetric_kullback_leibler(vec1, vec2):
     cov2 = np.empty([d,d])
     cov2 = vec2[d:].reshape(d, d)
 
-    isinv1=0
-    isinv2=0
     #================================        
     #OLD
     #================================
@@ -132,16 +129,21 @@ def symmetric_kullback_leibler(vec1, vec2):
     #================================
     #NEW    
     #================================
-    if is_invertible(cov1):
-        isinv1=1
+    try:
         g_chol = np.linalg.cholesky(cov1)
         g_ui   = np.linalg.solve(g_chol,np.eye(d))
         icov1  = np.transpose(g_ui)*g_ui
-    if is_invertible(cov2):
-        isinv2=1
+        isinv1=1
+    except np.linalg.LinAlgError as err:
+        isinv1=0
+
+    try:
         g_chol = np.linalg.cholesky(cov2)
         g_ui   = np.linalg.solve(g_chol,np.eye(d))
         icov2  = np.transpose(g_ui)*g_ui
+        isinv2=1
+    except np.linalg.LinAlgError as err:
+        isinv2=0
     #================================
 
     if (isinv1==1) and (isinv2==1):
@@ -217,11 +219,12 @@ time_dict['PREPROCESS: ']= tac1 - tic1
 
 def get_neighbors_mfcc_skl(song, featureDF):
     comparator_value = song[0]["mfccSkl"]
-    distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
-    result = featureDF.withColumn('distances_skl', distance_udf(F.col('mfccSkl'))).select("id", "distances_skl")
-    #thresholding 
+    distance_udf = F.udf(lambda x, y: float(symmetric_kullback_leibler(x, comparator_value, y)), DoubleType())
+    result = featureDF.withColumn('distances_skl', distance_udf(F.col('mfccSkl'), F.col('id'))).select("id", "distances_skl")
+    #result = featureDF.withColumn("compare", lit(str(comparator_value)))  #thresholding 
     #result = result.filter(result.distances_skl <= 100)  
-    #result = result.filter(result.distances_skl != np.inf)        
+    #result = result.filter(result.distances_skl != np.inf) 
+    #result = result.filter(result.distances_skl == np.inf or result.distances_skl >= 100 or np.isnan(result.distances_skl))   
     return result
 
 def get_neighbors_mfcc_js(song, featureDF):
@@ -264,7 +267,6 @@ def get_nearest_neighbors(song, outname):
 
     tic1 = int(round(time.time() * 1000))
     
-    mergedSim.toPandas().to_csv(outname, encoding='utf-8')
     neighbors_mfcc_eucl.unpersist()
     neighbors_mfcc_skl.unpersist()
     neighbors_mfcc_js.unpersist()
