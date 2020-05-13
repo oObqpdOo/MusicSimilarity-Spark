@@ -58,113 +58,137 @@ repartition_count = 32
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
 time_dict = {}
+
+sc.setLogLevel("ERROR")
+
 debug_dict = {}
-
-#sc.setLogLevel("ERROR")
-
 negjs = sc.accumulator(0)
 nanjs = sc.accumulator(0)
+nonpdjs = sc.accumulator(0)
 negskl = sc.accumulator(0)
 nanskl = sc.accumulator(0)
 noninskl = sc.accumulator(0)
 
-#get 13 mean and 13x13 cov as vectors
 def jensen_shannon(vec1, vec2):
-    mean1 = np.empty([13, 1])
-    mean1 = vec1[0:13]
-    #print mean1
-    cov1 = np.empty([13,13])
-    cov1 = vec1[13:].reshape(13, 13)
-    #print cov1
-    mean2 = np.empty([13, 1])
-    mean2 = vec2[0:13]
-    #print mean1
-    cov2 = np.empty([13,13])
-    cov2 = vec2[13:].reshape(13, 13)
-    #print cov1
-    mean_m = 0.5 * mean1 +  0.5 * mean2
-    cov_m_1 = 0.5 * (cov1 + mean1 * np.transpose(mean1)) 
-    cov_m_2 = 0.5 * (cov2 + mean2 * np.transpose(mean2)) 
-    cov_m_3 = (mean_m * np.transpose(mean_m))
-    cov_m = cov_m_1 + cov_m_2 - cov_m_3
-    div = 0.5 * np.linalg.slogdet(cov_m)[1] - 0.25 * np.linalg.slogdet(cov1)[1] - 0.25 * np.linalg.slogdet(cov2)[1]
-    #print("JENSEN_SHANNON_DIVERGENCE")    
-    if np.isnan(div):
-        #div = np.inf
-        nanjs.add(1)
-        #div = None
-    if div <= 0:
-        #div = div * (-1)
-        negjs.add(1)
-    #print div
-    return div
-
-def is_invertible(a):
-    return a.shape[0] == a.shape[1] and np.linalg.matrix_rank(a) == a.shape[0]
-
-#get 13 mean and 13x13 cov as vectors
-def symmetric_kullback_leibler(vec1, vec2, songname):
     d = 13
     mean1 = np.empty([d, 1])
     mean1 = vec1[0:d]
-    #print mean1
-    cov1 = np.empty([d,d])
+    cov1 = np.empty([d,13])
     cov1 = vec1[d:].reshape(d, d)
-    #print cov1
+    div = np.inf
+    #div = float('NaN')
+    try:
+        cov_1_logdet = 2*np.sum(np.log(np.linalg.cholesky(cov1).diagonal()))
+        issing1=1
+    except np.linalg.LinAlgError as err:
+        nonpdjs.add(1)
+        #print("ERROR: NON POSITIVE DEFINITE MATRIX 1\n\n\n") 
+        return div    
+    #print(cov_1_logdet)
     mean2 = np.empty([d, 1])
     mean2 = vec2[0:d]
-    #print mean1
     cov2 = np.empty([d,d])
     cov2 = vec2[d:].reshape(d, d)
+    try:
+        cov_2_logdet = 2*np.sum(np.log(np.linalg.cholesky(cov2).diagonal()))
+        issing2=1
+    except np.linalg.LinAlgError as err:
+        nonpdjs.add(1)
+        #print("ERROR: NON POSITIVE DEFINITE MATRIX 2\n\n\n") 
+        return div
+    #print(cov_2_logdet)
+    #==============================================
+    if (issing1==1) and (issing2==1):
+        mean_m = 0.5 * mean1 +  0.5 * mean2
+        cov_m = 0.5 * (cov1 + np.outer(mean1, mean1)) + 0.5 * (cov2 + np.outer(mean2, mean2)) - np.outer(mean_m, mean_m)
+        cov_m_logdet = 2*np.sum(np.log(np.linalg.cholesky(cov_m).diagonal()))
+        #print(cov_m_logdet)
+        try:        
+            div = 0.5 * cov_m_logdet - 0.25 * cov_1_logdet - 0.25 * cov_2_logdet
+        except np.linalg.LinAlgError as err:
+            nonpdjs.add(1)
+            #print("ERROR: NON POSITIVE DEFINITE MATRIX M\n\n\n") 
+            return div
+        #print("JENSEN_SHANNON_DIVERGENCE")   
+    if np.isnan(div):
+        div = np.inf
+        nanjs.add(1)
+        #div = None
+        pass
+    if div <= 0:
+        div = 0
+        negjs.add(1)
+        pass
+    #print(div)
+    return div
 
-    #================================        
-    #OLD
-    #================================
-    #if is_invertible(cov1):
-    #    isinv1=1
-    #    icov1 = np.linalg.inv(cov1)
-    #if is_invertible(cov2):
-    #    isinv2=1
-    #     icov2 = np.linalg.inv(cov2)
-    #================================
-    #NEW    
-    #================================
+#get 13 mean and 13x13 cov as vectors
+def symmetric_kullback_leibler(vec1, vec2):
+    d = 13
+    mean1 = np.empty([d, 1])
+    mean1 = vec1[0:d]
+    cov1 = np.empty([d,d])
+    cov1 = vec1[d:].reshape(d, d)
+    mean2 = np.empty([d, 1])
+    mean2 = vec2[0:d]
+    cov2 = np.empty([d,d])
+    cov2 = vec2[d:].reshape(d, d)
+    div = np.inf
     try:
         g_chol = np.linalg.cholesky(cov1)
         g_ui   = np.linalg.solve(g_chol,np.eye(d))
-        icov1  = np.transpose(g_ui)*g_ui
+        icov1  = np.matmul(np.transpose(g_ui), g_ui)
         isinv1=1
     except np.linalg.LinAlgError as err:
         isinv1=0
-
     try:
         g_chol = np.linalg.cholesky(cov2)
         g_ui   = np.linalg.solve(g_chol,np.eye(d))
-        icov2  = np.transpose(g_ui)*g_ui
+        icov2  = np.matmul(np.transpose(g_ui), g_ui)
         isinv2=1
     except np.linalg.LinAlgError as err:
         isinv2=0
     #================================
-
     if (isinv1==1) and (isinv2==1):
-        temp_a = np.trace(cov1 * icov2) 
-        temp_b = np.trace(cov2 * icov1)
-        temp_c = np.trace((icov1 + icov2) * (mean1 - mean2) * np.transpose(mean1 - mean2))
+        temp_a = np.trace(np.matmul(cov1, icov2)) 
+        #temp_a = traceprod(cov1, icov2) 
+        #print(temp_a)
+        temp_b = np.trace(np.matmul(cov2, icov1))
+        #temp_b = traceprod(cov2, icov1)
+        #print(temp_b)
+        temp_c = np.trace(np.matmul((icov1 + icov2), np.outer((mean1 - mean2), (mean1 - mean2))))
+        #print(temp_c)        
         div = 0.25 * (temp_a + temp_b + temp_c - 2*d)
     else: 
-        div = float('NaN')
+        div = np.inf
         noninskl.add(1)
-        print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
+        #print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
     if div <= 0:
-        #print "Temp_a: " + temp_a + "\n Temp_b: " + temp_b + "\n Temp_c: " + temp_c
-        #div = div * (-1)
+        #print("Temp_a: " + temp_a + "\n Temp_b: " + temp_b + "\n Temp_c: " + temp_c)
+        div = 0
         negskl.add(1)
     if np.isnan(div):
-        #div = np.inf
+        div = np.inf
         nanskl.add(1)
         #div = None
-    #print div
+    #print(div)
     return div
+
+#get 13 mean and 13x13 cov + var as vectors
+def get_euclidean_mfcc(vec1, vec2):
+    mean1 = np.empty([13, 1])
+    mean1 = vec1[0:13]
+    cov1 = np.empty([13,13])
+    cov1 = vec1[13:].reshape(13, 13)        
+    mean2 = np.empty([13, 1])
+    mean2 = vec2[0:13]
+    cov2 = np.empty([13,13])
+    cov2 = vec2[13:].reshape(13, 13)
+    iu1 = np.triu_indices(13)
+    #You need to pass the arrays as an iterable (a tuple or list), thus the correct syntax is np.concatenate((,),axis=None)
+    div = distance.euclidean(np.concatenate((mean1, cov1[iu1]),axis=None), np.concatenate((mean2, cov2[iu1]),axis=None))
+    return div
+
 
 #get 13 mean and 13x13 cov + var as vectors
 def get_euclidean_mfcc(vec1, vec2):
@@ -219,8 +243,8 @@ time_dict['PREPROCESS: ']= tac1 - tic1
 
 def get_neighbors_mfcc_skl(song, featureDF):
     comparator_value = song[0]["mfccSkl"]
-    distance_udf = F.udf(lambda x, y: float(symmetric_kullback_leibler(x, comparator_value, y)), DoubleType())
-    result = featureDF.withColumn('distances_skl', distance_udf(F.col('mfccSkl'), F.col('id'))).select("id", "distances_skl")
+    distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
+    result = featureDF.withColumn('distances_skl', distance_udf(F.col('mfccSkl'))).select("id", "distances_skl")
     #result = featureDF.withColumn("compare", lit(str(comparator_value)))  #thresholding 
     #result = result.filter(result.distances_skl <= 100)  
     #result = result.filter(result.distances_skl != np.inf) 
@@ -289,12 +313,12 @@ song1 = song1.replace(";","").replace(".","").replace(",","").replace(" ","")#.e
 song2 = song2.replace(";","").replace(".","").replace(",","").replace(" ","")#.encode('utf-8','replace')
 
 tic1 = int(round(time.time() * 1000))
-res1 = get_nearest_neighbors(song1, "MERGED_FULL_SONG1.csv").persist()
+res1 = get_nearest_neighbors(song1, "BUGFIX1.csv").persist()
 tac1 = int(round(time.time() * 1000))
 time_dict['MERGED_FULL_SONG1: ']= tac1 - tic1
 
 tic2 = int(round(time.time() * 1000))
-res2 = get_nearest_neighbors(song2, "MERGED_FULL_SONG2.csv").persist()
+res2 = get_nearest_neighbors(song2, "BUGFIX2.csv").persist()
 tac2 = int(round(time.time() * 1000))
 time_dict['MERGED_FULL_SONG2: ']= tac2 - tic2
 
@@ -302,13 +326,13 @@ total2 = int(round(time.time() * 1000))
 time_dict['MERGED_TOTAL: ']= total2 - total1
 
 tic1 = int(round(time.time() * 1000))
-res1.toPandas().to_csv("MERGED_FULL_SONG1.csv", encoding='utf-8')
+res1.toPandas().to_csv("BUGFIX1.csv", encoding='utf-8')
 res1.unpersist()
 tac1 = int(round(time.time() * 1000))
 time_dict['CSV1: ']= tac1 - tic1
 
 tic2 = int(round(time.time() * 1000))
-res2.toPandas().to_csv("MERGED_FULL_SONG2.csv", encoding='utf-8')
+res2.toPandas().to_csv("BUGFIX2.csv", encoding='utf-8')
 res2.unpersist()
 tac2 = int(round(time.time() * 1000))
 time_dict['CSV2: ']= tac2 - tic2
@@ -318,6 +342,7 @@ print "\n\n"
 
 debug_dict['Negative JS: ']= negjs.value
 debug_dict['Nan JS: ']= nanjs.value
+debug_dict['Non Positive Definite JS: ']= nonpdjs.value
 debug_dict['Negative SKL: ']= negskl.value
 debug_dict['Nan SKL: ']= nanskl.value
 debug_dict['Non Invertible SKL: ']= noninskl.value
