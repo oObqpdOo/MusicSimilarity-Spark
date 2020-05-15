@@ -123,57 +123,117 @@ def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
     correlation = sosfilt(sos, correlation)[:]
     return np.max(correlation)
 
+debug_dict = {}
+negjs = sc.accumulator(0)
+nanjs = sc.accumulator(0)
+nonpdjs = sc.accumulator(0)
+negskl = sc.accumulator(0)
+nanskl = sc.accumulator(0)
+noninskl = sc.accumulator(0)
 
-#get 13 mean and 13x13 cov as vectors
 def jensen_shannon(vec1, vec2):
-    mean1 = np.empty([13, 1])
-    mean1 = vec1[0:13]
-    #print mean1
-    cov1 = np.empty([13,13])
-    cov1 = vec1[13:].reshape(13, 13)
-    #print cov1
-    mean2 = np.empty([13, 1])
-    mean2 = vec2[0:13]
-    #print mean1
-    cov2 = np.empty([13,13])
-    cov2 = vec2[13:].reshape(13, 13)
-    #print cov1
-    mean_m = 0.5 * (mean1 + mean2)
-    cov_m = 0.5 * (cov1 + mean1 * np.transpose(mean1)) + 0.5 * (cov2 + mean2 * np.transpose(mean2)) - (mean_m * np.transpose(mean_m))
-    div = 0.5 * np.log(np.linalg.det(cov_m)) - 0.25 * np.log(np.linalg.det(cov1)) - 0.25 * np.log(np.linalg.det(cov2))
-    #print("JENSEN_SHANNON_DIVERGENCE")    
+    d = 13
+    mean1 = np.empty([d, 1])
+    mean1 = vec1[0:d]
+    cov1 = np.empty([d,13])
+    cov1 = vec1[d:].reshape(d, d)
+    div = np.inf
+    #div = float('NaN')
+    try:
+        cov_1_logdet = 2*np.sum(np.log(np.linalg.cholesky(cov1).diagonal()))
+        issing1=1
+    except np.linalg.LinAlgError as err:
+        nonpdjs.add(1)
+        #print("ERROR: NON POSITIVE DEFINITE MATRIX 1\n\n\n") 
+        return div    
+    #print(cov_1_logdet)
+    mean2 = np.empty([d, 1])
+    mean2 = vec2[0:d]
+    cov2 = np.empty([d,d])
+    cov2 = vec2[d:].reshape(d, d)
+    try:
+        cov_2_logdet = 2*np.sum(np.log(np.linalg.cholesky(cov2).diagonal()))
+        issing2=1
+    except np.linalg.LinAlgError as err:
+        nonpdjs.add(1)
+        #print("ERROR: NON POSITIVE DEFINITE MATRIX 2\n\n\n") 
+        return div
+    #print(cov_2_logdet)
+    #==============================================
+    if (issing1==1) and (issing2==1):
+        mean_m = 0.5 * mean1 +  0.5 * mean2
+        cov_m = 0.5 * (cov1 + np.outer(mean1, mean1)) + 0.5 * (cov2 + np.outer(mean2, mean2)) - np.outer(mean_m, mean_m)
+        cov_m_logdet = 2*np.sum(np.log(np.linalg.cholesky(cov_m).diagonal()))
+        #print(cov_m_logdet)
+        try:        
+            div = 0.5 * cov_m_logdet - 0.25 * cov_1_logdet - 0.25 * cov_2_logdet
+        except np.linalg.LinAlgError as err:
+            nonpdjs.add(1)
+            #print("ERROR: NON POSITIVE DEFINITE MATRIX M\n\n\n") 
+            return div
+        #print("JENSEN_SHANNON_DIVERGENCE")   
     if np.isnan(div):
         div = np.inf
+        nanjs.add(1)
         #div = None
+        pass
     if div <= 0:
-        div = div * (-1)
-    #print div
+        div = 0
+        negjs.add(1)
+        pass
+    #print(div)
     return div
-
-def is_invertible(a):
-    return a.shape[0] == a.shape[1] and np.linalg.matrix_rank(a) == a.shape[0]
 
 #get 13 mean and 13x13 cov as vectors
 def symmetric_kullback_leibler(vec1, vec2):
-    mean1 = np.empty([13, 1])
-    mean1 = vec1[0:13]
-    #print mean1
-    cov1 = np.empty([13,13])
-    cov1 = vec1[13:].reshape(13, 13)
-    #print cov1
-    mean2 = np.empty([13, 1])
-    mean2 = vec2[0:13]
-    #print mean1
-    cov2 = np.empty([13,13])
-    cov2 = vec2[13:].reshape(13, 13)
-    if (is_invertible(cov1) and is_invertible(cov2)):
-        d = 13
-        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2) * np.transpose(mean1 - mean2)) - 2*d)
-        #div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
+    d = 13
+    mean1 = np.empty([d, 1])
+    mean1 = vec1[0:d]
+    cov1 = np.empty([d,d])
+    cov1 = vec1[d:].reshape(d, d)
+    mean2 = np.empty([d, 1])
+    mean2 = vec2[0:d]
+    cov2 = np.empty([d,d])
+    cov2 = vec2[d:].reshape(d, d)
+    div = np.inf
+    try:
+        g_chol = np.linalg.cholesky(cov1)
+        g_ui   = np.linalg.solve(g_chol,np.eye(d))
+        icov1  = np.matmul(np.transpose(g_ui), g_ui)
+        isinv1=1
+    except np.linalg.LinAlgError as err:
+        isinv1=0
+    try:
+        g_chol = np.linalg.cholesky(cov2)
+        g_ui   = np.linalg.solve(g_chol,np.eye(d))
+        icov2  = np.matmul(np.transpose(g_ui), g_ui)
+        isinv2=1
+    except np.linalg.LinAlgError as err:
+        isinv2=0
+    #================================
+    if (isinv1==1) and (isinv2==1):
+        temp_a = np.trace(np.matmul(cov1, icov2)) 
+        #temp_a = traceprod(cov1, icov2) 
+        #print(temp_a)
+        temp_b = np.trace(np.matmul(cov2, icov1))
+        #temp_b = traceprod(cov2, icov1)
+        #print(temp_b)
+        temp_c = np.trace(np.matmul((icov1 + icov2), np.outer((mean1 - mean2), (mean1 - mean2))))
+        #print(temp_c)        
+        div = 0.25 * (temp_a + temp_b + temp_c - 2*d)
     else: 
         div = np.inf
-        print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
-    #print div
+        noninskl.add(1)
+        #print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
+    if div <= 0:
+        #print("Temp_a: " + temp_a + "\n Temp_b: " + temp_b + "\n Temp_c: " + temp_c)
+        div = 0
+        negskl.add(1)
+    if np.isnan(div):
+        div = np.inf
+        nanskl.add(1)
+        #div = None
+    #print(div)
     return div
 
 #get 13 mean and 13x13 cov + var as vectors
@@ -284,7 +344,7 @@ def get_neighbors_mfcc_skl(song, featureDF):
     distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
     result = featureDF.withColumn('distances_skl', distance_udf(F.col('mfccSkl'))).select("id", "distances_skl")
     #thresholding 
-    #result = result.filter(result.distances_skl <= 100)  
+    result = result.filter(result.distances_skl <= 10000)  
     result = result.filter(result.distances_skl != np.inf)        
     return result
 
