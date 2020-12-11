@@ -3,7 +3,7 @@
 
 import pyspark
 import pyspark.ml.feature
-import pyspark.ml.linalg
+import pyspark.mllib.linalg
 import pyspark.ml.param
 import pyspark.sql.functions
 from pyspark.sql import functions as F
@@ -11,10 +11,11 @@ from pyspark.sql.types import FloatType
 from pyspark.sql.types import DoubleType
 from pyspark.sql.functions import udf
 from scipy.spatial import distance
-from pyspark.ml.feature import BucketedRandomProjectionLSH
-#from pyspark.mllib.linalg import Vectors
+#only version 2.1 upwards
+#from pyspark.ml.feature import BucketedRandomProjectionLSH
+from pyspark.mllib.linalg import Vectors
 from pyspark.ml.param.shared import *
-from pyspark.ml.linalg import Vectors, VectorUDT
+from pyspark.mllib.linalg import Vectors, VectorUDT
 from pyspark.ml.feature import VectorAssembler
 import numpy as np
 #import org.apache.spark.sql.functions.typedLit
@@ -25,36 +26,37 @@ from pyspark.sql.functions import desc
 from pyspark.sql.functions import asc
 import scipy as sp
 from scipy.signal import butter, lfilter, freqz, correlate2d, sosfilt
-import sys
 import time
-
+import sys
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SQLContext, Row
-from pyspark.sql import SparkSession
 
 total1 = int(round(time.time() * 1000))
 
 confCluster = SparkConf().setAppName("MusicSimilarity Cluster")
-confCluster.set("spark.driver.memory", "1g")
-confCluster.set("spark.executor.memory", "1g")
-confCluster.set("spark.driver.memoryOverhead", "500m")
-confCluster.set("spark.executor.memoryOverhead", "500m")
+confCluster.set("spark.driver.memory", "64g")
+confCluster.set("spark.executor.memory", "64g")
+confCluster.set("spark.driver.memoryOverhead", "32g")
+confCluster.set("spark.executor.memoryOverhead", "32g")
 #Be sure that the sum of the driver or executor memory plus the driver or executor memory overhead is always less than the value of yarn.nodemanager.resource.memory-mb
-#confCluster.set("yarn.nodemanager.resource.memory-mb", "192000")
+#confCluster.set("yarn.nodemanager.resource.memory-mb", "196608")
 #spark.driver/executor.memory + spark.driver/executor.memoryOverhead < yarn.nodemanager.resource.memory-mb
-confCluster.set("spark.yarn.executor.memoryOverhead", "512")
+confCluster.set("spark.yarn.executor.memoryOverhead", "4096")
 #set cores of each executor and the driver -> less than avail -> more executors spawn
-confCluster.set("spark.driver.cores", "1")
-confCluster.set("spark.executor.cores", "1")
+confCluster.set("spark.driver.cores", "36")
+confCluster.set("spark.executor.cores", "36")
 confCluster.set("spark.dynamicAllocation.enabled", "True")
-confCluster.set("spark.dynamicAllocation.minExecutors", "4")
-confCluster.set("spark.dynamicAllocation.maxExecutors", "4")
+confCluster.set("spark.dynamicAllocation.minExecutors", "15")
+confCluster.set("spark.dynamicAllocation.maxExecutors", "15")
 confCluster.set("yarn.nodemanager.vmem-check-enabled", "false")
+repartition_count = 32
+
+
 sc = SparkContext(conf=confCluster)
 sqlContext = SQLContext(sc)
-spark = SparkSession.builder.master("cluster").appName("MusicSimilarity").getOrCreate()
 
-repartition_count = 32
+sc.setLogLevel("ERROR")
+
 time_dict = {}
 
 def chroma_cross_correlate(chroma1_par, chroma2_par):
@@ -124,55 +126,117 @@ def chroma_cross_correlate_valid(chroma1_par, chroma2_par):
     correlation = sosfilt(sos, correlation)[:]
     return np.max(correlation)
 
-#get 13 mean and 13x13 cov as vectors
+debug_dict = {}
+negjs = sc.accumulator(0)
+nanjs = sc.accumulator(0)
+nonpdjs = sc.accumulator(0)
+negskl = sc.accumulator(0)
+nanskl = sc.accumulator(0)
+noninskl = sc.accumulator(0)
+
 def jensen_shannon(vec1, vec2):
-    mean1 = np.empty([13, 1])
-    mean1 = vec1[0:13]
-    #print mean1
-    cov1 = np.empty([13,13])
-    cov1 = vec1[13:].reshape(13, 13)
-    #print cov1
-    mean2 = np.empty([13, 1])
-    mean2 = vec2[0:13]
-    #print mean1
-    cov2 = np.empty([13,13])
-    cov2 = vec2[13:].reshape(13, 13)
-    #print cov1
-    mean_m = 0.5 * (mean1 + mean2)
-    cov_m = 0.5 * (cov1 + mean1 * np.transpose(mean1)) + 0.5 * (cov2 + mean2 * np.transpose(mean2)) - (mean_m * np.transpose(mean_m))
-    div = 0.5 * np.log(np.linalg.det(cov_m)) - 0.25 * np.log(np.linalg.det(cov1)) - 0.25 * np.log(np.linalg.det(cov2))
-    #print("JENSEN_SHANNON_DIVERGENCE")    
+    d = 13
+    mean1 = np.empty([d, 1])
+    mean1 = vec1[0:d]
+    cov1 = np.empty([d,13])
+    cov1 = vec1[d:].reshape(d, d)
+    div = np.inf
+    #div = float('NaN')
+    try:
+        cov_1_logdet = 2*np.sum(np.log(np.linalg.cholesky(cov1).diagonal()))
+        issing1=1
+    except np.linalg.LinAlgError as err:
+        nonpdjs.add(1)
+        #print("ERROR: NON POSITIVE DEFINITE MATRIX 1\n\n\n") 
+        return div    
+    #print(cov_1_logdet)
+    mean2 = np.empty([d, 1])
+    mean2 = vec2[0:d]
+    cov2 = np.empty([d,d])
+    cov2 = vec2[d:].reshape(d, d)
+    try:
+        cov_2_logdet = 2*np.sum(np.log(np.linalg.cholesky(cov2).diagonal()))
+        issing2=1
+    except np.linalg.LinAlgError as err:
+        nonpdjs.add(1)
+        #print("ERROR: NON POSITIVE DEFINITE MATRIX 2\n\n\n") 
+        return div
+    #print(cov_2_logdet)
+    #==============================================
+    if (issing1==1) and (issing2==1):
+        mean_m = 0.5 * mean1 +  0.5 * mean2
+        cov_m = 0.5 * (cov1 + np.outer(mean1, mean1)) + 0.5 * (cov2 + np.outer(mean2, mean2)) - np.outer(mean_m, mean_m)
+        cov_m_logdet = 2*np.sum(np.log(np.linalg.cholesky(cov_m).diagonal()))
+        #print(cov_m_logdet)
+        try:        
+            div = 0.5 * cov_m_logdet - 0.25 * cov_1_logdet - 0.25 * cov_2_logdet
+        except np.linalg.LinAlgError as err:
+            nonpdjs.add(1)
+            #print("ERROR: NON POSITIVE DEFINITE MATRIX M\n\n\n") 
+            return div
+        #print("JENSEN_SHANNON_DIVERGENCE")   
     if np.isnan(div):
         div = np.inf
+        nanjs.add(1)
         #div = None
+        pass
     if div <= 0:
-        div = div * (-1)
-    #print div
+        div = 0
+        negjs.add(1)
+        pass
+    #print(div)
     return div
-
-def is_invertible(a):
-    return a.shape[0] == a.shape[1] and np.linalg.matrix_rank(a) == a.shape[0]
 
 #get 13 mean and 13x13 cov as vectors
 def symmetric_kullback_leibler(vec1, vec2):
-    mean1 = np.empty([13, 1])
-    mean1 = vec1[0:13]
-    #print mean1
-    cov1 = np.empty([13,13])
-    cov1 = vec1[13:].reshape(13, 13)
-    #print cov1
-    mean2 = np.empty([13, 1])
-    mean2 = vec2[0:13]
-    #print mean1
-    cov2 = np.empty([13,13])
-    cov2 = vec2[13:].reshape(13, 13)
-    if (is_invertible(cov1) and is_invertible(cov2)):
-        d = 13
-        div = 0.25 * (np.trace(cov1 * np.linalg.inv(cov2)) + np.trace(cov2 * np.linalg.inv(cov1)) + np.trace( (np.linalg.inv(cov1) + np.linalg.inv(cov2)) * (mean1 - mean2)**2) - 2*d)
+    d = 13
+    mean1 = np.empty([d, 1])
+    mean1 = vec1[0:d]
+    cov1 = np.empty([d,d])
+    cov1 = vec1[d:].reshape(d, d)
+    mean2 = np.empty([d, 1])
+    mean2 = vec2[0:d]
+    cov2 = np.empty([d,d])
+    cov2 = vec2[d:].reshape(d, d)
+    div = np.inf
+    try:
+        g_chol = np.linalg.cholesky(cov1)
+        g_ui   = np.linalg.solve(g_chol,np.eye(d))
+        icov1  = np.matmul(np.transpose(g_ui), g_ui)
+        isinv1=1
+    except np.linalg.LinAlgError as err:
+        isinv1=0
+    try:
+        g_chol = np.linalg.cholesky(cov2)
+        g_ui   = np.linalg.solve(g_chol,np.eye(d))
+        icov2  = np.matmul(np.transpose(g_ui), g_ui)
+        isinv2=1
+    except np.linalg.LinAlgError as err:
+        isinv2=0
+    #================================
+    if (isinv1==1) and (isinv2==1):
+        temp_a = np.trace(np.matmul(cov1, icov2)) 
+        #temp_a = traceprod(cov1, icov2) 
+        #print(temp_a)
+        temp_b = np.trace(np.matmul(cov2, icov1))
+        #temp_b = traceprod(cov2, icov1)
+        #print(temp_b)
+        temp_c = np.trace(np.matmul((icov1 + icov2), np.outer((mean1 - mean2), (mean1 - mean2))))
+        #print(temp_c)        
+        div = 0.25 * (temp_a + temp_b + temp_c - 2*d)
     else: 
         div = np.inf
-        print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
-    #print div
+        noninskl.add(1)
+        #print("ERROR: NON INVERTIBLE SINGULAR COVARIANCE MATRIX \n\n\n")    
+    if div <= 0:
+        #print("Temp_a: " + temp_a + "\n Temp_b: " + temp_b + "\n Temp_c: " + temp_c)
+        div = 0
+        negskl.add(1)
+    if np.isnan(div):
+        div = np.inf
+        nanskl.add(1)
+        #div = None
+    #print(div)
     return div
 
 #get 13 mean and 13x13 cov + var as vectors
@@ -290,7 +354,7 @@ def get_neighbors_mfcc_skl(song):
     distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
     result = df_vec.withColumn('distances_skl', distance_udf(F.col('features'))).select("id", "distances_skl")
     #thresholding 
-    #result = result.filter(result.distances_skl <= 1000)  
+    result = result.filter(result.distances_skl <= 10000)  
     result = result.filter(result.distances_skl != np.inf)        
     aggregated = result.agg(F.min(result.distances_skl),F.max(result.distances_skl))
     max_val = aggregated.collect()[0]["max(distances_skl)"]
@@ -463,12 +527,10 @@ def get_nearest_neighbors_precise(song, outname):
 song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3"
 
 if len (sys.argv) < 2:
-    song1 = "music/Jazz & Klassik/Keith Jarret - Creation/02-Keith Jarrett-Part II Tokyo.mp3"
-    song2 = "music/Oldschool/Raid the Arcade - Armada/12 - Rock You Like a Hurricane.mp3"
-    #song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3" #1517 artists
-    #song2 = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3" #1517 artists
-    #song1 = "music/Let_It_Be/beatles+Let_It_Be+06-Let_It_Be.mp3"
-    #song2 = "music/Lady/styx+Return_To_Paradise_Disc_1_+05-Lady.mp3"
+    song1 = "music/Classical/Katrine_Gislinge-Fr_Elise.mp3" #1517 artists
+    song1 = "music/Ooby_Dooby/roy_orbison+Black_and_White_Night+05-Ooby_Dooby.mp3"
+    song2 = "music/Rock & Pop/Sabaton-Primo_Victoria.mp3" #1517 artists
+    song2 = "music/Let_It_Be/beatles+Let_It_Be+06-Let_It_Be.mp3"
 else: 
     song1 = sys.argv[1]
     song2 = sys.argv[1]
@@ -501,7 +563,18 @@ res2.unpersist()
 tac2 = int(round(time.time() * 1000))
 time_dict['CSV2: ']= tac2 - tic2
 
-print(time_dict)
+print time_dict
+
+print "\n\n"
+
+debug_dict['Negative JS: ']= negjs.value
+debug_dict['Nan JS: ']= nanjs.value
+debug_dict['Non Positive Definite JS: ']= nonpdjs.value
+debug_dict['Negative SKL: ']= negskl.value
+debug_dict['Nan SKL: ']= nanskl.value
+debug_dict['Non Invertible SKL: ']= noninskl.value
+
+print debug_dict
 
 kv_rp.unpersist()
 kv_rh.unpersist()
