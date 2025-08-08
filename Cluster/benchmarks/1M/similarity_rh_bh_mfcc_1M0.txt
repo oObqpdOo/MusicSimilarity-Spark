@@ -1,0 +1,80 @@
+RUN_
+/cluster/spark/3.5.2/python/lib/pyspark.zip/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+{'COMPARATOR: ': 244, 'RH: ': 42, 'MFCC: ': 39, 'BH: ': 36, 'JOIN: ': 85, 'SCALE: ': 7336, 'AGG: ': 5584, 'MERGED_FULL_SONG1: ': 132236, 'MERGED_FULL_SONG2: ': 13366, 'MERGED_TOTAL: ': 149394}
+
+
+
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+1000000
+RUN_
+/cluster/spark/3.5.2/python/lib/pyspark.zip/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+{'COMPARATOR: ': 259, 'RH: ': 40, 'MFCC: ': 36, 'BH: ': 34, 'JOIN: ': 82, 'SCALE: ': 12276, 'AGG: ': 6882, 'MERGED_FULL_SONG1: ': 261720, 'MERGED_FULL_SONG2: ': 19610, 'MERGED_TOTAL: ': 287366}
+
+
+
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+1000000
+RUN_
+/cluster/spark/3.5.2/python/lib/pyspark.zip/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+{'COMPARATOR: ': 216, 'RH: ': 39, 'MFCC: ': 36, 'BH: ': 37, 'JOIN: ': 83, 'SCALE: ': 6562, 'AGG: ': 5127, 'MERGED_FULL_SONG1: ': 130343, 'MERGED_FULL_SONG2: ': 12101, 'MERGED_TOTAL: ': 146138}
+
+
+
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+1000000
+RUN_
+/cluster/spark/3.5.2/python/lib/pyspark.zip/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+{'COMPARATOR: ': 279, 'RH: ': 44, 'MFCC: ': 37, 'BH: ': 38, 'JOIN: ': 83, 'SCALE: ': 7599, 'AGG: ': 5315, 'MERGED_FULL_SONG1: ': 85485, 'MERGED_FULL_SONG2: ': 13396, 'MERGED_TOTAL: ': 102601}
+
+
+
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+1000000
+RUN_
+/cluster/spark/3.5.2/python/lib/pyspark.zip/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+{'COMPARATOR: ': 273, 'RH: ': 43, 'MFCC: ': 39, 'BH: ': 40, 'JOIN: ': 80, 'SCALE: ': 8763, 'AGG: ': 4374, 'MERGED_FULL_SONG1: ': 230341, 'MERGED_FULL_SONG2: ': 13612, 'MERGED_TOTAL: ': 248225}
+
+
+
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+1000000
+RUN_
+/cluster/spark/3.5.2/python/lib/pyspark.zip/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+{'COMPARATOR: ': 232, 'RH: ': 45, 'MFCC: ': 37, 'BH: ': 38, 'JOIN: ': 84, 'SCALE: ': 8375, 'AGG: ': 5973, 'MERGED_FULL_SONG1: ': 85049, 'MERGED_FULL_SONG2: ': 14784, 'MERGED_TOTAL: ': 103676}
+
+
+
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+1000000
+RUN_
+/cluster/spark/3.5.2/python/lib/pyspark.zip/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+{'COMPARATOR: ': 231, 'RH: ': 56, 'MFCC: ': 36, 'BH: ': 37, 'JOIN: ': 94, 'SCALE: ': 6667, 'AGG: ': 5801, 'MERGED_FULL_SONG1: ': 159474, 'MERGED_FULL_SONG2: ': 12922, 'MERGED_TOTAL: ': 176173}
+
+
+
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+1000000
+RUN_
+/cluster/spark/3.5.2/python/lib/pyspark.zip/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+{'COMPARATOR: ': 400, 'RH: ': 41, 'MFCC: ': 34, 'BH: ': 35, 'JOIN: ': 81, 'SCALE: ': 9792, 'AGG: ': 5315, 'MERGED_FULL_SONG1: ': 220326, 'MERGED_FULL_SONG2: ': 15698, 'MERGED_TOTAL: ': 239962}
+
+
+
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+1000000
+RUN_
+/cluster/spark/3.5.2/python/lib/pyspark.zip/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+{'COMPARATOR: ': 305, 'RH: ': 39, 'MFCC: ': 42, 'BH: ': 52, 'JOIN: ': 121, 'SCALE: ': 7416, 'AGG: ': 5684, 'MERGED_FULL_SONG1: ': 196240, 'MERGED_FULL_SONG2: ': 13659, 'MERGED_TOTAL: ': 213777}
+
+
+
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+1000000
+RUN_
+/cluster/spark/3.5.2/python/lib/pyspark.zip/pyspark/sql/context.py:113: FutureWarning: Deprecated in 3.0.0. Use SparkSession.builder.getOrCreate() instead.
+{'COMPARATOR: ': 254, 'RH: ': 43, 'MFCC: ': 34, 'BH: ': 35, 'JOIN: ': 78, 'SCALE: ': 8107, 'AGG: ': 37453, 'MERGED_FULL_SONG1: ': 145418, 'MERGED_FULL_SONG2: ': 46004, 'MERGED_TOTAL: ': 195277}
+
+
+
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+1000000

@@ -1,0 +1,90 @@
+import pyspark
+import pyspark.ml.feature
+import pyspark.mllib.linalg
+import pyspark.ml.param
+import pyspark.sql.functions
+from pyspark import SparkContext, SparkConf
+from pyspark.sql import functions as F
+from pyspark.sql import SQLContext
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, IntegerType, FloatType, DoubleType, StringType, Row
+from pyspark.sql.functions import * # col, array, lit, udf, min, max, round # lit is used for applying one scalar to every row in a whole column when using withColumn and creating a new column
+from pyspark.sql.functions import udf
+from pyspark.ml.param.shared import *
+from pyspark.mllib.linalg import Vectors, VectorUDT
+from pyspark.ml.feature import VectorAssembler
+
+from scipy.spatial import distance
+from pyspark.mllib.linalg import Vectors
+from pyspark.ml.param.shared import *
+from pyspark.mllib.linalg import Vectors, VectorUDT
+from pyspark.ml.feature import VectorAssembler
+
+import numpy as np
+from pyspark.sql.functions import lit
+from pyspark.sql.functions import levenshtein  
+from pyspark.sql.functions import col
+from pyspark.sql.functions import desc
+from pyspark.sql.functions import asc
+
+import scipy as sp
+from scipy.signal import butter, lfilter, freqz, correlate2d, sosfilt
+import time
+from pyspark import SparkContext, SparkConf
+from pyspark.sql import SQLContext, Row
+import sys
+
+
+conf = SparkConf().setAppName("MergeDatasets").set("yarn.nodemanager.resource.detect-hardware-capabilities" , "True") \
+                                              .set("yarn.nodemanager.resource.memory-mb", "196608") \
+                                              .set("spark.executor.memory", "8g") \
+                                              .set("spark.driver.memory", "8g") \
+                                              .set("spark.driver.cores", "2") \
+                                              .set("spark.executor.cores", "2") \
+                                              .set("spark.executor.instances", "27") \
+											  .set("spark.dynamicAllocation.enabled", "True") \
+                                              .set("spark.dynamicAllocation.initialExecutors", "27") \
+                                              .set("spark.dynamicAllocation.executorIdleTimeout", "30s") \
+                                              .set("spark.dynamicAllocation.minExecutors", "27") \
+                                              .set("spark.dynamicAllocation.maxExecutors", "27")
+                                            #.set("spark.driver.memoryOverhead", "1024") \
+                                            #.set("spark.executor.memoryOverhead", "1024") \
+                                            #.set("yarn.nodemanager.resource.memory-mb", "196608") \
+                                            #.set("yarn.nodemanager.vmem-check-enabled", "false") \
+                                            #.set("spark.yarn.executor.memoryOverhead", "8192") \
+                                            #.set("spark.shuffle.service.enabled", "True") \ 
+											#.set("spark.dynamicAllocation.shuffleTracking.enabled", "True") \ #Fehleranfällig: https://spark.apache.org/docs/3.5.2/job-scheduling.html#configuration-and-setup
+# Create a SparkSession object
+spark = SparkSession.builder.config(conf=conf).getOrCreate()
+sc = spark.sparkContext
+sqlContext= SQLContext(sc)
+
+
+fullFeatureDF = spark.read.format("parquet").option("header", True).option("inferSchema", True).load("PreProcessedFull.parquet").persist()
+
+#root
+# |-- id: string (nullable = true)
+# |-- chroma: vector (nullable = true)
+# |-- mfccSkl: vector (nullable = true)
+# |-- key: string (nullable = true)
+# |-- scale: string (nullable = true)
+# |-- notes: string (nullable = true)
+# |-- rp: vector (nullable = true)
+# |-- rh: vector (nullable = true)
+# |-- bpm: string (nullable = true)
+# |-- bh: vector (nullable = true)
+# |-- _c0: string (nullable = true)
+# |-- track: string (nullable = true)
+# |-- preview_url: string (nullable = true)
+# |-- album_id: string (nullable = true)
+# |-- artist_id: string (nullable = true)
+# |-- album: string (nullable = true)
+# |-- artist: string (nullable = true)
+
+selection = fullFeatureDF.select(['id', 'artist', 'track', 'album'])
+selection = fullFeatureDF.select(['id', 'artist', 'track', 'album', 'preview_url'])
+selection.write.csv("Tracklist.csv")
+
+artist = selection.filter(selection.artist == 'In Flames')
+
+

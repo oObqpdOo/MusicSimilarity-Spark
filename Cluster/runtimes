@@ -1,0 +1,118 @@
+4cores - 16GB - 100EX - 200Parts
+==================================
+==================================
+
+No Config:
+==================================
+
+100000
+100000
+100000
+100000
+100000
+100000
+{'COMPARATOR: ': 240, 'RH: ': 3017, 'NOTE: ': 814, 'MFCC: ': 5348, 'JOIN: ': 64, 'SCALE: ': 2274, 'AGG: ': 2710, 'MERGED_FULL_SONG1: ': 32723, 'MERGED_FULL_SONG2: ': 14468, 'MERGED_TOTAL: ': 58924}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+
+With Config:
+==================================
+
+100000
+100000
+100000
+100000
+100000
+100000
+{'COMPARATOR: ': 228, 'RH: ': 809, 'NOTE: ': 643, 'MFCC: ': 2679, 'JOIN: ': 73, 'SCALE: ': 6843, 'AGG: ': 2759, 'MERGED_FULL_SONG1: ': 28718, 'MERGED_FULL_SONG2: ': 14034, 'MERGED_TOTAL: ': 46578}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+
+No Count: 
+==================================
+
+{'COMPARATOR: ': 175, 'RH: ': 60, 'NOTE: ': 57, 'MFCC: ': 61, 'JOIN: ': 67, 'SCALE: ': 6982, 'AGG: ': 4224, 'MERGED_FULL_SONG1: ': 25122, 'MERGED_FULL_SONG2: ': 11626, 'MERGED_TOTAL: ': 40991}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+No Count No Persists: 
+==================================
+
+{'COMPARATOR: ': 307, 'RH: ': 53, 'NOTE: ': 42, 'MFCC: ': 38, 'JOIN: ': 92, 'SCALE: ': 7684, 'AGG: ': 4583, 'MERGED_FULL_SONG1: ': 28463, 'MERGED_FULL_SONG2: ': 12799, 'MERGED_TOTAL: ': 47660}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+nochmal: 
+
+{'COMPARATOR: ': 207, 'RH: ': 44, 'NOTE: ': 37, 'MFCC: ': 45, 'JOIN: ': 126, 'SCALE: ': 4617, 'AGG: ': 2245, 'MERGED_FULL_SONG1: ': 22207, 'MERGED_FULL_SONG2: ': 7322, 'MERGED_TOTAL: ': 33371}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+nochmal: 
+
+{'COMPARATOR: ': 302, 'RH: ': 43, 'NOTE: ': 40, 'MFCC: ': 68, 'JOIN: ': 102, 'SCALE: ': 4467, 'AGG: ': 2365, 'MERGED_FULL_SONG1: ': 22484, 'MERGED_FULL_SONG2: ': 7387, 'MERGED_TOTAL: ': 33558}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+NO PERSIST AT ALL: 
+==================================
+{'COMPARATOR: ': 196, 'RH: ': 66, 'NOTE: ': 51, 'MFCC: ': 44, 'JOIN: ': 36, 'SCALE: ': 4418, 'AGG: ': 9449, 'MERGED_FULL_SONG1: ': 31009, 'MERGED_FULL_SONG2: ': 14260, 'MERGED_TOTAL: ': 49321}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+2cores - 8GB - 200EX - 
+==================================
+==================================
+
+{'COMPARATOR: ': 334, 'RH: ': 44, 'NOTE: ': 36, 'MFCC: ': 35, 'JOIN: ': 93, 'SCALE: ': 7892, 'AGG: ': 2649, 'MERGED_FULL_SONG1: ': 31991, 'MERGED_FULL_SONG2: ': 11084, 'MERGED_TOTAL: ': 48458}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+
+4cores - 16GB - 50EX - 50Parts
+==================================
+==================================
+
+{'COMPARATOR: ': 159, 'RH: ': 39, 'NOTE: ': 37, 'MFCC: ': 36, 'JOIN: ': 92, 'SCALE: ': 6523, 'AGG: ': 3238, 'MERGED_FULL_SONG1: ': 26713, 'MERGED_FULL_SONG2: ': 10125, 'MERGED_TOTAL: ': 40667}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+4cores - 16GB - 100EX - 400Parts
+==================================
+==================================
+
+{'COMPARATOR: ': 229, 'RH: ': 59, 'NOTE: ': 42, 'MFCC: ': 42, 'JOIN: ': 108, 'SCALE: ': 7524, 'AGG: ': 3558, 'MERGED_FULL_SONG1: ': 28095, 'MERGED_FULL_SONG2: ': 11563, 'MERGED_TOTAL: ': 44193}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+==================================
+==================================
+==================================
+BEST: 4cores - 16GB - 100EX - 200Parts!
+{'COMPARATOR: ': 302, 'RH: ': 43, 'NOTE: ': 40, 'MFCC: ': 68, 'JOIN: ': 102, 'SCALE: ': 4467, 'AGG: ': 2365, 'MERGED_FULL_SONG1: ': 22484, 'MERGED_FULL_SONG2: ': 7387, 'MERGED_TOTAL: ': 33558}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+==================================
+==================================
+==================================
+
+Parameterized? NO ARGUMENTS Why so slow?
+==================================
+NO ARGUMENTS
+Using 100000 song subset
+{'COMPARATOR: ': 274, 'RH: ': 60, 'NOTE: ': 43, 'MFCC: ': 37, 'JOIN: ': 90, 'SCALE: ': 4628, 'AGG: ': 2979, 'MERGED_FULL_SONG1: ': 88973, 'MERGED_FULL_SONG2: ': 8111, 'MERGED_TOTAL: ': 102052}
+
+Using 100000 song subset
+{'COMPARATOR: ': 256, 'RH: ': 41, 'NOTE: ': 36, 'MFCC: ': 34, 'JOIN: ': 88, 'SCALE: ': 4735, 'AGG: ': 2713, 'MERGED_FULL_SONG1: ': 111449, 'MERGED_FULL_SONG2: ': 7903, 'MERGED_TOTAL: ': 124174}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+Parameterized? WITH ARGUMENTS
+==================================
+
+Using 100000 song subset
+{'COMPARATOR: ': 216, 'RH: ': 44, 'NOTE: ': 36, 'MFCC: ': 36, 'JOIN: ': 93, 'SCALE: ': 4760, 'AGG: ': 2751, 'MERGED_FULL_SONG1: ': 87761, 'MERGED_FULL_SONG2: ': 7936, 'MERGED_TOTAL: ': 100690}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+Using 100000 song subset
+{'COMPARATOR: ': 212, 'RH: ': 43, 'NOTE: ': 35, 'MFCC: ': 34, 'JOIN: ': 86, 'SCALE: ': 4878, 'AGG: ': 2551, 'MERGED_FULL_SONG1: ': 89286, 'MERGED_FULL_SONG2: ': 7839, 'MERGED_TOTAL: ': 102088}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+Non-Parameterized
+==================================
+{'COMPARATOR: ': 189, 'RH: ': 48, 'NOTE: ': 43, 'MFCC: ': 38, 'JOIN: ': 96, 'SCALE: ': 7731, 'AGG: ': 2928, 'MERGED_FULL_SONG1: ': 28078, 'MERGED_FULL_SONG2: ': 11074, 'MERGED_TOTAL: ': 42960}
+{'Negative JS: ': 0, 'Nan JS: ': 0, 'Non Positive Definite JS: ': 0, 'Negative SKL: ': 0, 'Nan SKL: ': 0, 'Non Invertible SKL: ': 0}
+
+
+
+
