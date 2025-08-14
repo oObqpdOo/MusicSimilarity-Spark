@@ -3,6 +3,20 @@ Feature Extraction Code for Chroma features, Note estimation, MFCC statistics, R
 
 Python Spark Code for estimating the similarity of songs
 
+## Demo:
+
+
+- Install dependencies (see below)  
+- Place audio files in the '''/audio/''' folder and create a target '''/features/''' folder  
+- Run '''python example\_mars\_extractor.py'''  
+	- Audio features are extracted into the '''/features/''' folder  
+- Run '''python example\_mars\_preprocess.py'''  
+	- A Spark dataframe containing the relevant features is stored to '''AudioFeaturesMerged.json'''  
+- Run '''python example\_mars\_preprocess.py'''  
+	- The first two songs are taken as exemplary song requests  
+
+
+
 ## Important Note:
 08.Aug.2025: Repository is in the progress of being merged with a repository from a private Gitlab server. 
 More thorough code documentation and cleaning will follow in the upcoming week

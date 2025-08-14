@@ -58,17 +58,17 @@ weight_js = 1
 
 #==============================================================
 
-executor_s = "100"
-parts_s = "100"
-parts = 400
+executor_s = "8"
+parts_s = "16"
+parts = 16
 
 conf = SparkConf().setAppName("MergeDatasets").set("yarn.nodemanager.resource.detect-hardware-capabilities" , "True") \
-                                              .set("yarn.nodemanager.resource.memory-mb", "196608") \
-					      .set("yarn.scheduler.maximum-allocation-vcores", "36") \
-                                              .set("spark.executor.memory", "16g") \
-                                              .set("spark.driver.memory", "16g") \
-                                              .set("spark.driver.cores", "4") \
-                                              .set("spark.executor.cores", "4") \
+                                              .set("yarn.nodemanager.resource.memory-mb", "16384") \
+					      .set("yarn.scheduler.maximum-allocation-vcores", "16") \
+                                              .set("spark.executor.memory", "4g") \
+                                              .set("spark.driver.memory", "4g") \
+                                              .set("spark.driver.cores", "1") \
+                                              .set("spark.executor.cores", "1") \
 					      					  .set("spark.dynamicAllocation.enabled", "True") \
                                               .set("spark.dynamicAllocation.initialExecutors", executor_s) \
                                               .set("spark.dynamicAllocation.executorIdleTimeout", "30s") \
@@ -582,14 +582,14 @@ def get_nearest_neighbors(song, outname):
 ##################################
 #ONLY TAKE SUBSET OF 5000
 ##################################
+fullFeatureDF = spark.read.format("parquet").option("header", True).option("inferSchema", True).load("AudioFeaturesMerged.parquet").coalesce(parts).persist()
+
 #fullFeatureDF = spark.read.format("parquet").option("header", True).option("inferSchema", True).load("PreProcessedPart5000.parquet").coalesce(parts).persist()
-fullFeatureDF = spark.read.format("parquet").option("header", True).option("inferSchema", True).load("PreProcessed100000.parquet").coalesce(parts).persist()
+#fullFeatureDF = spark.read.format("parquet").option("header", True).option("inferSchema", True).load("PreProcessed100000.parquet").coalesce(parts).persist()
 #fullFeatureDF = spark.read.format("parquet").option("header", True).option("inferSchema", True).load("PreProcessed500000.parquet").coalesce(parts).persist()
 #fullFeatureDF = spark.read.format("parquet").option("header", True).option("inferSchema", True).load("PreProcessed1000000.parquet").coalesce(parts).persist()
 #fullFeatureDF = spark.read.format("parquet").option("header", True).option("inferSchema", True).load("PreProcessedFull.parquet").coalesce(parts).persist()
-
 #fullFeatureDF = fullFeatureDF.limit(10000).persist()
-
 #print(fullFeatureDF.rdd.getNumPartitions())
 
 
@@ -599,6 +599,9 @@ if len (sys.argv) < 2:
     song2 = "0Zi7FzlLQsjdRIxtR0Tdm3" 
     song1 = "3TzFRDzRIiM5FEJ8PPpO6j"
     song2 = "3U4tQ24WRJUf8hc7NsNfwf"
+    songs = fullFeatureDF.take(2)
+    song1 = songs[0]["chroma"]
+    song2 = songs[1]["chroma"]
 
     #song3 = "001DpamjDdVjjeAHWCLju9"
     #song4 = "001LKjMxQcD7impp1Fxfsj"
