@@ -27,16 +27,14 @@ Description and Documentation: https://github.com/oObqpdOo/MusicSimilarity
 
 ## Requirements: 
 pyspark 1.6.0 or newer,  
-librosa,  
 essentia,  
 numpy,  
 scipy,  
-pp (parrallel python),  
-glob,  
 matplotlib,  
 urllib,  
 ipython/ jupyter,  
 pathlib,  
-signal,  
+signal,
+glob, 
 edlib,   
 ffmpeg or mpg123  
