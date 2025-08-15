@@ -39,13 +39,13 @@ import sys
 
 #either do_rh or do_rp (or both) has to be set by default!
 do_rh = 1
-do_rp = 0
-do_bh = 0
-do_chroma = 0
+do_rp = 1
+do_bh = 1
+do_chroma = 1
 do_notes = 1
 do_mfcc = 1
-do_skl = 0
-do_js = 0
+do_skl = 1
+do_js = 1
 
 weight_rh = 1
 weight_rp = 1
@@ -247,12 +247,12 @@ def symmetric_kullback_leibler(vec1, vec2):
 
 #get 13 mean and 13x13 cov + var as vectors
 def get_euclidean_mfcc(vec1, vec2):
-    print(vec1)
-    print(vec2)
-    mean1 = np.array(vec1[1][0:13])
-    cov1 = np.array(vec1[1][13:]).reshape(13, 13)        
-    mean2 = np.array(vec2[1][0:13])
-    cov2 = np.array(vec2[1][13:]).reshape(13, 13)
+    #print(vec1)
+    #print(vec2)
+    mean1 = np.array(vec1[0:13])
+    cov1 = np.array(vec1[13:]).reshape(13, 13)        
+    mean2 = np.array(vec2[0:13])
+    cov2 = np.array(vec2[13:]).reshape(13, 13)
     iu1 = np.triu_indices(13)
     #You need to pass the arrays as an iterable (a tuple or list), thus the correct syntax is np.concatenate((,),axis=None)
     div = distance.euclidean(np.concatenate((mean1, cov1[iu1]),axis=None), np.concatenate((mean2, cov2[iu1]),axis=None))
@@ -263,24 +263,32 @@ def get_euclidean_mfcc(vec1, vec2):
 
 def get_neighbors_rh_euclidean(song, featureDF):
     comparator_value = song[0]["rh"]
-    distance_udf = F.udf(lambda x: float(distance.euclidean(x[1], comparator_value[1])), FloatType())
+    print(comparator_value)
+    print(type(comparator_value))
+    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = featureDF.withColumn('distances_rh', distance_udf(F.col('rh'))).select("id", "distances_rh")#,"artist", "track", "album", "preview_url")
     return result
 
 def get_neighbors_bh_euclidean(song, featureDF):
     comparator_value = song[0]["bh"]
-    distance_udf = F.udf(lambda x: float(distance.euclidean(x[1], comparator_value[1])), FloatType())
+    print(comparator_value)
+    print(type(comparator_value))
+    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
     result = featureDF.withColumn('distances_bh', distance_udf(F.col('bh'))).select("id", "bpm", "distances_bh")
     return result
 
 def get_neighbors_rp_euclidean(song, featureDF):
     comparator_value = song[0]["rp"]
-    distance_udf = F.udf(lambda x: float(distance.euclidean(x[1], comparator_value[1])), FloatType())
-    result = featureDF.withColumn('distances_rp', distance_udf(F.col('rp'))).select("id", "distances_rp" ,"artist", "track", "album", "preview_url")
+    print(comparator_value)
+    print(type(comparator_value))
+    distance_udf = F.udf(lambda x: float(distance.euclidean(x, comparator_value)), FloatType())
+    result = featureDF.withColumn('distances_rp', distance_udf(F.col('rp'))).select("id", "distances_rp")# ,"artist", "track", "album", "preview_url")
     return result
 
 def get_neighbors_notes(song, featureDF):
     comparator_value = song[0]["notes"]
+    print(comparator_value)
+    print(type(comparator_value))
     df_merged = featureDF.withColumn("compare", lit(comparator_value))
     df_levenshtein = df_merged.withColumn("distances_levenshtein", levenshtein(col("notes"), col("compare")))
     result = df_levenshtein.select("id", "key", "scale", "distances_levenshtein")
@@ -288,13 +296,17 @@ def get_neighbors_notes(song, featureDF):
 
 def get_neighbors_chroma_corr_valid(song, featureDF):
     comparator_value = song[0]["chroma"]
-    distance_udf = F.udf(lambda x: float(chroma_cross_correlate_valid(x[1], comparator_value[1])), DoubleType())
+    print(comparator_value)
+    print(type(comparator_value))
+    distance_udf = F.udf(lambda x: float(chroma_cross_correlate_valid(x, comparator_value)), DoubleType())
     result = featureDF.withColumn('distances_corr', distance_udf(F.col('chroma'))).select("id", "distances_corr")
     return result
 
 def get_neighbors_mfcc_skl(song, featureDF):
     comparator_value = song[0]["mfccSkl"]
-    distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x[1], comparator_value[1])), DoubleType())
+    print(comparator_value)
+    print(type(comparator_value))
+    distance_udf = F.udf(lambda x: float(symmetric_kullback_leibler(x, comparator_value)), DoubleType())
     result = featureDF.withColumn('distances_skl', distance_udf(F.col('mfccSkl'))).select("id", "distances_skl")
     #thresholding 
     result = result.filter(result.distances_skl <= 10000)  
@@ -303,13 +315,17 @@ def get_neighbors_mfcc_skl(song, featureDF):
 
 def get_neighbors_mfcc_js(song, featureDF):
     comparator_value = song[0]["mfccSkl"]
-    distance_udf = F.udf(lambda x: float(jensen_shannon(x[1], comparator_value[1])), DoubleType())
+    print(comparator_value)
+    print(type(comparator_value))
+    distance_udf = F.udf(lambda x: float(jensen_shannon(x, comparator_value)), DoubleType())
     result = featureDF.withColumn('distances_js', distance_udf(F.col('mfccSkl'))).select("id", "distances_js")
     result = result.filter(result.distances_js != np.inf)    
     return result
 
 def get_neighbors_mfcc_euclidean(song, featureDF):
     comparator_value = song[0]["mfccSkl"]
+    print(comparator_value)
+    print(type(comparator_value))
     distance_udf = F.udf(lambda x: float(get_euclidean_mfcc(x, comparator_value)), FloatType())
     result = featureDF.withColumn('distances_mfcc', distance_udf(F.col('mfccSkl'))).select("id", "distances_mfcc")
     return result
@@ -410,10 +426,10 @@ def perform_scaling(unscaled_df):
 		"scaled_skl": do_skl,
 		"scaled_js": do_js,
 		"scaled_mfcc": do_mfcc,
- 		"artist": do_rp, 
-		"track": do_rp, 
-		"album": do_rp, 
-		"preview_url": do_rp,
+ 		#"artist": do_rp, 
+		#"track": do_rp, 
+		#"album": do_rp, 
+		#"preview_url": do_rp,
 		"bpm" : do_bh,
 		"key" : do_notes,
 		"scale" : do_notes
@@ -592,6 +608,10 @@ fullFeatureDF = spark.read.format("parquet").option("header", True).option("infe
 #fullFeatureDF = fullFeatureDF.limit(10000).persist()
 #print(fullFeatureDF.rdd.getNumPartitions())
 
+#fullFeatureDF.show()
+#fullFeatureDF.printSchema()
+#print(fullFeatureDF.first())
+
 
 if len (sys.argv) < 2:
     #song1 = "68kd1pdIjmaJAeWYXpUZAs" #In Flames - The New World
@@ -600,8 +620,14 @@ if len (sys.argv) < 2:
     song1 = "3TzFRDzRIiM5FEJ8PPpO6j"
     song2 = "3U4tQ24WRJUf8hc7NsNfwf"
     songs = fullFeatureDF.take(2)
-    song1 = songs[0]["chroma"]
-    song2 = songs[1]["chroma"]
+    #print(songs)
+    #print(type(songs))
+    #print(songs[0])
+    #print(type(songs[0]))
+    song1 = songs[0]["id"]
+    #print(song1)
+    song2 = songs[1]["id"]
+    #print(song2)
 
     #song3 = "001DpamjDdVjjeAHWCLju9"
     #song4 = "001LKjMxQcD7impp1Fxfsj"

@@ -52,7 +52,7 @@ for option in sc.getConf().getAll():
 #################################################################################################################################################
 #################################################################################################################################################
 
-pathName = "./features/"
+pathName = "./features/out0"
 
 repartition_count = 128
 
@@ -61,31 +61,34 @@ repartition_count = 128
 #
 rp = sc.textFile(pathName + ".rp")
 rp = rp.map(lambda x: x.replace("\"","").replace("b\'","").replace("'","")).map(lambda x: x.split(","))
-kv_rp= rp.map(lambda x: (x[0][3:].replace('.mp3', '').replace(";","").replace("/","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
+kv_rp= rp.map(lambda x: (x[0].replace('.mp3', '').replace(";","").replace("/","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
 rp_df = sqlContext.createDataFrame(kv_rp, ["id", "rp"])
 rp_df = rp_df.select(rp_df["id"],list_to_vector_udf(rp_df["rp"]).alias("rp"))#.repartition(repartition_count)
+rp_df.show()
 
 rh = sc.textFile(pathName + ".rh")
 rh = rh.map(lambda x: x.replace("\"","").replace("b\'","").replace("'","")).map(lambda x: x.split(","))
-kv_rh= rh.map(lambda x: (x[0][3:].replace('.mp3', '').replace(";","").replace("/","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
+kv_rh= rh.map(lambda x: (x[0].replace('.mp3', '').replace(";","").replace("/","").replace(".","").replace(",","").replace(" ",""), list(x[1:])))
 rh_df = sqlContext.createDataFrame(kv_rh, ["id", "rh"])
 rh_df = rh_df.select(rh_df["id"],list_to_vector_udf(rh_df["rh"]).alias("rh"))#.repartition(repartition_count)
-
+rh_df.show()
 #########################################################
 #   Pre- Process BH for Euclidean
 #
 bh = sc.textFile(pathName + ".bh")
 bh = bh.map(lambda x: x.split(";"))
-kv_bh = bh.map(lambda x: (x[0].replace("/beegfs/ja62lel/6M/","")[3:].replace('.mp3', '').replace("/","").replace(";","").replace(".","").replace(",","").replace(" ","").replace("b\'","").replace("'","").replace("\"",""), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
+kv_bh = bh.map(lambda x: (x[0].replace("audio/","").replace('.mp3', '').replace("/","").replace(";","").replace(".","").replace(",","").replace(" ","").replace("b\'","").replace("'","").replace("\"",""), x[1], Vectors.dense(x[2].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 bh_df = sqlContext.createDataFrame(kv_bh, ["id", "bpm", "bh"])#.repartition(repartition_count)
+bh_df.show()
 #########################################################
 #   Pre- Process Notes for Levenshtein
 #
 notes = sc.textFile(pathName + ".notes")
 notes = notes.map(lambda x: x.split(';'))
-notes = notes.map(lambda x: (x[0].replace("/beegfs/ja62lel/6M/","")[3:].replace('.mp3', '').replace("/","").replace(";","").replace(".","").replace(",","").replace(" ","").replace("b\'","").replace("'","").replace("\"",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
+notes = notes.map(lambda x: (x[0].replace("audio/","").replace('.mp3', '').replace("/","").replace(";","").replace(".","").replace(",","").replace(" ","").replace("b\'","").replace("'","").replace("\"",""), x[1], x[2], x[3].replace("10",'K').replace("11",'L').replace("0",'A').replace("1",'B').replace("2",'C').replace("3",'D').replace("4",'E').replace("5",'F').replace("6",'G').replace("7",'H').replace("8",'I').replace("9",'J')))
 notes = notes.map(lambda x: (x[0], x[1], x[2], x[3].replace(',','').replace(' ','')))
 notesDf = sqlContext.createDataFrame(notes, ["id", "key", "scale", "notes"])#.repartition(repartition_count)
+notesDf.show()
 #########################################################
 #   Pre- Process Chroma for cross-correlation
 #
@@ -95,9 +98,10 @@ chroma = chroma.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav
 chroma = chroma.map(lambda x: x.split(';'))
 #try to filter out empty elements
 chroma = chroma.filter(lambda x: (not x[1] == '[]') and (x[1].startswith("[[0.") or x[1].startswith("[[1.")))
-chromaRdd = chroma.map(lambda x: (x[0].replace("/beegfs/ja62lel/6M/","")[3:].replace('.mp3', '').replace("/","").replace(";","").replace(".","").replace(",","").replace(" ","").replace("b\'","").replace("'","").replace("\"",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
+chromaRdd = chroma.map(lambda x: (x[0].replace("audio/","").replace('.mp3', '').replace("/","").replace(";","").replace(".","").replace(",","").replace(" ","").replace("b\'","").replace("'","").replace("\"",""),(x[1].replace(' ', '').replace('[', '').replace(']', '').split(','))))
 chromaVec = chromaRdd.map(lambda x: (x[0], Vectors.dense(x[1])))
 chromaDf = sqlContext.createDataFrame(chromaVec, ["id", "chroma"])#.repartition(repartition_count)
+chromaDf.show()
 #########################################################
 #   Pre- Process MFCC for SKL and JS and EUC
 #
@@ -105,10 +109,10 @@ mfcc = sc.textFile(pathName + ".mfcckl")
 mfcc = mfcc.map(lambda x: x.replace(' ', '').replace(';', ','))
 mfcc = mfcc.map(lambda x: x.replace('.mp3,', '.mp3;').replace('.wav,', '.wav;').replace('.m4a,', '.m4a;').replace('.aiff,', '.aiff;').replace('.aif,', '.aif;').replace('.au,', '.au;').replace('.flac,', '.flac;').replace('.ogg,', '.ogg;'))
 mfcc = mfcc.map(lambda x: x.split(';'))
-mfcc = mfcc.map(lambda x: (x[0].replace("/beegfs/ja62lel/6M/","")[3:].replace('.mp3', '').replace("/","").replace(";","").replace(".","").replace(",","").replace(" ","").replace("b\'","").replace("'","").replace("\"",""), x[1].replace('[', '').replace(']', '').split(',')))
+mfcc = mfcc.map(lambda x: (x[0].replace("audio/","").replace('.mp3', '').replace("/","").replace(";","").replace(".","").replace(",","").replace(" ","").replace("b\'","").replace("'","").replace("\"",""), x[1].replace('[', '').replace(']', '').split(',')))
 mfccVec = mfcc.map(lambda x: (x[0], Vectors.dense(x[1])))
 mfccDfMerged = sqlContext.createDataFrame(mfccVec, ["id", "mfccSkl"])#.repartition(repartition_count)
-
+mfccDfMerged.show()
 #########################################################
 #   Gather all features in one dataframe
 #
@@ -123,9 +127,9 @@ featureDF4 = featureDF3.join(rh_df, on=['id'], how='inner').dropDuplicates()#.ca
 dataframe = featureDF4.join(bh_df, on=['id'], how='inner').dropDuplicates().cache()
 #featureDF4.unpersist()
 
-dataframe.write.json("AudioFeaturesMerged.json")
-#dataframe.printSchema()
-#dataframe.show()
+dataframe.write.mode("overwrite").parquet("AudioFeaturesMerged.parquet")
+dataframe.printSchema()
+dataframe.show()
 
 #Force lazy evaluation to evaluate with an action
 #trans = featureDF.count()

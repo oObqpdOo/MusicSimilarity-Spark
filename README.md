@@ -8,7 +8,7 @@ Python Spark Code for estimating the similarity of songs
 
 - Install dependencies (see below)  
 - Place audio files in the '''/audio/''' folder and create a target '''/features/''' folder  
-- Run '''python example\_mars\_extractor.py'''  
+- Run '''mpiexec -n 4 python example_mars_extractor.py'''  
 	- Audio features are extracted into the '''/features/''' folder  
 - Run '''python example\_mars\_preprocess.py'''  
 	- A Spark dataframe containing the relevant features is stored to '''AudioFeaturesMerged.json'''  
